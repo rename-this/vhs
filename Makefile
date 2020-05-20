@@ -2,6 +2,7 @@
 test:
 	go test -cover -race ./...
 
-.PHONY: run
-run: 
-	docker build -t vhs:dev . && docker run -it vhs:dev
+.PHONY: dev
+dev: 
+	docker build -t vhs:dev . && \
+	docker run -v $$(pwd):/go/vhs -it vhs:dev
