@@ -24,5 +24,12 @@ jobs:
       run: |
         go get -v -t -d ./...
 
+    - name: Install libpcap
+      run: |
+        apt-get update && \
+          apt-get install -y --no-install-recommends \
+          libpcap-dev
+
     - name: Test
-      run: make test
+      run: |
+        make test
