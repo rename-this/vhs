@@ -1,8 +1,9 @@
 package listener
 
 import (
+	"fmt"
+
 	"github.com/google/gopacket/pcap"
-	"github.com/pkg/errors"
 )
 
 // AddrType represents the type of address.
@@ -38,7 +39,7 @@ func NewAddr(addr string) *Addr {
 func (a *Addr) Interfaces() ([]pcap.Interface, error) {
 	interfaces, err := a.getInterfacesFn()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get interfaces")
+		return nil, fmt.Errorf("failed to get interfaces: %w", err)
 	}
 
 	if a.Type == AddrLoopback {
