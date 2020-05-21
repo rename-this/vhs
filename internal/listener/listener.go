@@ -5,7 +5,7 @@ import (
 )
 
 // NewListener creates a new listener.
-func NewListener(addr Addr, port uint16) (*Listener, error) {
+func NewListener(addr *Addr, port uint16) (*Listener, error) {
 	interfaces, err := addr.Interfaces()
 	if err != nil {
 		return nil, err
@@ -20,7 +20,7 @@ func NewListener(addr Addr, port uint16) (*Listener, error) {
 // Listener listens for TCP traffic on a
 // given address and port.
 type Listener struct {
-	Addr       Addr
+	Addr       *Addr
 	Port       uint16
 	Interfaces []pcap.Interface
 }

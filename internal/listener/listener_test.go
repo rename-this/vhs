@@ -10,15 +10,51 @@ import (
 
 func TestNewListener(t *testing.T) {
 	cases := []struct {
-		desc string
+		desc        string
+		addr        *Addr
+		port        uint16
+		errContains string
+		interfaces  []pcap.Interface
 	}{
 		{
-			desc: "",
+			desc: "addr interfaces error",
+			addr: &Addr{
+				getInterfacesFn: func() ([]pcap.Interface, error) {
+					return nil, errors.New("111")
+				},
+			},
+			errContains: "111",
+		},
+		{
+			desc: "no errors",
+			addr: &Addr{
+				Type: AddrLoopback,
+				getInterfacesFn: func() ([]pcap.Interface, error) {
+					return []pcap.Interface{
+						{Name: "111"},
+						{Name: "222"},
+						{Name: "333"},
+					}, nil
+				},
+			},
+			port: 1111,
+			interfaces: []pcap.Interface{
+				{Name: "111"},
+				{Name: "222"},
+				{Name: "333"},
+			},
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
+			l, err := NewListener(c.addr, c.port)
+			if err != nil {
+				assert.ErrorContains(t, err, c.errContains)
+				return
+			}
 
+			assert.Equal(t, l.Port, c.port)
+			assert.DeepEqual(t, l.Interfaces, c.interfaces)
 		})
 	}
 }

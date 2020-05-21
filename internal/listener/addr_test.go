@@ -176,9 +176,9 @@ func TestInterfaces(t *testing.T) {
 			ifs, err := addr.Interfaces()
 			if err != nil {
 				assert.ErrorContains(t, err, c.errContains)
-			} else {
-				assert.DeepEqual(t, ifs, c.interfaces)
+				return
 			}
+			assert.DeepEqual(t, ifs, c.interfaces)
 		})
 	}
 }
