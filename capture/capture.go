@@ -2,96 +2,73 @@ package capture
 
 import (
 	"fmt"
-	"strings"
+	"net"
 
 	"github.com/google/gopacket/pcap"
 )
 
-// DeviceType represents the type of device.
-type DeviceType int
+// Type represents the type of device.
+type Type int
 
 const (
-	// DeviceRegular is a standard IP address.
-	DeviceRegular DeviceType = iota
-	// DeviceLoopback represents the loopback interface (e.g. 127.0.0.1).
-	DeviceLoopback
-	// DeviceAll represents all interfaces (e.g. 0.0.0.0).
-	DeviceAll
+	// CaptureInvalid is an invalid device type.
+	CaptureInvalid Type = iota
+	// CaptureIP is a standard IP address.
+	CaptureIP
+	// CaptureLoopback represents the loopback interface (e.g. 127.0.0.1).
+	CaptureLoopback
+	// CaptureAll represents all interfaces (e.g. 0.0.0.0).
+	CaptureAll
 )
 
 // Capture represents an intent to capture traffic.
 type Capture struct {
-	Device     string
+	Addr       string
 	Port       uint16
-	DeviceType DeviceType
+	DeviceType Type
 	Interfaces []pcap.Interface
 
-	CaptureResponse bool
+	Response bool
 }
 
 // NewCapture creates a new capture.
-func NewCapture(device string, port uint16) (*Capture, error) {
+func NewCapture(addr string, port uint16) (*Capture, error) {
 	interfaces, err := pcap.FindAllDevs()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find interfaces: %w", err)
 	}
 
-	var (
-		deviceType = getDeviceType(device)
-		selected   = selectInterfaces(device, deviceType, interfaces)
-	)
+	deviceType, err := getCaptureType(addr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get device type: %w", err)
+	}
 
 	return &Capture{
-		Device:     device,
+		Addr:       addr,
 		Port:       port,
 		DeviceType: deviceType,
-		Interfaces: selected,
+		Interfaces: selectInterfaces(addr, deviceType, interfaces),
 	}, nil
 }
 
-// Filter creates a BPF string for the current addr.
-func (a *Capture) Filter() string {
-	var (
-		src string
-		dst string
-	)
-
-	switch a.DeviceType {
-	case DeviceLoopback:
-		var addrs []string
-		for _, dc := range a.Interfaces {
-			for _, addr := range dc.Addresses {
-				addrs = append(addrs, fmt.Sprintf("(dst host %s and src host %s)", addr.IP, addr.IP))
-			}
-		}
-		dst = strings.Join(addrs, " or ")
-		src = dst
-	default:
-	}
-
-	_ = src
-
-	return fmt.Sprintf("tcp dst port %d and (%s)", a.Port, dst)
-}
-
-func selectInterfaces(name string, deviceType DeviceType, interfaces []pcap.Interface) []pcap.Interface {
-	if deviceType == DeviceLoopback {
+func selectInterfaces(addr string, deviceType Type, interfaces []pcap.Interface) []pcap.Interface {
+	if deviceType == CaptureLoopback {
 		return interfaces
 	}
 
 	var filtered []pcap.Interface
 	for _, i := range interfaces {
-		if deviceType == DeviceAll && len(i.Addresses) > 0 {
+		if deviceType == CaptureAll && len(i.Addresses) > 0 {
 			filtered = append(filtered, i)
 			continue
 		}
 
-		if i.Name == name {
+		if i.Name == addr {
 			return []pcap.Interface{i}
 		}
 
 		for _, address := range i.Addresses {
-			if address.IP.String() == name {
+			if address.IP.String() == addr {
 				return []pcap.Interface{i}
 			}
 		}
@@ -100,13 +77,16 @@ func selectInterfaces(name string, deviceType DeviceType, interfaces []pcap.Inte
 	return filtered
 }
 
-func getDeviceType(device string) DeviceType {
-	switch device {
+func getCaptureType(addr string) (Type, error) {
+	switch addr {
 	case "", "0.0.0.0", "::":
-		return DeviceAll
+		return CaptureAll, nil
 	case "127.0.0.1", "::1":
-		return DeviceLoopback
+		return CaptureLoopback, nil
 	default:
-		return DeviceRegular
+		if ip := net.ParseIP(addr); ip != nil {
+			return CaptureIP, nil
+		}
 	}
+	return CaptureInvalid, fmt.Errorf("invalid address: %s", addr)
 }

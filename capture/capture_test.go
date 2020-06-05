@@ -8,41 +8,57 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-func TestGetDeviceType(t *testing.T) {
+func TestGeCaptureType(t *testing.T) {
 	cases := []struct {
-		desc       string
-		device     string
-		deviceType DeviceType
+		desc        string
+		device      string
+		deviceType  Type
+		errContains string
 	}{
 		{
 			desc:       "empty",
 			device:     "",
-			deviceType: DeviceAll,
+			deviceType: CaptureAll,
 		},
 		{
 			desc:       "all zeros",
 			device:     "0.0.0.0",
-			deviceType: DeviceAll,
+			deviceType: CaptureAll,
 		},
 		{
 			desc:       "empty IPv6",
 			device:     "::",
-			deviceType: DeviceAll,
+			deviceType: CaptureAll,
 		},
 		{
 			desc:       "IPv4 loopback",
 			device:     "127.0.0.1",
-			deviceType: DeviceLoopback,
+			deviceType: CaptureLoopback,
 		},
 		{
 			desc:       "IPv6 loopback",
 			device:     "::1",
-			deviceType: DeviceLoopback,
+			deviceType: CaptureLoopback,
+		},
+		{
+			desc:       "regular",
+			device:     "1.1.1.1",
+			deviceType: CaptureIP,
+		},
+		{
+			desc:        "invalid",
+			device:      "1111",
+			deviceType:  CaptureInvalid,
+			errContains: "invalid address",
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			assert.Equal(t, c.deviceType, getDeviceType(c.device))
+			deviceType, err := getCaptureType(c.device)
+			if err != nil {
+				assert.ErrorContains(t, err, c.errContains)
+			}
+			assert.Equal(t, c.deviceType, deviceType)
 		})
 	}
 }
@@ -51,14 +67,14 @@ func TestSelectInterfaces(t *testing.T) {
 	cases := []struct {
 		desc               string
 		value              string
-		deviceType         DeviceType
+		deviceType         Type
 		interfaces         []pcap.Interface
 		expectedInterfaces []pcap.Interface
 	}{
 		{
 			desc:       "loopback",
 			value:      "::1",
-			deviceType: DeviceLoopback,
+			deviceType: CaptureLoopback,
 			interfaces: []pcap.Interface{
 				{Name: "111"},
 				{Name: "222"},
@@ -73,7 +89,7 @@ func TestSelectInterfaces(t *testing.T) {
 		{
 			desc:       "all with no addresses",
 			value:      "::",
-			deviceType: DeviceAll,
+			deviceType: CaptureAll,
 			interfaces: []pcap.Interface{
 				{Name: "111"},
 			},
@@ -82,7 +98,7 @@ func TestSelectInterfaces(t *testing.T) {
 		{
 			desc:       "all with addresses",
 			value:      "::",
-			deviceType: DeviceAll,
+			deviceType: CaptureAll,
 			interfaces: []pcap.Interface{
 				{
 					Name: "111",
@@ -118,7 +134,7 @@ func TestSelectInterfaces(t *testing.T) {
 		{
 			desc:       "single address match name",
 			value:      "1.1.1.1",
-			deviceType: DeviceRegular,
+			deviceType: CaptureIP,
 			interfaces: []pcap.Interface{
 				{Name: "1.1.1.1"},
 				{Name: "2.2.2.2"},
@@ -130,7 +146,7 @@ func TestSelectInterfaces(t *testing.T) {
 		{
 			desc:       "single address match IP",
 			value:      "1.1.1.1",
-			deviceType: DeviceRegular,
+			deviceType: CaptureIP,
 			interfaces: []pcap.Interface{
 				{
 					Name: "111",
