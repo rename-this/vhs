@@ -1,17 +1,21 @@
 package capture
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"sync"
 
+	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 )
 
 // NewListener creates a new listener.
-func NewListener(addr *Capture, port uint16) *Listener {
+func NewListener(capture *Capture, port uint16) *Listener {
 	return &Listener{
-		Capture: addr,
+		Capture: capture,
 		Port:    port,
+		packets: make(chan gopacket.Packet),
 	}
 }
 
@@ -21,6 +25,8 @@ type Listener struct {
 	Capture *Capture
 	Port    uint16
 
+	packets chan gopacket.Packet
+
 	handleMu sync.Mutex
 	handles  []*pcap.Handle
 }
@@ -28,6 +34,12 @@ type Listener struct {
 // Listen starts listening.
 func (l *Listener) Listen() error {
 	return l.listenAll(l.listen)
+}
+
+// Packets retrieves a channel for all packets
+// captured by this listener.
+func (l *Listener) Packets() <-chan gopacket.Packet {
+	return l.packets
 }
 
 type listenFn func(i pcap.Interface) error
@@ -59,11 +71,34 @@ func (l *Listener) listen(i pcap.Interface) error {
 
 	defer handle.Close()
 
+	if err := handle.SetBPFFilter(filter(l.Capture, i)); err != nil {
+		return fmt.Errorf("failed to set filter: %w", err)
+	}
+
 	l.handleMu.Lock()
 	l.handles = append(l.handles, handle)
 	l.handleMu.Unlock()
 
+	go l.readPackets(handle, handle.LinkType())
+
 	return nil
+}
+
+func (l *Listener) readPackets(source gopacket.PacketDataSource, decoder gopacket.Decoder) {
+	src := gopacket.NewPacketSource(source, decoder)
+	src.Lazy = true
+	src.NoCopy = true
+
+	for {
+		p, err := src.NextPacket()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			continue
+		}
+		l.packets <- p
+	}
 }
 
 func (l *Listener) newActiveHandler(name string) (*pcap.Handle, error) {

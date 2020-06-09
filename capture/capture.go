@@ -31,9 +31,15 @@ type Capture struct {
 	Response bool
 }
 
+type getAllInterfacesFn func() ([]pcap.Interface, error)
+
 // NewCapture creates a new capture.
 func NewCapture(addr string, port uint16) (*Capture, error) {
-	interfaces, err := pcap.FindAllDevs()
+	return newCapture(addr, port, pcap.FindAllDevs)
+}
+
+func newCapture(addr string, port uint16, fn getAllInterfacesFn) (*Capture, error) {
+	interfaces, err := fn()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find interfaces: %w", err)
 	}

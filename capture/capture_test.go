@@ -1,12 +1,81 @@
 package capture
 
 import (
+	"errors"
 	"net"
 	"testing"
 
 	"github.com/google/gopacket/pcap"
 	"gotest.tools/v3/assert"
 )
+
+func TestNewCapture(t *testing.T) {
+	cases := []struct {
+		desc        string
+		addr        string
+		port        uint16
+		fn          getAllInterfacesFn
+		capture     *Capture
+		errContains string
+	}{
+		{
+			desc: "success",
+			addr: "1.1.1.1",
+			port: 1111,
+			fn: func() ([]pcap.Interface, error) {
+				return []pcap.Interface{
+					{
+						Name: "111",
+						Addresses: []pcap.InterfaceAddress{
+							{IP: net.ParseIP("1.1.1.1")},
+						},
+					},
+				}, nil
+			},
+			capture: &Capture{
+				Addr:       "1.1.1.1",
+				Port:       1111,
+				DeviceType: CaptureIP,
+				Interfaces: []pcap.Interface{
+					{
+						Name: "111",
+						Addresses: []pcap.InterfaceAddress{
+							{IP: net.ParseIP("1.1.1.1")},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc: "fail to get interfaces",
+			addr: "1.1.1.1",
+			port: 1111,
+			fn: func() ([]pcap.Interface, error) {
+				return nil, errors.New("111")
+			},
+			errContains: "111",
+		},
+		{
+			desc: "fail to get capture type",
+			addr: "1.1.1",
+			port: 1111,
+			fn: func() ([]pcap.Interface, error) {
+				return nil, nil
+			},
+			errContains: "invalid address: 1.1.1",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.desc, func(t *testing.T) {
+			capture, err := newCapture(c.addr, c.port, c.fn)
+			if err != nil {
+				assert.ErrorContains(t, err, c.errContains)
+				return
+			}
+			assert.DeepEqual(t, capture, c.capture)
+		})
+	}
+}
 
 func TestGeCaptureType(t *testing.T) {
 	cases := []struct {
