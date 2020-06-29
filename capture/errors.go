@@ -27,6 +27,10 @@ func (e *Error) Append(err *InterfaceError) {
 
 // Error returns an error string.
 func (e *Error) Error() string {
+	if e == nil {
+		return ""
+	}
+
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 

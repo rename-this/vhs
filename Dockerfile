@@ -5,6 +5,9 @@ RUN apt-get update && \
     curl \
     hping3 \
     libpcap-dev \
+    tcpdump \
     tmux
+
+RUN go get github.com/go-delve/delve/cmd/dlv
 
 WORKDIR /go/vhs

@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 )
 
 // NewListener creates a new listener.
-func NewListener(capture *Capture, port uint16) *Listener {
+func NewListener(cap *Capture) *Listener {
 	return &Listener{
-		Capture: capture,
-		Port:    port,
+		Capture: cap,
 		packets: make(chan gopacket.Packet),
 	}
 }
@@ -23,7 +23,6 @@ func NewListener(capture *Capture, port uint16) *Listener {
 // given address and port.
 type Listener struct {
 	Capture *Capture
-	Port    uint16
 
 	packets chan gopacket.Packet
 
@@ -60,6 +59,10 @@ func (l *Listener) listenAll(fn listenFn) error {
 		allErrs.Append(<-errChan)
 	}
 
+	if len(allErrs.InterfaceErrors) == 0 {
+		return nil
+	}
+
 	return allErrs
 }
 
@@ -68,8 +71,6 @@ func (l *Listener) listen(i pcap.Interface) error {
 	if err != nil {
 		return fmt.Errorf("failed to get handle: %w", err)
 	}
-
-	defer handle.Close()
 
 	if err := handle.SetBPFFilter(filter(l.Capture, i)); err != nil {
 		return fmt.Errorf("failed to set filter: %w", err)
@@ -84,17 +85,18 @@ func (l *Listener) listen(i pcap.Interface) error {
 	return nil
 }
 
-func (l *Listener) readPackets(source gopacket.PacketDataSource, decoder gopacket.Decoder) {
-	src := gopacket.NewPacketSource(source, decoder)
-	src.Lazy = true
-	src.NoCopy = true
+func (l *Listener) readPackets(dataSource gopacket.PacketDataSource, decoder gopacket.Decoder) {
+	source := gopacket.NewPacketSource(dataSource, decoder)
+	source.Lazy = true
+	source.NoCopy = true
 
 	for {
-		p, err := src.NextPacket()
+		p, err := source.NextPacket()
 		if errors.Is(err, io.EOF) {
-			break
+			continue
 		}
 		if err != nil {
+			fmt.Printf("read packet failed: %v\n", err)
 			continue
 		}
 		l.packets <- p
@@ -109,9 +111,12 @@ func (l *Listener) newActiveHandler(name string) (*pcap.Handle, error) {
 
 	defer inactive.CleanUp()
 
-	//
-	// TODO(andrewhare): Configure the handle.
-	//
+	inactive.SetPromisc(true)
+
+	// TODO(andrewhare): configure these
+	inactive.SetTimeout(2000 * time.Millisecond)
+	inactive.SetImmediateMode(true)
+	inactive.SetSnapLen(65536)
 
 	handle, err := inactive.Activate()
 	if err != nil {
@@ -119,4 +124,14 @@ func (l *Listener) newActiveHandler(name string) (*pcap.Handle, error) {
 	}
 
 	return handle, nil
+}
+
+// Close closes the listener and all open handles.
+func (l *Listener) Close() {
+	l.handleMu.Lock()
+	defer l.handleMu.Unlock()
+
+	for _, handle := range l.handles {
+		handle.Close()
+	}
 }

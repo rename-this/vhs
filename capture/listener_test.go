@@ -53,7 +53,11 @@ func TestListenAll(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			err := c.listener.listenAll(c.fn)
-			assert.ErrorContains(t, err, c.errContains)
+			if c.errContains == "" {
+				assert.NilError(t, err)
+			} else {
+				assert.ErrorContains(t, err, c.errContains)
+			}
 		})
 	}
 }
@@ -80,7 +84,7 @@ func TestReadPackets(t *testing.T) {
 	}{
 		{
 			desc:     "reads to EOF",
-			listener: NewListener(nil, 1),
+			listener: NewListener(&Capture{}),
 			source: &testPacketDataSource{
 				data: []string{
 					"111",
