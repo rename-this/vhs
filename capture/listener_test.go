@@ -69,7 +69,7 @@ type testPacketDataSource struct {
 
 func (tpds *testPacketDataSource) ReadPacketData() ([]byte, gopacket.CaptureInfo, error) {
 	defer func() { tpds.idx++ }()
-	if len(tpds.data) == tpds.idx {
+	if tpds.idx >= len(tpds.data) {
 		return nil, gopacket.CaptureInfo{}, io.EOF
 	}
 	return []byte(tpds.data[tpds.idx]), gopacket.CaptureInfo{}, nil
