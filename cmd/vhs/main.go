@@ -1,20 +1,33 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/gramLabs/vhs/capture"
+	"github.com/gramLabs/vhs/http"
 )
 
 func main() {
 	var (
-		addr = flag.String("addr", "0.0.0.0", "address to listen on")
-		port = flag.Int("port", 0, "port to listen on")
+		addr      = flag.String("addr", "0.0.0.0", "address to listen on")
+		port      = flag.Int("port", 0, "port to listen on")
+		mwarePath = flag.String("middleware", "", "path to a middleware executable")
 	)
 
 	flag.Parse()
+
+	middleware, err := http.NewMiddleware(context.TODO(), *mwarePath, os.Stderr)
+	if err != nil {
+		log.Fatalf("failed to initialize middleware: %v", err)
+	}
+
+	if err := middleware.Start(); err != nil {
+		log.Fatalf("failed to start middleware: %v", err)
+	}
 
 	cap, err := capture.NewCapture(*addr, uint16(*port))
 	if err != nil {
