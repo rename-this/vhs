@@ -20,14 +20,19 @@ func main() {
 
 	flag.Parse()
 
-	middleware, err := http.NewMiddleware(context.TODO(), *mwarePath, os.Stderr)
+	middleware, err := http.NewMiddleware(context.TODO(), *mwarePath)
 	if err != nil {
 		log.Fatalf("failed to initialize middleware: %v", err)
 	}
+	middleware.Stderr = os.Stderr
 
-	if err := middleware.Start(); err != nil {
-		log.Fatalf("failed to start middleware: %v", err)
-	}
+	defer middleware.Close()
+
+	go func() {
+		if err := middleware.Start(); err != nil {
+			log.Fatalf("failed to start middleware: %v", err)
+		}
+	}()
 
 	cap, err := capture.NewCapture(*addr, uint16(*port))
 	if err != nil {

@@ -15,7 +15,7 @@ import (
 // be written to its stdin and output is read from the executable's
 // stdout,
 type Middleware struct {
-	Stderr io.ReadCloser
+	Stderr io.Writer
 
 	mu      sync.Mutex
 	cmd     *exec.Cmd
@@ -25,7 +25,7 @@ type Middleware struct {
 }
 
 // NewMiddleware creates a new HTTP Middleware.
-func NewMiddleware(ctx context.Context, command string, stderr io.Writer) (*Middleware, error) {
+func NewMiddleware(ctx context.Context, command string) (*Middleware, error) {
 	if command == "" {
 		return &Middleware{}, nil
 	}
@@ -45,9 +45,9 @@ func NewMiddleware(ctx context.Context, command string, stderr io.Writer) (*Midd
 		return nil, fmt.Errorf("failed to get stdout pipe: %w", err)
 	}
 
-	cmd.Stderr = stderr
-
 	return &Middleware{
+		Stderr: cmd.Stderr,
+
 		cmd:    cmd,
 		stdin:  stdin,
 		stdout: stdout,
@@ -74,7 +74,6 @@ func (m *Middleware) Start() error {
 
 // Close closes the middleware.
 func (m *Middleware) Close() {
-	m.Stderr.Close()
 	m.stdout.Close()
 }
 
