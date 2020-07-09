@@ -3,12 +3,16 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"os"
+	"time"
 
+	"github.com/google/gopacket/layers"
+	"github.com/google/gopacket/tcpassembly"
 	"github.com/gramLabs/vhs/capture"
 	"github.com/gramLabs/vhs/http"
+	"github.com/gramLabs/vhs/middleware"
+	"github.com/gramLabs/vhs/sink"
 )
 
 func main() {
@@ -19,20 +23,6 @@ func main() {
 	)
 
 	flag.Parse()
-
-	middleware, err := http.NewMiddleware(context.TODO(), *mwarePath)
-	if err != nil {
-		log.Fatalf("failed to initialize middleware: %v", err)
-	}
-	middleware.Stderr = os.Stderr
-
-	defer middleware.Close()
-
-	go func() {
-		if err := middleware.Start(); err != nil {
-			log.Fatalf("failed to start middleware: %v", err)
-		}
-	}()
 
 	cap, err := capture.NewCapture(*addr, uint16(*port))
 	if err != nil {
@@ -49,10 +39,52 @@ func main() {
 
 	defer listener.Close()
 
-	for p := range listener.Packets() {
-		l := p.ApplicationLayer()
-		if l != nil {
-			fmt.Println(string(l.Payload()))
+	mware, err := middleware.New(context.TODO(), *mwarePath, os.Stderr)
+	if err != nil {
+		log.Fatalf("failed to initialize middleware: %v", err)
+	}
+
+	defer mware.Close()
+
+	go func() {
+		if err := mware.Start(); err != nil {
+			log.Fatalf("failed to start middleware: %v", err)
+		}
+	}()
+
+	var (
+		sinks = []sink.Sink{
+			sink.NewStdout(),
+		}
+		factory = &http.StreamFactory{
+			Middleware: mware,
+			Sinks:      sinks,
+		}
+		pool      = tcpassembly.NewStreamPool(factory)
+		assembler = tcpassembly.NewAssembler(pool)
+		packets   = listener.Packets()
+		ticker    = time.Tick(time.Minute)
+	)
+
+	for {
+		select {
+		case packet := <-packets:
+			if packet == nil {
+				return
+			}
+			if packet.NetworkLayer() == nil || packet.TransportLayer() == nil || packet.TransportLayer().LayerType() != layers.LayerTypeTCP {
+				continue
+			}
+
+			var (
+				tcp  = packet.TransportLayer().(*layers.TCP)
+				flow = packet.NetworkLayer().NetworkFlow()
+			)
+
+			assembler.AssembleWithTimestamp(flow, tcp, time.Now())
+
+		case <-ticker:
+			assembler.FlushOlderThan(time.Now().Add(time.Minute * -2))
 		}
 	}
 }

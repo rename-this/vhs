@@ -4,6 +4,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     curl \
     hping3 \
+    jq \
     libpcap-dev \
     tcpdump \
     tmux

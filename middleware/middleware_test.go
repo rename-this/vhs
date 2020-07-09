@@ -1,4 +1,4 @@
-package http
+package middleware
 
 import (
 	"bytes"
@@ -8,49 +8,52 @@ import (
 	"gotest.tools/assert"
 )
 
-func TestProcess(t *testing.T) {
+type leopard struct {
+	NumSpots int
+}
+
+func TestExec(t *testing.T) {
 	cases := []struct {
 		desc        string
 		mware       *Middleware
 		num         int
-		req         *Request
-		out         []*Request
+		l           *leopard
+		out         []*leopard
 		errContains string
 	}{
 		{
 			desc:  "no exec path",
 			mware: &Middleware{},
-			req:   &Request{Host: "111"},
-			out:   []*Request{{Host: "111"}},
+			l:     &leopard{NumSpots: 111},
+			out:   []*leopard{{NumSpots: 111}},
 		},
 		{
 			desc: "change host",
 			mware: &Middleware{
 				stdin:  ioutil.Discard,
-				stdout: ioutil.NopCloser(bytes.NewBufferString("{\"host\":\"222\"}\n{\"host\":\"333\"}\n")),
+				stdout: ioutil.NopCloser(bytes.NewBufferString("{\"NumSpots\":222}\n{\"NumSpots\":333}\n")),
 			},
 			num: 2,
-			req: &Request{Host: "111"},
-			out: []*Request{
-				{Host: "222"},
-				{Host: "333"},
+			l:   &leopard{NumSpots: 111},
+			out: []*leopard{
+				{NumSpots: 222},
+				{NumSpots: 333},
 			},
 		},
 		{
 			desc: "bad JSON",
 			mware: &Middleware{
 				stdin:  ioutil.Discard,
-				stdout: ioutil.NopCloser(bytes.NewBufferString("{\"host\":\n")),
-			},
+				stdout: ioutil.NopCloser(bytes.NewBufferString("{\"NumSpots\":"))},
 			num:         1,
-			req:         &Request{Host: "111"},
-			errContains: "failed to unmarshal request",
+			l:           &leopard{NumSpots: 111},
+			errContains: "failed to unmarshal",
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			for i := 0; i < c.num; i++ {
-				req, err := c.mware.Exec(c.req)
+				req, err := c.mware.Exec(c.l)
 				if c.errContains != "" {
 					assert.ErrorContains(t, err, c.errContains)
 				} else {

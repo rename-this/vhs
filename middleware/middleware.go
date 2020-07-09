@@ -1,4 +1,4 @@
-package http
+package middleware
 
 import (
 	"bufio"
@@ -15,8 +15,6 @@ import (
 // be written to its stdin and output is read from the executable's
 // stdout,
 type Middleware struct {
-	Stderr io.Writer
-
 	mu      sync.Mutex
 	cmd     *exec.Cmd
 	stdin   io.Writer
@@ -24,8 +22,8 @@ type Middleware struct {
 	scanner *bufio.Scanner
 }
 
-// NewMiddleware creates a new HTTP Middleware.
-func NewMiddleware(ctx context.Context, command string) (*Middleware, error) {
+// New creates a new HTTP Middleware.
+func New(ctx context.Context, command string, stderr io.Writer) (*Middleware, error) {
 	if command == "" {
 		return &Middleware{}, nil
 	}
@@ -34,6 +32,8 @@ func NewMiddleware(ctx context.Context, command string) (*Middleware, error) {
 		parts = strings.Split(command, " ")
 		cmd   = exec.CommandContext(ctx, parts[0], parts[1:]...)
 	)
+
+	cmd.Stderr = stderr
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -46,8 +46,6 @@ func NewMiddleware(ctx context.Context, command string) (*Middleware, error) {
 	}
 
 	return &Middleware{
-		Stderr: cmd.Stderr,
-
 		cmd:    cmd,
 		stdin:  stdin,
 		stdout: stdout,
@@ -56,17 +54,12 @@ func NewMiddleware(ctx context.Context, command string) (*Middleware, error) {
 
 // Start starts the middleware command and leaves it open for execution.
 func (m *Middleware) Start() error {
-	if m.cmd == nil {
+	if m.stdin == nil {
 		return nil
 	}
 
-	err := m.cmd.Start()
-	if err != nil {
-		return fmt.Errorf("failed to start middleware: %w", err)
-	}
-
-	if err := m.cmd.Wait(); err != nil {
-		return fmt.Errorf("failed to wait on command: %w", err)
+	if err := m.cmd.Run(); err != nil {
+		return fmt.Errorf("failed to run command: %w", err)
 	}
 
 	return nil
@@ -78,9 +71,9 @@ func (m *Middleware) Close() {
 }
 
 // Exec executes the middleware for a given request.
-func (m *Middleware) Exec(req *Request) (*Request, error) {
+func (m *Middleware) Exec(n interface{}) (interface{}, error) {
 	if m.stdin == nil {
-		return req, nil
+		return n, nil
 	}
 
 	m.mu.Lock()
@@ -90,17 +83,16 @@ func (m *Middleware) Exec(req *Request) (*Request, error) {
 		m.scanner = bufio.NewScanner(m.stdout)
 	}
 
-	err := json.NewEncoder(m.stdin).Encode(req)
+	err := json.NewEncoder(m.stdin).Encode(n)
 	if err != nil {
-		return nil, fmt.Errorf("failed to encode request: %w", err)
+		return nil, fmt.Errorf("failed to encode: %w", err)
 	}
 
 	if m.scanner.Scan() {
-		var outReq Request
-		if err := json.Unmarshal(m.scanner.Bytes(), &outReq); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal request: %w", err)
+		if err := json.Unmarshal(m.scanner.Bytes(), n); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal: %w", err)
 		}
-		return &outReq, nil
+		return n, nil
 	}
 	if err := m.scanner.Err(); err != nil {
 		return nil, fmt.Errorf("failed to scan middleware stdout: %w", err)
