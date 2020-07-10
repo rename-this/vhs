@@ -41,8 +41,8 @@ func filter(capture *Capture, iface pcap.Interface) string {
 	}
 
 	if capture.Response {
-		return fmt.Sprintf("(tcp dst port %d and (%s)) or (tcp src port %d and (%s))", capture.Port, dst, capture.Port, src)
+		return fmt.Sprintf("(tcp dst port %s and (%s)) or (tcp src port %s and (%s))", capture.Port, dst, capture.Port, src)
 	}
 
-	return fmt.Sprintf("tcp dst port %d and (%s)", capture.Port, src)
+	return fmt.Sprintf("tcp dst port %s and (%s)", capture.Port, src)
 }

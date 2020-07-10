@@ -13,7 +13,7 @@ func TestNewCapture(t *testing.T) {
 	cases := []struct {
 		desc        string
 		addr        string
-		port        uint16
+		port        string
 		fn          getAllInterfacesFn
 		capture     *Capture
 		errContains string
@@ -21,7 +21,7 @@ func TestNewCapture(t *testing.T) {
 		{
 			desc: "success",
 			addr: "1.1.1.1",
-			port: 1111,
+			port: "1111",
 			fn: func() ([]pcap.Interface, error) {
 				return []pcap.Interface{
 					{
@@ -33,8 +33,8 @@ func TestNewCapture(t *testing.T) {
 				}, nil
 			},
 			capture: &Capture{
-				Addr:       "1.1.1.1",
-				Port:       1111,
+				Host:       "1.1.1.1",
+				Port:       "1111",
 				DeviceType: CaptureIP,
 				Interfaces: []pcap.Interface{
 					{
@@ -49,7 +49,7 @@ func TestNewCapture(t *testing.T) {
 		{
 			desc: "fail to get interfaces",
 			addr: "1.1.1.1",
-			port: 1111,
+			port: "1111",
 			fn: func() ([]pcap.Interface, error) {
 				return nil, errors.New("111")
 			},
@@ -58,7 +58,7 @@ func TestNewCapture(t *testing.T) {
 		{
 			desc: "fail to get capture type",
 			addr: "1.1.1",
-			port: 1111,
+			port: "1111",
 			fn: func() ([]pcap.Interface, error) {
 				return nil, nil
 			},

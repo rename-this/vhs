@@ -7,6 +7,11 @@ import (
 	"github.com/google/gopacket/pcap"
 )
 
+const (
+	// DefaultAddr is the default capture address.
+	DefaultAddr = "0.0.0.0:80"
+)
+
 // Type represents the type of device.
 type Type int
 
@@ -23,8 +28,8 @@ const (
 
 // Capture represents an intent to capture traffic.
 type Capture struct {
-	Addr       string
-	Port       uint16
+	Host       string
+	Port       string
 	DeviceType Type
 	Interfaces []pcap.Interface
 
@@ -34,30 +39,31 @@ type Capture struct {
 type getAllInterfacesFn func() ([]pcap.Interface, error)
 
 // NewCapture creates a new capture.
-func NewCapture(addr string, port uint16) (*Capture, error) {
-	return newCapture(addr, port, pcap.FindAllDevs)
+func NewCapture(addr string) (*Capture, error) {
+	host, port := splitHostPort(addr)
+	return newCapture(host, port, pcap.FindAllDevs)
 }
 
-func newCapture(addr string, port uint16, fn getAllInterfacesFn) (*Capture, error) {
+func newCapture(host string, port string, fn getAllInterfacesFn) (*Capture, error) {
 	interfaces, err := fn()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find interfaces: %w", err)
 	}
 
-	deviceType, err := getCaptureType(addr)
+	deviceType, err := getCaptureType(host)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get device type: %w", err)
 	}
 
 	return &Capture{
-		Addr:       addr,
+		Host:       host,
 		Port:       port,
 		DeviceType: deviceType,
-		Interfaces: selectInterfaces(addr, deviceType, interfaces),
+		Interfaces: selectInterfaces(host, deviceType, interfaces),
 	}, nil
 }
 
-func selectInterfaces(addr string, deviceType Type, interfaces []pcap.Interface) []pcap.Interface {
+func selectInterfaces(host string, deviceType Type, interfaces []pcap.Interface) []pcap.Interface {
 	if deviceType == CaptureLoopback {
 		return interfaces
 	}
@@ -69,12 +75,12 @@ func selectInterfaces(addr string, deviceType Type, interfaces []pcap.Interface)
 			continue
 		}
 
-		if i.Name == addr {
+		if i.Name == host {
 			return []pcap.Interface{i}
 		}
 
 		for _, address := range i.Addresses {
-			if address.IP.String() == addr {
+			if address.IP.String() == host {
 				return []pcap.Interface{i}
 			}
 		}
@@ -83,16 +89,24 @@ func selectInterfaces(addr string, deviceType Type, interfaces []pcap.Interface)
 	return filtered
 }
 
-func getCaptureType(addr string) (Type, error) {
-	switch addr {
+func getCaptureType(host string) (Type, error) {
+	switch host {
 	case "", "0.0.0.0", "::":
 		return CaptureAll, nil
 	case "127.0.0.1", "::1":
 		return CaptureLoopback, nil
 	default:
-		if ip := net.ParseIP(addr); ip != nil {
+		if ip := net.ParseIP(host); ip != nil {
 			return CaptureIP, nil
 		}
 	}
-	return CaptureInvalid, fmt.Errorf("invalid address: %s", addr)
+	return CaptureInvalid, fmt.Errorf("invalid address: %s", host)
+}
+
+func splitHostPort(addr string) (string, string) {
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		host, port, _ = net.SplitHostPort(DefaultAddr)
+	}
+	return host, port
 }

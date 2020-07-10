@@ -27,7 +27,7 @@ func TestFilter(t *testing.T) {
 		{
 			desc: "loopback with single addr",
 			capture: &Capture{
-				Port:       1111,
+				Port:       "1111",
 				DeviceType: CaptureLoopback,
 				Interfaces: []pcap.Interface{
 					{
@@ -44,7 +44,7 @@ func TestFilter(t *testing.T) {
 		{
 			desc: "loopback with multiple addrs",
 			capture: &Capture{
-				Port:       1111,
+				Port:       "1111",
 				DeviceType: CaptureLoopback,
 				Interfaces: []pcap.Interface{
 					{
@@ -67,7 +67,7 @@ func TestFilter(t *testing.T) {
 		{
 			desc: "interface with single addr",
 			capture: &Capture{
-				Port:       1111,
+				Port:       "1111",
 				DeviceType: CaptureIP,
 			},
 			iface: pcap.Interface{
@@ -82,7 +82,7 @@ func TestFilter(t *testing.T) {
 		{
 			desc: "interface with multiple addrs",
 			capture: &Capture{
-				Port:       1111,
+				Port:       "1111",
 				DeviceType: CaptureIP,
 			},
 			iface: pcap.Interface{
