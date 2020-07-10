@@ -55,11 +55,20 @@ func (s *Stream) run() {
 			continue
 		}
 
-		r2, err := s.mware.Exec(r)
-		if err != nil {
-			// TODO(andrewhare): get these errors to a logger
-			log.Println("failed to run middleware:", err)
-			continue
+		var (
+			// By default, r2 is the original request.
+			// If middleware is defined, this will be
+			// overwritten by the middleware output.
+			r2 interface{} = r
+		)
+
+		if s.mware != nil {
+			r2, err = s.mware.Exec(r)
+			if err != nil {
+				// TODO(andrewhare): get these errors to a logger
+				log.Println("failed to run middleware:", err)
+				continue
+			}
 		}
 
 		for _, s := range s.sinks {

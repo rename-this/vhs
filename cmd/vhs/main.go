@@ -39,18 +39,21 @@ func main() {
 
 	defer listener.Close()
 
-	mware, err := middleware.New(context.TODO(), *mwarePath, os.Stderr)
-	if err != nil {
-		log.Fatalf("failed to initialize middleware: %v", err)
-	}
-
-	defer mware.Close()
-
-	go func() {
-		if err := mware.Start(); err != nil {
-			log.Fatalf("failed to start middleware: %v", err)
+	var mware *middleware.Middleware
+	if mwarePath != nil {
+		mware, err = middleware.New(context.TODO(), *mwarePath, os.Stderr)
+		if err != nil {
+			log.Fatalf("failed to initialize middleware: %v", err)
 		}
-	}()
+
+		defer mware.Close()
+
+		go func() {
+			if err := mware.Start(); err != nil {
+				log.Fatalf("failed to start middleware: %v", err)
+			}
+		}()
+	}
 
 	var (
 		sinks = []sink.Sink{

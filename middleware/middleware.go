@@ -54,10 +54,6 @@ func New(ctx context.Context, command string, stderr io.Writer) (*Middleware, er
 
 // Start starts the middleware command and leaves it open for execution.
 func (m *Middleware) Start() error {
-	if m.stdin == nil {
-		return nil
-	}
-
 	if err := m.cmd.Run(); err != nil {
 		return fmt.Errorf("failed to run command: %w", err)
 	}
@@ -72,10 +68,6 @@ func (m *Middleware) Close() {
 
 // Exec executes the middleware for a given request.
 func (m *Middleware) Exec(n interface{}) (interface{}, error) {
-	if m.stdin == nil {
-		return n, nil
-	}
-
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
