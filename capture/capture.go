@@ -90,16 +90,17 @@ func selectInterfaces(host string, deviceType Type, interfaces []pcap.Interface)
 }
 
 func getCaptureType(host string) (Type, error) {
-	switch host {
-	case "", "0.0.0.0", "::":
-		return CaptureAll, nil
-	case "127.0.0.1", "::1":
+	ip := net.ParseIP(host)
+	if ip.IsLoopback() {
 		return CaptureLoopback, nil
-	default:
-		if ip := net.ParseIP(host); ip != nil {
-			return CaptureIP, nil
-		}
 	}
+	if ip.IsUnspecified() {
+		return CaptureAll, nil
+	}
+	if ip != nil {
+		return CaptureIP, nil
+	}
+
 	return CaptureInvalid, fmt.Errorf("invalid address: %s", host)
 }
 

@@ -87,7 +87,7 @@ func TestGeCaptureType(t *testing.T) {
 		{
 			desc:       "empty",
 			device:     "",
-			deviceType: CaptureAll,
+			deviceType: CaptureInvalid,
 		},
 		{
 			desc:       "all zeros",
