@@ -17,7 +17,7 @@ Open two bash sessions on the container.
 In one, run this script to boot a simple echo server and a curl request that calls the server every second:
 
 ```
-$ ./testdata/echo.bash
+$ cd testdata && ./echo.bash
 ```
 
 In the other, run the following command to build `vhs`, and run it against `0.0.0.0:1111` using a dummy middleware that appends `" [[hijacked]]"` to the end of the request body for each request (note this command discards `stderr` because it can be noisy at times):
