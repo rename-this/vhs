@@ -55,12 +55,10 @@ func (s *Stream) run() {
 			continue
 		}
 
-		var (
-			// By default, r2 is the original request.
-			// If middleware is defined, this will be
-			// overwritten by the middleware output.
-			r2 interface{} = r
-		)
+		// By default, r2 is the original request.
+		// If middleware is defined, this will be
+		// overwritten by the middleware output.
+		var r2 interface{} = r
 
 		if s.mware != nil {
 			r2, err = s.mware.Exec(r)

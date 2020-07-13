@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
-	"strings"
 	"sync"
 )
 
@@ -28,11 +27,7 @@ func New(ctx context.Context, command string, stderr io.Writer) (*Middleware, er
 		return &Middleware{}, nil
 	}
 
-	var (
-		parts = strings.Split(command, " ")
-		cmd   = exec.CommandContext(ctx, parts[0], parts[1:]...)
-	)
-
+	cmd := exec.CommandContext(ctx, command)
 	cmd.Stderr = stderr
 
 	stdin, err := cmd.StdinPipe()

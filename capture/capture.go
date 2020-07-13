@@ -107,6 +107,7 @@ func getCaptureType(host string) (Type, error) {
 func splitHostPort(addr string) (string, string) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
+		// TODO(andrewhare): Log that we're using the default addr.
 		host, port, _ = net.SplitHostPort(DefaultAddr)
 	}
 	return host, port
