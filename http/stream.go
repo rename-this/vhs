@@ -2,29 +2,30 @@ package http
 
 import (
 	"bufio"
+	"bytes"
+	"io"
 	"log"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
-	"github.com/gramLabs/vhs/middleware"
 	"github.com/gramLabs/vhs/sink"
 )
 
 // StreamFactory is a tcpassembly.StreamFactory
 type StreamFactory struct {
-	Middleware *middleware.Middleware
+	Middleware *Middleware
 	Sinks      []sink.Sink
 }
 
 // New creates a new StreamFactory.
 func (f *StreamFactory) New(net, transport gopacket.Flow) tcpassembly.Stream {
 	s := &Stream{
-		net:       net,
-		transport: transport,
-		r:         tcpreader.NewReaderStream(),
-		mware:     f.Middleware,
-		sinks:     f.Sinks,
+		net:        net,
+		transport:  transport,
+		r:          tcpreader.NewReaderStream(),
+		middleware: f.Middleware,
+		sinks:      f.Sinks,
 	}
 
 	go s.run()
@@ -34,46 +35,74 @@ func (f *StreamFactory) New(net, transport gopacket.Flow) tcpassembly.Stream {
 
 // Stream is an HTTP stream decoder.
 type Stream struct {
-	net       gopacket.Flow
-	transport gopacket.Flow
-	r         tcpreader.ReaderStream
-	mware     *middleware.Middleware
-	sinks     []sink.Sink
+	net        gopacket.Flow
+	transport  gopacket.Flow
+	r          tcpreader.ReaderStream
+	middleware *Middleware
+	sinks      []sink.Sink
 }
 
 func (s *Stream) run() {
-	buf := bufio.NewReader(&s.r)
+	var (
+		resBuf bytes.Buffer
+		tee    = io.TeeReader(&s.r, &resBuf)
+
+		reqReader = bufio.NewReader(tee)
+		resReader = bufio.NewReader(&resBuf)
+	)
+
 	for {
-		r, err := NewRequest(buf)
-		if err != nil {
-			// TODO(andrewhare): get these errors to a logger
-			log.Println("failed to parse http request:", err)
-			continue
-		}
+		s.handleRequest(reqReader)
+		s.handleResponse(resReader)
+	}
+}
 
-		if r == nil {
-			continue
-		}
+func (s *Stream) handleRequest(buf *bufio.Reader) {
+	r, err := NewRequest(buf)
+	if err != nil {
+		// TODO(andrewhare): ultraverbose logging.
+	}
+	if r == nil {
+		return
+	}
 
+	s.handle(r, TypeRequest)
+}
+
+func (s *Stream) handleResponse(buf *bufio.Reader) {
+	r, err := NewResponse(buf)
+	if err != nil {
+		// TODO(andrewhare): ultraverbose logging.
+	}
+	if r == nil {
+		return
+	}
+
+	s.handle(r, TypeResponse)
+}
+
+func (s *Stream) handle(r interface{}, t MessageType) {
+	var (
 		// By default, r2 is the original request.
 		// If middleware is defined, this will be
 		// overwritten by the middleware output.
-		var r2 interface{} = r
+		r2  = r
+		err error
+	)
 
-		if s.mware != nil {
-			r2, err = s.mware.Exec(r)
-			if err != nil {
-				// TODO(andrewhare): get these errors to a logger
-				log.Println("failed to run middleware:", err)
-				continue
-			}
+	if s.middleware != nil {
+		r2, err = s.middleware.ExecMessage(t, r)
+		if err != nil {
+			// TODO(andrewhare): get these errors to a logger
+			log.Println("failed to run middleware:", err)
+			return
 		}
+	}
 
-		for _, s := range s.sinks {
-			if err := s.Write(r2); err != nil {
-				// TODO(andrewhare): get these errors to a logger
-				log.Println("failed to write sink:", err)
-			}
+	for _, s := range s.sinks {
+		if err := s.Write(r2); err != nil {
+			// TODO(andrewhare): get these errors to a logger
+			log.Println("failed to write sink:", err)
 		}
 	}
 }

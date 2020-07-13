@@ -13,13 +13,18 @@ var (
 		Short: "A tool for capturing and recording network traffic.",
 	}
 
-	address        string
-	middlewarePath string
+	captureResponse bool
+
+	address    string
+	middleware string
+	protocol   string
 )
 
 func main() {
+	rootCmd.PersistentFlags().BoolVar(&captureResponse, "capture-response", false, "Capture the responses.")
 	rootCmd.PersistentFlags().StringVar(&address, "address", capture.DefaultAddr, "Address VHS will use to capture traffic.")
-	rootCmd.PersistentFlags().StringVar(&middlewarePath, "middleware", "", "A path to an executable that VHS will use as middleware.")
+	rootCmd.PersistentFlags().StringVar(&middleware, "middleware", "", "A path to an executable that VHS will use as middleware.")
+	rootCmd.PersistentFlags().StringVar(&protocol, "protocol", "http", "Protocol to be used when assembling packets.")
 
 	rootCmd.AddCommand(recordCmd)
 
