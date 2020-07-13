@@ -23,7 +23,7 @@ $ ./testdata/echo.bash
 In the other, run the following command to build `vhs`, and run it against `0.0.0.0:1111` using a dummy middleware that appends `" [[hijacked]]"` to the end of the request body for each request (note this command discards `stderr` because it can be noisy at times):
 
 ```
-$ go build -o vhsout ./vhs && ./vhsout record --address 0.0.0.0:1111 --middleware ./testdata/middleware.bash | jq -R "fromjson | .body" 2> /dev/null
+$ go build ./cmd/vhs && ./vhs record --address 0.0.0.0:1111 --middleware ./testdata/middleware.bash | jq -R "fromjson | .body" 2> /dev/null
 ```
 
 Sample output:
