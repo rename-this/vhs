@@ -25,7 +25,7 @@ type Response struct {
 	Trailer          map[string][]string `json:"trailer,omitempty"`
 }
 
-// NewResponse creates a new Request.
+// NewResponse creates a new Response.
 func NewResponse(b *bufio.Reader) (*Response, error) {
 	res, err := _http.ReadResponse(b, nil)
 	if errors.Is(err, io.EOF) {

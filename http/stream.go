@@ -58,19 +58,19 @@ func (s *Stream) run() {
 }
 
 func (s *Stream) handleRequest(buf *bufio.Reader) {
-	r, err := NewRequest(buf)
-	if err != nil {
-		// TODO(andrewhare): ultraverbose logging.
-	}
-	if r == nil {
-		return
-	}
-
-	s.handle(r, TypeRequest)
+	s.handle(TypeRequest, func() (interface{}, error) {
+		return NewRequest(buf)
+	})
 }
 
 func (s *Stream) handleResponse(buf *bufio.Reader) {
-	r, err := NewResponse(buf)
+	s.handle(TypeResponse, func() (interface{}, error) {
+		return NewResponse(buf)
+	})
+}
+
+func (s *Stream) handle(t MessageType, parseFn func() (interface{}, error)) {
+	r, err := parseFn()
 	if err != nil {
 		// TODO(andrewhare): ultraverbose logging.
 	}
@@ -78,17 +78,10 @@ func (s *Stream) handleResponse(buf *bufio.Reader) {
 		return
 	}
 
-	s.handle(r, TypeResponse)
-}
-
-func (s *Stream) handle(r interface{}, t MessageType) {
-	var (
-		// By default, r2 is the original request.
-		// If middleware is defined, this will be
-		// overwritten by the middleware output.
-		r2  = r
-		err error
-	)
+	// By default, r2 is the original request.
+	// If middleware is defined, this will be
+	// overwritten by the middleware output.
+	var r2 = r
 
 	if s.middleware != nil {
 		r2, err = s.middleware.ExecMessage(t, r)
