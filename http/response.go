@@ -2,9 +2,7 @@ package http
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	_http "net/http"
 )
@@ -28,9 +26,6 @@ type Response struct {
 // NewResponse creates a new Response.
 func NewResponse(b *bufio.Reader) (*Response, error) {
 	res, err := _http.ReadResponse(b, nil)
-	if errors.Is(err, io.EOF) {
-		return nil, nil
-	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}

@@ -73,12 +73,10 @@ func (s *Stream) handle(t MessageType, parseFn func() (interface{}, error)) {
 	r, err := parseFn()
 	if err != nil {
 		// TODO(andrewhare): ultraverbose logging.
-	}
-	if r == nil {
 		return
 	}
 
-	// By default, r2 is the original request.
+	// By default, r2 is the original message.
 	// If middleware is defined, this will be
 	// overwritten by the middleware output.
 	var r2 = r

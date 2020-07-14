@@ -2,9 +2,7 @@ package http
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	_http "net/http"
 	"net/url"
@@ -30,9 +28,6 @@ type Request struct {
 // NewRequest creates a new Request.
 func NewRequest(b *bufio.Reader) (*Request, error) {
 	req, err := _http.ReadRequest(b)
-	if errors.Is(err, io.EOF) {
-		return nil, nil
-	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to read request: %w", err)
 	}
