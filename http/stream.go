@@ -61,8 +61,8 @@ func (s *Stream) run() {
 	}
 }
 
-func (s *Stream) handle(t MessageType, parseFn func() (interface{}, error)) {
-	r, err := parseFn()
+func (s *Stream) handle(t MessageType, parseMessage func() (interface{}, error)) {
+	r, err := parseMessage()
 	if err != nil {
 		// TODO(andrewhare): ultraverbose logging.
 		return
