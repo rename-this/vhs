@@ -52,21 +52,13 @@ func (s *Stream) run() {
 	)
 
 	for {
-		s.handleRequest(reqReader)
-		s.handleResponse(resReader)
+		s.handle(TypeRequest, func() (interface{}, error) {
+			return NewRequest(reqReader)
+		})
+		s.handle(TypeResponse, func() (interface{}, error) {
+			return NewResponse(resReader)
+		})
 	}
-}
-
-func (s *Stream) handleRequest(buf *bufio.Reader) {
-	s.handle(TypeRequest, func() (interface{}, error) {
-		return NewRequest(buf)
-	})
-}
-
-func (s *Stream) handleResponse(buf *bufio.Reader) {
-	s.handle(TypeResponse, func() (interface{}, error) {
-		return NewResponse(buf)
-	})
 }
 
 func (s *Stream) handle(t MessageType, parseFn func() (interface{}, error)) {
