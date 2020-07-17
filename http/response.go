@@ -10,7 +10,7 @@ import (
 // Response represents an HTTP response.
 type Response struct {
 	ConnID           string              `json:"conn_id,omitempty"`
-	TransactionID    int64               `json:"transaction_id,omitempty"`
+	TransactionID    int64               `json:"transaction_id"`
 	Status           string              `json:"status,omitempty"`
 	StatusCode       int                 `json:"status_code,omitempty"`
 	Proto            string              `json:"proto,omitempty"`
