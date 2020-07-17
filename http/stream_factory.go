@@ -75,7 +75,6 @@ func (f *StreamFactory) trackStream(s *Stream) {
 		f.conns[id.Reverse().String()] = c
 	} else {
 		c.Down = s
-		delete(f.conns, id.String())
 	}
 
 	s.conn = c
