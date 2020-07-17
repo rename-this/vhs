@@ -12,7 +12,12 @@ import (
 	"github.com/gramLabs/vhs/capture"
 	"github.com/gramLabs/vhs/http"
 	"github.com/gramLabs/vhs/sink"
+	"github.com/gramLabs/vhs/tcp"
 	"github.com/spf13/cobra"
+)
+
+const (
+	tcpTimeout = 5 * time.Minute
 )
 
 var recordCmd = &cobra.Command{
@@ -52,12 +57,12 @@ func record(cmd *cobra.Command, args []string) {
 	}
 }
 
-func recordTCP(listener *capture.Listener, factory tcpassembly.StreamFactory) {
+func recordTCP(listener *capture.Listener, factory tcp.BidirectionalStreamFactory) {
 	var (
 		pool      = tcpassembly.NewStreamPool(factory)
 		assembler = tcpassembly.NewAssembler(pool)
 		packets   = listener.Packets()
-		ticker    = time.Tick(time.Minute)
+		ticker    = time.Tick(tcpTimeout)
 	)
 
 	for {
@@ -81,7 +86,8 @@ func recordTCP(listener *capture.Listener, factory tcpassembly.StreamFactory) {
 			assembler.AssembleWithTimestamp(flow, tcp, time.Now())
 
 		case <-ticker:
-			assembler.FlushOlderThan(time.Now().Add(time.Minute * -2))
+			assembler.FlushOlderThan(time.Now().Add(-tcpTimeout))
+			factory.Prune(tcpTimeout)
 		}
 	}
 }
@@ -105,11 +111,9 @@ func newStreamFactoryHTTP(ctx context.Context) *http.StreamFactory {
 		}()
 	}
 
-	return &http.StreamFactory{
-		Middleware: m,
-		Sinks: []sink.Sink{
+	return http.NewStreamFactory(m,
+		[]sink.Sink{
 			// TODO(andrewhare): How do we let user's configure their own sinks?
 			sink.NewStdout(),
-		},
-	}
+		})
 }

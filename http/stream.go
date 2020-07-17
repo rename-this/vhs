@@ -5,47 +5,29 @@ import (
 	"bytes"
 	"io"
 	"log"
+	"time"
 
 	"github.com/google/gopacket"
-	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
 	"github.com/gramLabs/vhs/sink"
 )
 
-// StreamFactory is a tcpassembly.StreamFactory
-type StreamFactory struct {
-	Middleware *Middleware
-	Sinks      []sink.Sink
-}
-
-// New creates a new StreamFactory.
-func (f *StreamFactory) New(net, transport gopacket.Flow) tcpassembly.Stream {
-	s := &Stream{
-		net:        net,
-		transport:  transport,
-		r:          tcpreader.NewReaderStream(),
-		middleware: f.Middleware,
-		sinks:      f.Sinks,
-	}
-
-	go s.run()
-
-	return &s.r
-}
-
 // Stream is an HTTP stream decoder.
 type Stream struct {
+	id         string
 	net        gopacket.Flow
 	transport  gopacket.Flow
-	r          tcpreader.ReaderStream
+	reader     tcpreader.ReaderStream
 	middleware *Middleware
 	sinks      []sink.Sink
+	conn       *conn
 }
 
 func (s *Stream) run() {
 	var (
-		resBuf bytes.Buffer
-		tee    = io.TeeReader(&s.r, &resBuf)
+		transactionID int64
+		resBuf        bytes.Buffer
+		tee           = io.TeeReader(&s.reader, &resBuf)
 
 		reqReader = bufio.NewReader(tee)
 		resReader = bufio.NewReader(&resBuf)
@@ -53,11 +35,14 @@ func (s *Stream) run() {
 
 	for {
 		s.handle(TypeRequest, func() (interface{}, error) {
-			return NewRequest(reqReader)
+			return NewRequest(reqReader, s.conn.ID, transactionID)
 		})
 		s.handle(TypeResponse, func() (interface{}, error) {
-			return NewResponse(resReader)
+			return NewResponse(resReader, s.conn.ID, transactionID)
 		})
+
+		transactionID++
+		s.conn.lastActivity = time.Now()
 	}
 }
 

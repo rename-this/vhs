@@ -9,6 +9,8 @@ import (
 
 // Response represents an HTTP response.
 type Response struct {
+	ConnID           string              `json:"conn_id,omitempty"`
+	TransactionID    int64               `json:"transaction_id,omitempty"`
 	Status           string              `json:"status,omitempty"`
 	StatusCode       int                 `json:"status_code,omitempty"`
 	Proto            string              `json:"proto,omitempty"`
@@ -24,7 +26,7 @@ type Response struct {
 }
 
 // NewResponse creates a new Response.
-func NewResponse(b *bufio.Reader) (*Response, error) {
+func NewResponse(b *bufio.Reader, connID string, transactionID int64) (*Response, error) {
 	res, err := _http.ReadResponse(b, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)
@@ -38,6 +40,8 @@ func NewResponse(b *bufio.Reader) (*Response, error) {
 	}
 
 	return &Response{
+		ConnID:           connID,
+		TransactionID:    transactionID,
 		Status:           res.Status,
 		StatusCode:       res.StatusCode,
 		Proto:            res.Proto,

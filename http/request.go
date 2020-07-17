@@ -10,6 +10,8 @@ import (
 
 // Request represents an HTTP request.
 type Request struct {
+	ConnID           string              `json:"conn_id,omitempty"`
+	TransactionID    int64               `json:"transaction_id"`
 	Method           string              `json:"method,omitempty"`
 	URL              *url.URL            `json:"url,omitempty"`
 	Proto            string              `json:"proto,omitempty"`
@@ -26,7 +28,7 @@ type Request struct {
 }
 
 // NewRequest creates a new Request.
-func NewRequest(b *bufio.Reader) (*Request, error) {
+func NewRequest(b *bufio.Reader, connID string, transactionID int64) (*Request, error) {
 	req, err := _http.ReadRequest(b)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read request: %w", err)
@@ -40,6 +42,8 @@ func NewRequest(b *bufio.Reader) (*Request, error) {
 	}
 
 	return &Request{
+		ConnID:           connID,
+		TransactionID:    transactionID,
 		Method:           req.Method,
 		URL:              req.URL,
 		Proto:            req.Proto,

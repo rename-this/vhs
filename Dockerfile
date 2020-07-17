@@ -7,6 +7,7 @@ RUN apt-get update && \
     jq \
     libpcap-dev \
     tcpdump \
+    telnet \
     tmux
 
 RUN go get github.com/go-delve/delve/cmd/dlv
