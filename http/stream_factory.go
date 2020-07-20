@@ -55,7 +55,7 @@ func (f *StreamFactory) Prune(timeout time.Duration) {
 
 	cutoff := time.Now().Add(-timeout)
 	for id, c := range f.conns {
-		if c.lastActivity.Before(cutoff) {
+		if c.LastActivity.Before(cutoff) {
 			delete(f.conns, id)
 		}
 	}
@@ -100,7 +100,7 @@ type conn struct {
 	ID           string
 	Up           *Stream
 	Down         *Stream
-	lastActivity time.Time
+	LastActivity time.Time
 }
 
 func newConn(up *Stream) *conn {

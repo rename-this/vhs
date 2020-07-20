@@ -42,7 +42,7 @@ func (s *Stream) run() {
 		})
 
 		transactionID++
-		s.conn.lastActivity = time.Now()
+		s.conn.LastActivity = time.Now()
 	}
 }
 
