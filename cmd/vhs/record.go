@@ -44,11 +44,16 @@ func record(cmd *cobra.Command, args []string) {
 
 	defer listener.Close()
 
+	sinks := sinks()
+	for _, s := range sinks {
+		defer s.Flush()
+	}
+
 	switch strings.ToLower(protocol) {
 	case "http":
 		var (
 			ctx     = context.TODO()
-			factory = newStreamFactoryHTTP(ctx)
+			factory = newStreamFactoryHTTP(ctx, sinks)
 		)
 		defer factory.Middleware.Close()
 		recordTCP(listener, factory)
@@ -92,7 +97,7 @@ func recordTCP(listener *capture.Listener, factory tcp.BidirectionalStreamFactor
 	}
 }
 
-func newStreamFactoryHTTP(ctx context.Context) *http.StreamFactory {
+func newStreamFactoryHTTP(ctx context.Context, sinks []sink.Sink) *http.StreamFactory {
 	var (
 		m   *http.Middleware
 		err error
@@ -111,9 +116,12 @@ func newStreamFactoryHTTP(ctx context.Context) *http.StreamFactory {
 		}()
 	}
 
-	return http.NewStreamFactory(m,
-		[]sink.Sink{
-			// TODO(andrewhare): How do we let user's configure their own sinks?
-			sink.NewStdout(),
-		})
+	return http.NewStreamFactory(m, sinks)
+}
+
+func sinks() []sink.Sink {
+	return []sink.Sink{
+		// TODO(andrewhare): How do we let user's configure their own sinks?
+		sink.NewStdout(),
+	}
 }
