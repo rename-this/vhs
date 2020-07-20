@@ -50,8 +50,8 @@ func (f *StreamFactory) New(net, transport gopacket.Flow) tcpassembly.Stream {
 // Prune cleans up old streams and connections that are no longer being used.
 // This is a stop-the-world garbage collection.
 func (f *StreamFactory) Prune(timeout time.Duration) {
-	defer f.mu.Unlock()
 	f.mu.Lock()
+	defer f.mu.Unlock()
 
 	cutoff := time.Now().Add(-timeout)
 	for id, c := range f.conns {
@@ -62,8 +62,8 @@ func (f *StreamFactory) Prune(timeout time.Duration) {
 }
 
 func (f *StreamFactory) trackStream(s *Stream) {
-	defer f.mu.Unlock()
 	f.mu.Lock()
+	defer f.mu.Unlock()
 
 	var (
 		id = &streamID{net: s.net, transport: s.transport}
