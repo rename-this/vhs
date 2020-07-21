@@ -3,7 +3,6 @@ module github.com/gramLabs/vhs
 go 1.14
 
 require (
-	github.com/bluele/gcache v0.0.0-20190518031135-bc40bd653833 // indirect
 	github.com/google/gopacket v1.1.17
 	github.com/google/uuid v1.1.1
 	github.com/spf13/cobra v1.0.0
