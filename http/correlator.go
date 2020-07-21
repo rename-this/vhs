@@ -12,8 +12,7 @@ import (
 // Requests that live longer than the timeout without a corresponding
 // response are considered as not having a response and returned as-is.
 type Correlator struct {
-	Requests  chan *Request
-	Responses chan *Response
+	Messages  chan Message
 	Exchanges chan *Request
 
 	cache *prunemap.Map
@@ -22,8 +21,7 @@ type Correlator struct {
 // NewCorrelator creates a new correlator.
 func NewCorrelator(timeout time.Duration) *Correlator {
 	return &Correlator{
-		Requests:  make(chan *Request),
-		Responses: make(chan *Response),
+		Messages:  make(chan Message),
 		Exchanges: make(chan *Request),
 
 		cache: prunemap.New(timeout, timeout*5),
@@ -34,14 +32,17 @@ func NewCorrelator(timeout time.Duration) *Correlator {
 func (c *Correlator) Start() {
 	for {
 		select {
-		case req := <-c.Requests:
-			c.cache.Add(cacheKey(req), req)
-		case res := <-c.Responses:
-			k := cacheKey(res)
-			if req, ok := c.cache.Get(k).(*Request); ok {
-				req.Response = res
-				c.Exchanges <- req
-				c.cache.Remove(k)
+		case msg := <-c.Messages:
+			k := cacheKey(msg)
+			switch r := msg.(type) {
+			case *Request:
+				c.cache.Add(k, r)
+			case *Response:
+				if req, ok := c.cache.Get(k).(*Request); ok {
+					req.Response = r
+					c.Exchanges <- req
+					c.cache.Remove(k)
+				}
 			}
 		case i := <-c.cache.Evictions:
 			if req, ok := i.(*Request); ok {

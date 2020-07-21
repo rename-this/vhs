@@ -31,11 +31,11 @@ func TestCorrelator(t *testing.T) {
 	go m.Start()
 
 	// A paired request/response
-	m.Requests <- &Request{ConnectionID: "1", ExchangeID: 0}
-	m.Responses <- &Response{ConnectionID: "1", ExchangeID: 0}
+	m.Messages <- &Request{ConnectionID: "1", ExchangeID: 0}
+	m.Messages <- &Response{ConnectionID: "1", ExchangeID: 0}
 
 	// Timed-out request
-	m.Requests <- &Request{ConnectionID: "2", ExchangeID: 0}
+	m.Messages <- &Request{ConnectionID: "2", ExchangeID: 0}
 	time.Sleep(timeout + 100*time.Millisecond)
 
 	exchangeMu.RLock()
