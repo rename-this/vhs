@@ -8,10 +8,12 @@ import (
 	"net/url"
 )
 
+var _ Message = &Request{}
+
 // Request represents an HTTP request.
 type Request struct {
 	ConnectionID     string              `json:"connection_id,omitempty"`
-	TransactionID    int64               `json:"transaction_id"`
+	ExchangeID       int64               `json:"exchange_id,omitempty"`
 	Method           string              `json:"method,omitempty"`
 	URL              *url.URL            `json:"url,omitempty"`
 	Proto            string              `json:"proto,omitempty"`
@@ -25,10 +27,17 @@ type Request struct {
 	Trailer          map[string][]string `json:"trailer,omitempty"`
 	RemoteAddr       string              `json:"remote_addr,omitempty"`
 	RequestURI       string              `json:"request_uri,omitempty"`
+	Response         *Response           `json:"response,omitempty"`
 }
 
+// GetConnectionID gets a connection ID.
+func (r *Request) GetConnectionID() string { return r.ConnectionID }
+
+// GetExchangeID gets an exchange ID.
+func (r *Request) GetExchangeID() int64 { return r.ExchangeID }
+
 // NewRequest creates a new Request.
-func NewRequest(b *bufio.Reader, connectionID string, transactionID int64) (*Request, error) {
+func NewRequest(b *bufio.Reader, connectionID string, exchangeID int64) (*Request, error) {
 	req, err := _http.ReadRequest(b)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read request: %w", err)
@@ -43,7 +52,7 @@ func NewRequest(b *bufio.Reader, connectionID string, transactionID int64) (*Req
 
 	return &Request{
 		ConnectionID:     connectionID,
-		TransactionID:    transactionID,
+		ExchangeID:       exchangeID,
 		Method:           req.Method,
 		URL:              req.URL,
 		Proto:            req.Proto,

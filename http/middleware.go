@@ -34,6 +34,17 @@ type Middleware struct {
 }
 
 // ExecMessage executes a middleware request for an HTTP message.
-func (m *Middleware) ExecMessage(t MessageType, r interface{}) (interface{}, error) {
-	return m.Exec([]byte{byte(t)}, r)
+func (m *Middleware) ExecMessage(t MessageType, msg Message) (Message, error) {
+	n, err := m.Exec([]byte{byte(t)}, msg)
+	if err != nil {
+		return nil, err
+	}
+	if msgOut, ok := n.(Message); ok {
+		return msgOut, nil
+	}
+	// TODO(andrewhare): ultraverbose logging here, middleware
+	// returned something that wasn't a message. Not sure if
+	// this is actually possible but best to avoid a panic until
+	// we have tests around this.
+	return nil, nil
 }

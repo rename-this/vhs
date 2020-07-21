@@ -7,10 +7,12 @@ import (
 	_http "net/http"
 )
 
+var _ Message = &Response{}
+
 // Response represents an HTTP response.
 type Response struct {
 	ConnectionID     string              `json:"connection_id,omitempty"`
-	TransactionID    int64               `json:"transaction_id"`
+	ExchangeID       int64               `json:"exchange_id"`
 	Status           string              `json:"status,omitempty"`
 	StatusCode       int                 `json:"status_code,omitempty"`
 	Proto            string              `json:"proto,omitempty"`
@@ -25,8 +27,14 @@ type Response struct {
 	Trailer          map[string][]string `json:"trailer,omitempty"`
 }
 
+// GetConnectionID gets a connection ID.
+func (r *Response) GetConnectionID() string { return r.ConnectionID }
+
+// GetExchangeID gets an exchange ID.
+func (r *Response) GetExchangeID() int64 { return r.ExchangeID }
+
 // NewResponse creates a new Response.
-func NewResponse(b *bufio.Reader, connectionID string, transactionID int64) (*Response, error) {
+func NewResponse(b *bufio.Reader, connectionID string, exchangeID int64) (*Response, error) {
 	res, err := _http.ReadResponse(b, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)
@@ -41,7 +49,7 @@ func NewResponse(b *bufio.Reader, connectionID string, transactionID int64) (*Re
 
 	return &Response{
 		ConnectionID:     connectionID,
-		TransactionID:    transactionID,
+		ExchangeID:       exchangeID,
 		Status:           res.Status,
 		StatusCode:       res.StatusCode,
 		Proto:            res.Proto,

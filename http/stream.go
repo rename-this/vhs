@@ -25,41 +25,41 @@ type Stream struct {
 
 func (s *Stream) run() {
 	var (
-		transactionID int64
-		resBuf        bytes.Buffer
-		tee           = io.TeeReader(&s.reader, &resBuf)
+		exchangeID int64
+		resBuf     bytes.Buffer
+		tee        = io.TeeReader(&s.reader, &resBuf)
 
 		reqReader = bufio.NewReader(tee)
 		resReader = bufio.NewReader(&resBuf)
 	)
 
 	for {
-		s.handle(TypeRequest, func() (interface{}, error) {
-			return NewRequest(reqReader, s.conn.ID, transactionID)
+		s.handle(TypeRequest, func() (Message, error) {
+			return NewRequest(reqReader, s.conn.ID, exchangeID)
 		})
-		s.handle(TypeResponse, func() (interface{}, error) {
-			return NewResponse(resReader, s.conn.ID, transactionID)
+		s.handle(TypeResponse, func() (Message, error) {
+			return NewResponse(resReader, s.conn.ID, exchangeID)
 		})
 
-		transactionID++
 		s.conn.LastActivity = time.Now()
+		exchangeID++
 	}
 }
 
-func (s *Stream) handle(t MessageType, parseMessage func() (interface{}, error)) {
-	r, err := parseMessage()
+func (s *Stream) handle(t MessageType, parseMessage func() (Message, error)) {
+	msg, err := parseMessage()
 	if err != nil {
 		// TODO(andrewhare): ultraverbose logging.
 		return
 	}
 
-	// By default, r2 is the original message.
+	// By default, msgOut is the original message.
 	// If middleware is defined, this will be
 	// overwritten by the middleware output.
-	var r2 = r
+	var msgOut = msg
 
 	if s.middleware != nil {
-		r2, err = s.middleware.ExecMessage(t, r)
+		msgOut, err = s.middleware.ExecMessage(t, msg)
 		if err != nil {
 			// TODO(andrewhare): get these errors to a logger
 			log.Println("failed to run middleware:", err)
@@ -68,7 +68,7 @@ func (s *Stream) handle(t MessageType, parseMessage func() (interface{}, error))
 	}
 
 	for _, s := range s.sinks {
-		if err := s.Write(r2); err != nil {
+		if err := s.Write(msgOut); err != nil {
 			// TODO(andrewhare): get these errors to a logger
 			log.Println("failed to write sink:", err)
 		}
