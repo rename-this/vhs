@@ -28,5 +28,8 @@ func (s *Stdout) Write(n interface{}) error {
 	return nil
 }
 
+// Init is a no-op.
+func (*Stdout) Init() {}
+
 // Flush is a no-op.
 func (*Stdout) Flush() error { return nil }

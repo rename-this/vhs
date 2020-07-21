@@ -53,6 +53,8 @@ func (s *Stream) handle(t MessageType, parseMessage func() (Message, error)) {
 		return
 	}
 
+	msg.SetCreated(time.Now())
+
 	// By default, msgOut is the original message.
 	// If middleware is defined, this will be
 	// overwritten by the middleware output.
