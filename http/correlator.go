@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -29,7 +30,7 @@ func NewCorrelator(timeout time.Duration) *Correlator {
 }
 
 // Start starts the correlator.
-func (c *Correlator) Start() {
+func (c *Correlator) Start(ctx context.Context) {
 	for {
 		select {
 		case msg := <-c.Messages:
@@ -48,6 +49,8 @@ func (c *Correlator) Start() {
 			if req, ok := i.(*Request); ok {
 				c.Exchanges <- req
 			}
+		case <-ctx.Done():
+			return
 		}
 	}
 }

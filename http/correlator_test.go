@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"sync"
 	"testing"
 	"time"
@@ -28,7 +29,9 @@ func TestCorrelator(t *testing.T) {
 		}
 	}()
 
-	go m.Start()
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go m.Start(ctx)
 
 	// A paired request/response
 	m.Messages <- &Request{ConnectionID: "1", ExchangeID: 0}
@@ -37,6 +40,8 @@ func TestCorrelator(t *testing.T) {
 	// Timed-out request
 	m.Messages <- &Request{ConnectionID: "2", ExchangeID: 0}
 	time.Sleep(timeout + 100*time.Millisecond)
+
+	cancel()
 
 	exchangeMu.RLock()
 	assert.Equal(t, 2, exchangeCount)
