@@ -7,6 +7,7 @@ import (
 	_http "net/http"
 )
 
+// Ensure Response implements the Message interface.
 var _ Message = &Response{}
 
 // Response represents an HTTP response.

@@ -8,6 +8,7 @@ import (
 	"net/url"
 )
 
+// Ensure Request implements the Message interface.
 var _ Message = &Request{}
 
 // Request represents an HTTP request.
