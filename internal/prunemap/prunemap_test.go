@@ -15,6 +15,7 @@ func TestMap(t *testing.T) {
 	)
 
 	m := New(itemTTL, pruneDuration)
+	defer m.Close()
 
 	var (
 		evictionCount int

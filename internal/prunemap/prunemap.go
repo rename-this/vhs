@@ -15,6 +15,8 @@ type item struct {
 type Map struct {
 	Evictions chan interface{}
 
+	ticker *time.Ticker
+
 	mu sync.RWMutex
 	m  map[string]*item
 }
@@ -23,11 +25,12 @@ type Map struct {
 func New(itemTTL, pruneInterval time.Duration) *Map {
 	m := &Map{
 		Evictions: make(chan interface{}),
+		ticker:    time.NewTicker(pruneInterval),
 		m:         make(map[string]*item),
 	}
 
 	go func() {
-		for now := range time.Tick(pruneInterval) {
+		for now := range m.ticker.C {
 			m.mu.Lock()
 			for k, i := range m.m {
 				if now.Sub(i.last) > itemTTL {
@@ -74,4 +77,9 @@ func (m *Map) Get(k string) interface{} {
 	}
 
 	return nil
+}
+
+// Close closes the map.
+func (m *Map) Close() {
+	m.ticker.Stop()
 }
