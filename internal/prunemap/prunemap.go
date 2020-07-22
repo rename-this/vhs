@@ -17,8 +17,8 @@ type Map struct {
 
 	ticker *time.Ticker
 
-	mu sync.RWMutex
-	m  map[string]*item
+	mu    sync.RWMutex
+	items map[string]*item
 }
 
 // New creates a new Map
@@ -26,16 +26,16 @@ func New(itemTTL, pruneInterval time.Duration) *Map {
 	m := &Map{
 		Evictions: make(chan interface{}),
 		ticker:    time.NewTicker(pruneInterval),
-		m:         make(map[string]*item),
+		items:     make(map[string]*item),
 	}
 
 	go func() {
 		for now := range m.ticker.C {
 			m.mu.Lock()
-			for k, i := range m.m {
+			for k, i := range m.items {
 				if now.Sub(i.last) > itemTTL {
-					m.Evictions <- m.m[k].n
-					delete(m.m, k)
+					m.Evictions <- m.items[k].n
+					delete(m.items, k)
 				}
 			}
 			m.mu.Unlock()
@@ -50,10 +50,10 @@ func (m *Map) Add(k string, n interface{}) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	i, ok := m.m[k]
+	i, ok := m.items[k]
 	if !ok {
 		i = &item{n: n}
-		m.m[k] = i
+		m.items[k] = i
 	}
 
 	i.last = time.Now()
@@ -62,7 +62,7 @@ func (m *Map) Add(k string, n interface{}) {
 // Remove removes an item.
 func (m *Map) Remove(k string) {
 	m.mu.Lock()
-	delete(m.m, k)
+	delete(m.items, k)
 	m.mu.Unlock()
 }
 
@@ -71,7 +71,7 @@ func (m *Map) Get(k string) interface{} {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	if i, ok := m.m[k]; ok {
+	if i, ok := m.items[k]; ok {
 		i.last = time.Now()
 		return i.n
 	}

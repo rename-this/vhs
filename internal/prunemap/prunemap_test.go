@@ -34,13 +34,13 @@ func TestMap(t *testing.T) {
 	m.Add("c", struct{}{})
 
 	m.mu.RLock()
-	assert.Equal(t, 3, len(m.m))
+	assert.Equal(t, 3, len(m.items))
 	m.mu.RUnlock()
 
 	time.Sleep(pruneDuration + 10*time.Millisecond)
 
 	m.mu.RLock()
-	assert.Equal(t, 0, len(m.m))
+	assert.Equal(t, 0, len(m.items))
 	m.mu.RUnlock()
 
 	m.Add("a", "a")
@@ -54,7 +54,7 @@ func TestMap(t *testing.T) {
 	time.Sleep(pruneDuration + 10*time.Millisecond)
 
 	m.mu.RLock()
-	assert.Equal(t, 0, len(m.m))
+	assert.Equal(t, 0, len(m.items))
 	m.mu.RUnlock()
 
 	assert.Equal(t, nil, m.Get("a"))
