@@ -27,6 +27,11 @@ var recordCmd = &cobra.Command{
 }
 
 func record(cmd *cobra.Command, args []string) {
+	// TOOD(andrehare): Use this context to coordinate
+	// all the pieces of the recording.
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
 	cap, err := capture.NewCapture(address)
 	if err != nil {
 		log.Fatalf("failed to initialize capture: %v", err)
@@ -46,7 +51,7 @@ func record(cmd *cobra.Command, args []string) {
 
 	sinks := sinks()
 	for _, s := range sinks {
-		s.Init()
+		s.Init(ctx)
 		defer s.Flush()
 	}
 

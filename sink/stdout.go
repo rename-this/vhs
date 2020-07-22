@@ -1,6 +1,7 @@
 package sink
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -29,7 +30,7 @@ func (s *Stdout) Write(n interface{}) error {
 }
 
 // Init is a no-op.
-func (*Stdout) Init() {}
+func (*Stdout) Init(_ context.Context) {}
 
 // Flush is a no-op.
 func (*Stdout) Flush() error { return nil }

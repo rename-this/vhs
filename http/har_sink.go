@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -41,8 +42,8 @@ func NewHAR(w io.Writer, reqTimeout time.Duration) *HARSink {
 }
 
 // Init initializes the HAR sink.
-func (h *HARSink) Init() {
-	go h.c.Start()
+func (h *HARSink) Init(ctx context.Context) {
+	go h.c.Start(ctx)
 	go func() {
 		for r := range h.c.Exchanges {
 			h.addRequest(r)
