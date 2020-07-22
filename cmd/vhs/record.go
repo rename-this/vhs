@@ -11,6 +11,7 @@ import (
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/gramLabs/vhs/capture"
 	"github.com/gramLabs/vhs/http"
+	"github.com/gramLabs/vhs/session"
 	"github.com/gramLabs/vhs/sink"
 	"github.com/gramLabs/vhs/tcp"
 	"github.com/spf13/cobra"
@@ -32,6 +33,8 @@ func record(cmd *cobra.Command, args []string) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
+	sess := session.New()
+
 	cap, err := capture.NewCapture(address)
 	if err != nil {
 		log.Fatalf("failed to initialize capture: %v", err)
@@ -51,16 +54,13 @@ func record(cmd *cobra.Command, args []string) {
 
 	sinks := sinks()
 	for _, s := range sinks {
-		s.Init(ctx)
+		s.Init(ctx, sess)
 		defer s.Flush()
 	}
 
 	switch strings.ToLower(protocol) {
 	case "http":
-		var (
-			ctx     = context.TODO()
-			factory = newStreamFactoryHTTP(ctx, sinks)
-		)
+		factory := newStreamFactoryHTTP(ctx, sess, sinks)
 		defer factory.Middleware.Close()
 		recordTCP(listener, factory)
 	default:
@@ -103,7 +103,7 @@ func recordTCP(listener *capture.Listener, factory tcp.BidirectionalStreamFactor
 	}
 }
 
-func newStreamFactoryHTTP(ctx context.Context, sinks []sink.Sink) *http.StreamFactory {
+func newStreamFactoryHTTP(ctx context.Context, sess *session.Session, sinks []sink.Sink) *http.StreamFactory {
 	var (
 		m   *http.Middleware
 		err error
@@ -122,7 +122,7 @@ func newStreamFactoryHTTP(ctx context.Context, sinks []sink.Sink) *http.StreamFa
 		}()
 	}
 
-	return http.NewStreamFactory(m, sinks)
+	return http.NewStreamFactory(m, sess, sinks)
 }
 
 func sinks() []sink.Sink {

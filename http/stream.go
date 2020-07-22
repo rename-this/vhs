@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
+	"github.com/gramLabs/vhs/session"
 	"github.com/gramLabs/vhs/sink"
 )
 
@@ -21,6 +22,7 @@ type Stream struct {
 	middleware *Middleware
 	sinks      []sink.Sink
 	conn       *conn
+	sess       *session.Session
 }
 
 func (s *Stream) run() {
@@ -54,6 +56,7 @@ func (s *Stream) handle(t MessageType, parseMessage func() (Message, error)) {
 	}
 
 	msg.SetCreated(time.Now())
+	msg.SetSession(s.sess)
 
 	// By default, msgOut is the original message.
 	// If middleware is defined, this will be

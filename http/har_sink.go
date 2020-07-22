@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gramLabs/vhs/session"
 	"github.com/gramLabs/vhs/sink"
 )
 
@@ -42,7 +43,7 @@ func NewHAR(w io.Writer, reqTimeout time.Duration) *HARSink {
 }
 
 // Init initializes the HAR sink.
-func (h *HARSink) Init(ctx context.Context) {
+func (h *HARSink) Init(ctx context.Context, sess *session.Session) {
 	go h.c.Start(ctx)
 	go func() {
 		for r := range h.c.Exchanges {

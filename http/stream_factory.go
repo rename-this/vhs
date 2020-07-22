@@ -9,14 +9,16 @@ import (
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
 	"github.com/google/uuid"
+	"github.com/gramLabs/vhs/session"
 	"github.com/gramLabs/vhs/sink"
 )
 
 // NewStreamFactory creates a new factory.
-func NewStreamFactory(middleware *Middleware, sinks []sink.Sink) *StreamFactory {
+func NewStreamFactory(middleware *Middleware, sess *session.Session, sinks []sink.Sink) *StreamFactory {
 	return &StreamFactory{
 		Middleware: middleware,
 		Sinks:      sinks,
+		sess:       sess,
 		conns:      make(map[string]*conn),
 	}
 }
@@ -25,6 +27,8 @@ func NewStreamFactory(middleware *Middleware, sinks []sink.Sink) *StreamFactory 
 type StreamFactory struct {
 	Middleware *Middleware
 	Sinks      []sink.Sink
+
+	sess *session.Session
 
 	mu    sync.Mutex
 	conns map[string]*conn
@@ -38,6 +42,7 @@ func (f *StreamFactory) New(net, transport gopacket.Flow) tcpassembly.Stream {
 		reader:     tcpreader.NewReaderStream(),
 		middleware: f.Middleware,
 		sinks:      f.Sinks,
+		sess:       f.sess,
 	}
 
 	f.trackStream(s)
