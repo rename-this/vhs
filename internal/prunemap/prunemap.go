@@ -45,7 +45,8 @@ func New(itemTTL, pruneInterval time.Duration) *Map {
 	return m
 }
 
-// Add adds an item to the map.
+// Add adds an item to the map or updates the timestamp if the
+// item already exists.
 func (m *Map) Add(k string, n interface{}) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
