@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gramLabs/vhs/session"
 	"gotest.tools/v3/assert"
 )
 
@@ -62,7 +61,7 @@ func TestHAR(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			har := NewHAR(ioutil.Discard, 30*time.Second)
-			har.Init(context.Background(), session.New())
+			har.Init(context.Background())
 
 			for _, m := range c.messages {
 				har.Write(m)

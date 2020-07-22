@@ -54,7 +54,7 @@ func record(cmd *cobra.Command, args []string) {
 
 	sinks := sinks()
 	for _, s := range sinks {
-		s.Init(ctx, sess)
+		s.Init(ctx)
 		defer s.Flush()
 	}
 
