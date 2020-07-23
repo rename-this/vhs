@@ -42,7 +42,7 @@ func NewHAR(w io.Writer, reqTimeout time.Duration) *HARSink {
 }
 
 // Init initializes the HAR sink.
-func (h *HARSink) Init(ctx context.Context) {
+func (h *HARSink) Init(ctx context.Context, _ sink.Format) {
 	go h.c.Start(ctx)
 	go func() {
 		for r := range h.c.Exchanges {

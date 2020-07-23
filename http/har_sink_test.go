@@ -61,7 +61,7 @@ func TestHAR(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			har := NewHAR(ioutil.Discard, 30*time.Second)
-			har.Init(context.Background())
+			har.Init(context.Background(), nil)
 
 			for _, m := range c.messages {
 				har.Write(m)
