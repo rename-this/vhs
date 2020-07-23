@@ -30,7 +30,7 @@ func (s *Stdout) Write(n interface{}) error {
 }
 
 // Init is a no-op.
-func (*Stdout) Init(_ context.Context) {}
+func (*Stdout) Init(_ context.Context, _ Format) {}
 
 // Flush is a no-op.
 func (*Stdout) Flush() error { return nil }
