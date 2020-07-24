@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"log"
+	_http "net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/tcpassembly"
@@ -30,6 +33,15 @@ var recordCmd = &cobra.Command{
 }
 
 func record(cmd *cobra.Command, args []string) {
+
+	if promMetrics {
+		//log.Println("Starting Prometheus endpoint at ", promAddr)
+		_http.Handle("/metrics", promhttp.Handler())
+		go func() {
+			log.Fatal(_http.ListenAndServe(promAddr, nil))
+		}()
+	}
+
 	// TOOD(andrehare): Use this context to coordinate
 	// all the pieces of the recording.
 	ctx, cancel := context.WithCancel(context.TODO())
@@ -74,6 +86,7 @@ func record(cmd *cobra.Command, args []string) {
 	default:
 		log.Fatal("invalid protocol")
 	}
+
 }
 
 func recordTCP(listener *capture.Listener, factory tcp.BidirectionalStreamFactory) {
