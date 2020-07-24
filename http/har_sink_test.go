@@ -67,6 +67,8 @@ func TestHAR(t *testing.T) {
 				har.Write(m)
 			}
 
+			time.Sleep(100 * time.Millisecond)
+
 			har.mu.Lock()
 			assert.DeepEqual(t, har.out, c.out)
 			har.mu.Unlock()
