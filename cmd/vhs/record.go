@@ -153,7 +153,7 @@ func pipes() output.Pipes {
 
 	// Add the httpmetrics sink if the user has specified the prometheus-metrics flag.
 	if promMetrics {
-		sinks = append(sinks, http.NewHttpmetrics(30*time.Second))
+		sinks = append(sinks, http.NewMetrics(30*time.Second))
 	}
 
 	return sinks

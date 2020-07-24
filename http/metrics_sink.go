@@ -9,19 +9,19 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// Ensure Httpmetrics conforms to Sink interface.
-var _ sink.Sink = &Httpmetrics{}
+// Ensure MetricsSink conforms to Sink interface.
+var _ sink.Sink = &MetricsSink{}
 
-// Httpmetrics is a sink that calculates HTTP metrics to be made available to Prometheus
-type Httpmetrics struct {
+// MetricsSink is a sink that calculates HTTP metrics to be made available to Prometheus
+type MetricsSink struct {
 	c        *Correlator
 	latency  *prometheus.GaugeVec
 	timeouts *prometheus.CounterVec
 }
 
-// NewHttpmetrics returns a new Httpmetrics.
-func NewHttpmetrics(reqTimeout time.Duration) *Httpmetrics {
-	return &Httpmetrics{
+// NewMetrics returns a new MetricsSink.
+func NewMetrics(reqTimeout time.Duration) *MetricsSink {
+	return &MetricsSink{
 		c: NewCorrelator(reqTimeout),
 		latency: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: "vhs_http_latency_seconds",
@@ -35,7 +35,7 @@ func NewHttpmetrics(reqTimeout time.Duration) *Httpmetrics {
 }
 
 // Init initializes the sink and registers the Prometheus metrics
-func (h *Httpmetrics) Init(ctx context.Context) {
+func (h *MetricsSink) Init(ctx context.Context) {
 	prometheus.MustRegister(h.latency)
 	prometheus.MustRegister(h.timeouts)
 
@@ -49,7 +49,7 @@ func (h *Httpmetrics) Init(ctx context.Context) {
 }
 
 // Write adds a new message on which metrics will be calculated.
-func (h *Httpmetrics) Write(n interface{}) error {
+func (h *MetricsSink) Write(n interface{}) error {
 	switch m := n.(type) {
 	case Message:
 		h.c.Messages <- m
@@ -58,10 +58,10 @@ func (h *Httpmetrics) Write(n interface{}) error {
 }
 
 // Flush is a no-op.
-func (*Httpmetrics) Flush() error { return nil }
+func (*MetricsSink) Flush() error { return nil }
 
 // Calculates the desired metrics. Currently calculates latency between request and response and number of timeouts.
-func (h *Httpmetrics) calcMetrics(req *Request) {
+func (h *MetricsSink) calcMetrics(req *Request) {
 	if req.Response != nil {
 		h.latency.With(prometheus.Labels{
 			"method": req.Method,
