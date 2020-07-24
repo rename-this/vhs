@@ -10,6 +10,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/gramLabs/vhs/capture"
@@ -34,8 +36,8 @@ var recordCmd = &cobra.Command{
 
 func record(cmd *cobra.Command, args []string) {
 
-	//Start Prometheus endpoint if requested by the user.
 	if promMetrics {
+		//log.Println("Starting Prometheus endpoint at ", promAddr)
 		_http.Handle("/metrics", promhttp.Handler())
 		go func() {
 			log.Fatal(_http.ListenAndServe(promAddr, nil))
