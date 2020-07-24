@@ -36,8 +36,8 @@ var recordCmd = &cobra.Command{
 
 func record(cmd *cobra.Command, args []string) {
 
+	//Start Prometheus endpoint if requested by the user.
 	if promMetrics {
-		//log.Println("Starting Prometheus endpoint at ", promAddr)
 		_http.Handle("/metrics", promhttp.Handler())
 		go func() {
 			log.Fatal(_http.ListenAndServe(promAddr, nil))
@@ -153,9 +153,12 @@ func pipes() output.Pipes {
 		output.NewPipe(format.NewJSON(), nil, os.Stdout),
 	}
 
+
+	}
+
 	// Add the httpmetrics sink if the user has specified the prometheus-metrics flag.
 	if promMetrics {
-		sinks = append(sinks, http.NewMetrics(30*time.Second))
+		sinks = append(sinks, http.NewHttpmetrics(30*time.Second))
 	}
 
 	return sinks
