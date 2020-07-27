@@ -5,13 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"sync"
 	"time"
 
-	"github.com/gramLabs/vhs/sink"
+	"github.com/gramLabs/vhs/output"
 )
 
-var _ sink.Sink = &HARSink{}
+var _ output.Format = &HARSink{}
 
 // HARSink is an HTTP Archive.
 // https://w3c.github.io/web-performance/specs/HARSink/Overview.html
@@ -20,50 +19,56 @@ type HARSink struct {
 	w io.Writer
 	c *Correlator
 
-	mu  sync.Mutex
-	out har
+	in  chan interface{}
+	out chan interface{}
 }
 
 // NewHAR creates a mew HAR sink.
 func NewHAR(w io.Writer, reqTimeout time.Duration) *HARSink {
 	return &HARSink{
-		w: w,
-		c: NewCorrelator(reqTimeout),
-		out: har{
-			Log: harLog{
-				Version: "1.2",
-				Creator: harCreator{
-					Name:    "vhs",
-					Version: "0.0.1",
-				},
+		w:   w,
+		c:   NewCorrelator(reqTimeout),
+		in:  make(chan interface{}),
+		out: make(chan interface{}),
+	}
+}
+
+// In returns the input channel.
+func (s *HARSink) In() chan<- interface{} { return s.in }
+
+// Out returns the output channel.
+func (s *HARSink) Out() <-chan interface{} { return s.out }
+
+// Init initializes the HAR sink.
+func (s *HARSink) Init(ctx context.Context) {
+	go s.c.Start(ctx)
+
+	h := &har{
+		Log: harLog{
+			Version: "1.2",
+			Creator: harCreator{
+				Name:    "vhs",
+				Version: "0.0.1",
 			},
 		},
 	}
-}
 
-// Init initializes the HAR sink.
-func (h *HARSink) Init(ctx context.Context, _ sink.Format) {
-	go h.c.Start(ctx)
-	go func() {
-		for r := range h.c.Exchanges {
-			h.addRequest(r)
+	for {
+		select {
+		case n := <-s.in:
+			switch m := n.(type) {
+			case Message:
+				s.c.Messages <- m
+			}
+		case r := <-s.c.Exchanges:
+			s.addRequest(h, r)
+		case <-ctx.Done():
+			s.out <- h
 		}
-	}()
-}
-
-// Write writes an HTTP message to a HAR.
-func (h *HARSink) Write(n interface{}) error {
-	switch m := n.(type) {
-	case Message:
-		h.c.Messages <- m
 	}
-	return nil
 }
 
-func (h *HARSink) addRequest(req *Request) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
+func (s *HARSink) addRequest(h *har, req *Request) {
 	var headers []harNVP
 	for n, vals := range req.Header {
 		for _, v := range vals {
@@ -118,7 +123,7 @@ func (h *HARSink) addRequest(req *Request) {
 		Response:        response,
 	}
 
-	h.out.Log.Entries = append(h.out.Log.Entries, entry)
+	h.Log.Entries = append(h.Log.Entries, entry)
 }
 
 // Flush writes the archive to its underlying writer.

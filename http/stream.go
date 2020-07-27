@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
+	"github.com/gramLabs/vhs/output"
 	"github.com/gramLabs/vhs/session"
-	"github.com/gramLabs/vhs/sink"
 )
 
 // Stream is an HTTP stream decoder.
@@ -20,7 +20,7 @@ type Stream struct {
 	transport  gopacket.Flow
 	reader     tcpreader.ReaderStream
 	middleware *Middleware
-	sinks      []sink.Sink
+	pipes      []*output.Pipe
 	conn       *conn
 	sess       *session.Session
 }
@@ -72,10 +72,7 @@ func (s *Stream) handle(t MessageType, parseMessage func() (Message, error)) {
 		}
 	}
 
-	for _, s := range s.sinks {
-		if err := s.Write(msgOut); err != nil {
-			// TODO(andrewhare): get these errors to a logger
-			log.Println("failed to write sink:", err)
-		}
+	for _, p := range s.pipes {
+		p.Format.In() <- msgOut
 	}
 }

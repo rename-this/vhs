@@ -11,8 +11,8 @@ import (
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/gramLabs/vhs/capture"
 	"github.com/gramLabs/vhs/http"
+	"github.com/gramLabs/vhs/output"
 	"github.com/gramLabs/vhs/session"
-	"github.com/gramLabs/vhs/sink"
 	"github.com/gramLabs/vhs/tcp"
 	"github.com/spf13/cobra"
 )
@@ -52,15 +52,14 @@ func record(cmd *cobra.Command, args []string) {
 
 	defer listener.Close()
 
-	sinks := sinks()
-	for _, s := range sinks {
-		s.Init(ctx, nil)
-		defer s.Flush()
+	pipes := pipes()
+	for _, p := range pipes {
+		p.Init(ctx)
 	}
 
 	switch strings.ToLower(protocol) {
 	case "http":
-		factory := newStreamFactoryHTTP(ctx, sess, sinks)
+		factory := newStreamFactoryHTTP(ctx, sess, pipes)
 		defer factory.Middleware.Close()
 		recordTCP(listener, factory)
 	default:
@@ -103,7 +102,7 @@ func recordTCP(listener *capture.Listener, factory tcp.BidirectionalStreamFactor
 	}
 }
 
-func newStreamFactoryHTTP(ctx context.Context, sess *session.Session, sinks []sink.Sink) *http.StreamFactory {
+func newStreamFactoryHTTP(ctx context.Context, sess *session.Session, pipes []*output.Pipe) *http.StreamFactory {
 	var (
 		m   *http.Middleware
 		err error
@@ -122,12 +121,11 @@ func newStreamFactoryHTTP(ctx context.Context, sess *session.Session, sinks []si
 		}()
 	}
 
-	return http.NewStreamFactory(m, sess, sinks)
+	return http.NewStreamFactory(m, sess, pipes)
 }
 
-func sinks() []sink.Sink {
-	return []sink.Sink{
-		// TODO(andrewhare): How do we let user's configure their own sinks?
-		sink.NewStdout(),
+func pipes() []*output.Pipe {
+	return []*output.Pipe{
+		output.NewPipe(output.NewPassthrough(), output.NewStdout()),
 	}
 }

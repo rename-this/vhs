@@ -15,20 +15,20 @@ func TestHAR(t *testing.T) {
 	cases := []struct {
 		desc     string
 		messages []Message
-		out      har
+		out      *har
 	}{
-		{
-			desc: "no messages",
-			out: har{
-				Log: harLog{
-					Version: "1.2",
-					Creator: harCreator{
-						Name:    "vhs",
-						Version: "0.0.1",
-					},
-				},
-			},
-		},
+		// {
+		// 	desc: "no messages",
+		// 	out: &har{
+		// 		Log: harLog{
+		// 			Version: "1.2",
+		// 			Creator: harCreator{
+		// 				Name:    "vhs",
+		// 				Version: "0.0.1",
+		// 			},
+		// 		},
+		// 	},
+		// },
 		{
 			desc: "basic",
 			messages: []Message{
@@ -47,12 +47,23 @@ func TestHAR(t *testing.T) {
 					StatusCode:   _http.StatusOK,
 				},
 			},
-			out: har{
+			out: &har{
 				Log: harLog{
 					Version: "1.2",
 					Creator: harCreator{
 						Name:    "vhs",
 						Version: "0.0.1",
+					},
+					Entries: []harEntry{
+						{
+							StartedDateTime: "0001-01-01T00:00:00Z",
+							Request: harRequest{
+								URL:      "http://example.org",
+								Headers:  []harNVP{{Name: "a", Value: "a"}},
+								BodySize: 1,
+							},
+							Response: harResponse{Status: 200},
+						},
 					},
 				},
 			},
@@ -60,18 +71,21 @@ func TestHAR(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			har := NewHAR(ioutil.Discard, 30*time.Second)
-			har.Init(context.Background(), nil)
+			h := NewHAR(ioutil.Discard, 30*time.Second)
+
+			ctx, cancel := context.WithCancel(context.Background())
+			go h.Init(ctx)
 
 			for _, m := range c.messages {
-				har.Write(m)
+				h.In() <- m
+				time.Sleep(100 * time.Millisecond)
 			}
 
-			time.Sleep(100 * time.Millisecond)
+			cancel()
 
-			har.mu.Lock()
-			assert.DeepEqual(t, har.out, c.out)
-			har.mu.Unlock()
+			time.Sleep(500 * time.Millisecond)
+
+			assert.DeepEqual(t, <-h.Out(), c.out)
 		})
 	}
 }

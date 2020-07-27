@@ -1,4 +1,4 @@
-package sink
+package output
 
 import (
 	"context"
@@ -30,7 +30,4 @@ func (s *Stdout) Write(n interface{}) error {
 }
 
 // Init is a no-op.
-func (*Stdout) Init(_ context.Context, _ Format) {}
-
-// Flush is a no-op.
-func (*Stdout) Flush() error { return nil }
+func (*Stdout) Init(_ context.Context) {}
