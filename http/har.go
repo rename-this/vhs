@@ -34,16 +34,16 @@ func NewHAR(w io.Writer, reqTimeout time.Duration) *HAR {
 }
 
 // In returns the input channel.
-func (s *HAR) In() chan<- interface{} { return s.in }
+func (h *HAR) In() chan<- interface{} { return h.in }
 
 // Out returns the output channel.
-func (s *HAR) Out() <-chan interface{} { return s.out }
+func (h *HAR) Out() <-chan interface{} { return h.out }
 
 // Init initializes the HAR sink.
-func (s *HAR) Init(ctx context.Context) {
-	go s.c.Start(ctx)
+func (h *HAR) Init(ctx context.Context) {
+	go h.c.Start(ctx)
 
-	h := &har{
+	hh := &har{
 		Log: harLog{
 			Version: "1.2",
 			Creator: harCreator{
@@ -55,20 +55,20 @@ func (s *HAR) Init(ctx context.Context) {
 
 	for {
 		select {
-		case n := <-s.in:
+		case n := <-h.in:
 			switch m := n.(type) {
 			case Message:
-				s.c.Messages <- m
+				h.c.Messages <- m
 			}
-		case r := <-s.c.Exchanges:
-			s.addRequest(h, r)
+		case r := <-h.c.Exchanges:
+			h.addRequest(hh, r)
 		case <-ctx.Done():
-			s.out <- h
+			h.out <- hh
 		}
 	}
 }
 
-func (s *HAR) addRequest(h *har, req *Request) {
+func (h *HAR) addRequest(hh *har, req *Request) {
 	var headers []harNVP
 	for n, vals := range req.Header {
 		for _, v := range vals {
@@ -123,7 +123,7 @@ func (s *HAR) addRequest(h *har, req *Request) {
 		Response:        response,
 	}
 
-	h.Log.Entries = append(h.Log.Entries, entry)
+	hh.Log.Entries = append(hh.Log.Entries, entry)
 }
 
 // Flush writes the archive to its underlying writer.
