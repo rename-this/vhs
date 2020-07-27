@@ -17,18 +17,18 @@ func TestHAR(t *testing.T) {
 		messages []Message
 		out      *har
 	}{
-		// {
-		// 	desc: "no messages",
-		// 	out: &har{
-		// 		Log: harLog{
-		// 			Version: "1.2",
-		// 			Creator: harCreator{
-		// 				Name:    "vhs",
-		// 				Version: "0.0.1",
-		// 			},
-		// 		},
-		// 	},
-		// },
+		{
+			desc: "no messages",
+			out: &har{
+				Log: harLog{
+					Version: "1.2",
+					Creator: harCreator{
+						Name:    "vhs",
+						Version: "0.0.1",
+					},
+				},
+			},
+		},
 		{
 			desc: "basic",
 			messages: []Message{
