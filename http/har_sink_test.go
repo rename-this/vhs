@@ -83,8 +83,6 @@ func TestHAR(t *testing.T) {
 
 			cancel()
 
-			time.Sleep(500 * time.Millisecond)
-
 			assert.DeepEqual(t, <-h.Out(), c.out)
 		})
 	}
