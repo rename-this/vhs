@@ -10,12 +10,12 @@ import (
 	"github.com/gramLabs/vhs/output"
 )
 
-var _ output.Format = &HARSink{}
+var _ output.Format = &HAR{}
 
-// HARSink is an HTTP Archive.
-// https://w3c.github.io/web-performance/specs/HARSink/Overview.html
+// HAR is an HTTP Archive.
+// https://w3c.github.io/web-performance/specs/HAR/Overview.html
 // http://www.softwareishard.com/blog/har-12-spec/
-type HARSink struct {
+type HAR struct {
 	w io.Writer
 	c *Correlator
 
@@ -24,8 +24,8 @@ type HARSink struct {
 }
 
 // NewHAR creates a mew HAR sink.
-func NewHAR(w io.Writer, reqTimeout time.Duration) *HARSink {
-	return &HARSink{
+func NewHAR(w io.Writer, reqTimeout time.Duration) *HAR {
+	return &HAR{
 		w:   w,
 		c:   NewCorrelator(reqTimeout),
 		in:  make(chan interface{}),
@@ -34,13 +34,13 @@ func NewHAR(w io.Writer, reqTimeout time.Duration) *HARSink {
 }
 
 // In returns the input channel.
-func (s *HARSink) In() chan<- interface{} { return s.in }
+func (s *HAR) In() chan<- interface{} { return s.in }
 
 // Out returns the output channel.
-func (s *HARSink) Out() <-chan interface{} { return s.out }
+func (s *HAR) Out() <-chan interface{} { return s.out }
 
 // Init initializes the HAR sink.
-func (s *HARSink) Init(ctx context.Context) {
+func (s *HAR) Init(ctx context.Context) {
 	go s.c.Start(ctx)
 
 	h := &har{
@@ -68,7 +68,7 @@ func (s *HARSink) Init(ctx context.Context) {
 	}
 }
 
-func (s *HARSink) addRequest(h *har, req *Request) {
+func (s *HAR) addRequest(h *har, req *Request) {
 	var headers []harNVP
 	for n, vals := range req.Header {
 		for _, v := range vals {
@@ -127,7 +127,7 @@ func (s *HARSink) addRequest(h *har, req *Request) {
 }
 
 // Flush writes the archive to its underlying writer.
-func (h *HARSink) Flush() error {
+func (h *HAR) Flush() error {
 	if err := json.NewEncoder(h.w).Encode(h.out); err != nil {
 		return fmt.Errorf("failed to write HAR: %w", err)
 	}
