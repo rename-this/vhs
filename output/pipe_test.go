@@ -17,13 +17,13 @@ type datum struct {
 	B bool
 }
 
-type sink struct {
+type testSink struct {
 	mu        sync.Mutex
 	data      *data
 	dataSlice []*datum
 }
 
-func (s *sink) Data() interface{} {
+func (s *testSink) Data() interface{} {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -33,9 +33,9 @@ func (s *sink) Data() interface{} {
 	return s.data
 }
 
-func (*sink) Init(_ context.Context) {}
+func (*testSink) Init(_ context.Context) {}
 
-func (s *sink) Write(n interface{}) error {
+func (s *testSink) Write(n interface{}) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -49,19 +49,19 @@ func (s *sink) Write(n interface{}) error {
 	return nil
 }
 
-type format struct {
+type formatUnbuffered struct {
 	in  chan interface{}
 	out chan interface{}
 }
 
-func newFormat() *format {
-	return &format{
+func newFormatUnbuffered() *formatUnbuffered {
+	return &formatUnbuffered{
 		in:  make(chan interface{}),
 		out: make(chan interface{}),
 	}
 }
 
-func (f *format) Init(ctx context.Context) {
+func (f *formatUnbuffered) Init(ctx context.Context) {
 	for {
 		select {
 		case n := <-f.in:
@@ -74,8 +74,8 @@ func (f *format) Init(ctx context.Context) {
 	}
 }
 
-func (f *format) In() chan<- interface{}  { return f.in }
-func (f *format) Out() <-chan interface{} { return f.out }
+func (f *formatUnbuffered) In() chan<- interface{}  { return f.in }
+func (f *formatUnbuffered) Out() <-chan interface{} { return f.out }
 
 type formatBuffered struct {
 	in  chan interface{}
@@ -115,7 +115,7 @@ func TestSink(t *testing.T) {
 	}{
 		{
 			desc: "unbuffered",
-			p:    NewPipe(newFormat(), &sink{dataSlice: []*datum{}}),
+			p:    NewPipe(newFormatUnbuffered(), &testSink{dataSlice: []*datum{}}),
 			data: []interface{}{
 				&datum{},
 				&datum{},
@@ -129,7 +129,7 @@ func TestSink(t *testing.T) {
 		},
 		{
 			desc: "buffered",
-			p:    NewPipe(newFormatBuffered(), &sink{}),
+			p:    NewPipe(newFormatBuffered(), &testSink{}),
 			data: []interface{}{
 				&datum{},
 				&datum{},
@@ -158,7 +158,7 @@ func TestSink(t *testing.T) {
 
 			time.Sleep(100 * time.Millisecond)
 
-			s := c.p.Sink.(*sink)
+			s := c.p.Sink.(*testSink)
 			assert.DeepEqual(t, s.Data(), c.out)
 		})
 	}

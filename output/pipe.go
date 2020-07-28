@@ -3,32 +3,22 @@ package output
 import (
 	"context"
 	"log"
+
+	"github.com/gramLabs/vhs/output/format"
+	"github.com/gramLabs/vhs/output/sink"
 )
-
-// Format is an interface for formatting output
-type Format interface {
-	Init(context.Context)
-	In() chan<- interface{}
-	Out() <-chan interface{}
-}
-
-// Sink is a writable location for output.
-type Sink interface {
-	Init(context.Context)
-	Write(interface{}) error
-}
 
 // Pipe joins a format and sink.
 type Pipe struct {
-	Format Format
-	Sink   Sink
+	Format format.Format
+	Sink   sink.Sink
 }
 
 // NewPipe creates a pipe connecting a format and a sink.
-func NewPipe(format Format, sink Sink) *Pipe {
+func NewPipe(f format.Format, s sink.Sink) *Pipe {
 	return &Pipe{
-		Format: format,
-		Sink:   sink,
+		Format: f,
+		Sink:   s,
 	}
 }
 

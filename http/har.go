@@ -2,15 +2,13 @@ package http
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"io"
 	"time"
 
-	"github.com/gramLabs/vhs/output"
+	"github.com/gramLabs/vhs/output/format"
 )
 
-var _ output.Format = &HAR{}
+var _ format.Format = &HAR{}
 
 // HAR is an HTTP Archive.
 // https://w3c.github.io/web-performance/specs/HAR/Overview.html
@@ -124,14 +122,6 @@ func (h *HAR) addRequest(hh *har, req *Request) {
 	}
 
 	hh.Log.Entries = append(hh.Log.Entries, entry)
-}
-
-// Flush writes the archive to its underlying writer.
-func (h *HAR) Flush() error {
-	if err := json.NewEncoder(h.w).Encode(h.out); err != nil {
-		return fmt.Errorf("failed to write HAR: %w", err)
-	}
-	return nil
 }
 
 type har struct {

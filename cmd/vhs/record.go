@@ -12,6 +12,8 @@ import (
 	"github.com/gramLabs/vhs/capture"
 	"github.com/gramLabs/vhs/http"
 	"github.com/gramLabs/vhs/output"
+	"github.com/gramLabs/vhs/output/format"
+	"github.com/gramLabs/vhs/output/sink"
 	"github.com/gramLabs/vhs/session"
 	"github.com/gramLabs/vhs/tcp"
 	"github.com/spf13/cobra"
@@ -126,6 +128,6 @@ func newStreamFactoryHTTP(ctx context.Context, sess *session.Session, pipes []*o
 
 func pipes() []*output.Pipe {
 	return []*output.Pipe{
-		output.NewPipe(output.NewPassthrough(), output.NewStdout()),
+		output.NewPipe(format.NewJSON(), &sink.Stdout{}),
 	}
 }
