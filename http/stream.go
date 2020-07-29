@@ -20,7 +20,7 @@ type Stream struct {
 	transport  gopacket.Flow
 	reader     tcpreader.ReaderStream
 	middleware *Middleware
-	pipes      []*output.Pipe
+	pipes      output.Pipes
 	conn       *conn
 	sess       *session.Session
 }
@@ -72,7 +72,5 @@ func (s *Stream) handle(t MessageType, parseMessage func() (Message, error)) {
 		}
 	}
 
-	for _, p := range s.pipes {
-		p.Write(msgOut)
-	}
+	s.pipes.Write(msgOut)
 }

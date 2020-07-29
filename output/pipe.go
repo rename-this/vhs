@@ -38,3 +38,12 @@ func (p *Pipe) Init(ctx context.Context) {
 func (p *Pipe) Write(n interface{}) {
 	p.Format.In() <- n
 }
+
+// Pipes is a slice of pipes
+type Pipes []*Pipe
+
+func (pp Pipes) Write(n interface{}) {
+	for _, p := range pp {
+		p.Write(n)
+	}
+}

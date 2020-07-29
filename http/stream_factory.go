@@ -14,7 +14,7 @@ import (
 )
 
 // NewStreamFactory creates a new factory.
-func NewStreamFactory(middleware *Middleware, sess *session.Session, pipes []*output.Pipe) *StreamFactory {
+func NewStreamFactory(middleware *Middleware, sess *session.Session, pipes output.Pipes) *StreamFactory {
 	return &StreamFactory{
 		Middleware: middleware,
 		Pipes:      pipes,
@@ -26,7 +26,7 @@ func NewStreamFactory(middleware *Middleware, sess *session.Session, pipes []*ou
 // StreamFactory is a tcpassembly.StreamFactory
 type StreamFactory struct {
 	Middleware *Middleware
-	Pipes      []*output.Pipe
+	Pipes      output.Pipes
 
 	sess *session.Session
 
