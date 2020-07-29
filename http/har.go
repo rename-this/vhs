@@ -19,8 +19,8 @@ type HAR struct {
 	out chan io.Reader
 }
 
-// NewHAR creates a mew HAR sink.
-func NewHAR(reqTimeout time.Duration) *HAR {
+// NewHAR creates a mew HAR format.
+func NewHAR(reqTimeout time.Duration) format.Format {
 	return &HAR{
 		c:   NewCorrelator(reqTimeout),
 		in:  make(chan interface{}),

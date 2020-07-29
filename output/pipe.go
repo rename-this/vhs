@@ -12,7 +12,7 @@ import (
 type Pipe struct {
 	Format format.Format
 	Sink   sink.Sink
-	Errors []error
+	Errors chan error
 }
 
 // NewPipe creates a pipe connecting a format and a sink.
@@ -29,7 +29,7 @@ func (p *Pipe) Init(ctx context.Context) {
 
 	for r := range p.Format.Out() {
 		if _, err := io.Copy(p.Sink, r); err != nil {
-			p.Errors = append(p.Errors, err)
+			p.Errors <- err
 		}
 	}
 }
