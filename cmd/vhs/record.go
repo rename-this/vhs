@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"github.com/gramLabs/vhs/http"
 	"log"
 	_http "net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/gramLabs/vhs/http"
 
 	"github.com/gramLabs/vhs/capture"
 	"github.com/gramLabs/vhs/output"
@@ -23,7 +24,7 @@ import (
 )
 
 const (
-	tcpTimeout = 5 * time.Minute
+	tcpTimeout  = 5 * time.Minute
 	httpTimeout = 30 * time.Second
 )
 
@@ -45,7 +46,7 @@ func record(cmd *cobra.Command, args []string) {
 
 	// TOOD(andrehare): Use this context to coordinate
 	// all the pieces of the recording.
-	ctx, cancel := context.WithCancel(context.TODO())
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	sess := session.New()
@@ -67,7 +68,30 @@ func record(cmd *cobra.Command, args []string) {
 
 	defer listener.Close()
 
-	pipes := pipes()
+	pipes := output.Pipes{
+		output.NewPipe(format.NewJSON(), os.Stdout),
+	}
+
+	if gcsProjectID != "" {
+		var (
+			har      = http.NewHAR(30 * time.Second)
+			gcs, err = sink.NewGCS(ctx, sink.GCSConfig{
+				Session:    sess,
+				ProjectID:  gcsProjectID,
+				BucketName: gcsBucketName,
+			})
+		)
+		if err != nil {
+			log.Fatalf("failed to initialize GCS sink: %v", err)
+		}
+		pipes = append(pipes, output.NewPipe(har, gcs))
+	}
+
+	// Add the metrics pipe if the user has enabled Prometheus metrics.
+	if promAddr != "" {
+		pipes = append(pipes, http.NewMetricsPipe(httpTimeout))
+	}
+
 	for _, p := range pipes {
 		go p.Init(ctx)
 		defer func(s sink.Sink) {
@@ -145,17 +169,4 @@ func newStreamFactoryHTTP(ctx context.Context, sess *session.Session, pipes []*o
 	}
 
 	return http.NewStreamFactory(m, sess, pipes)
-}
-
-func pipes() output.Pipes {
-	pipes := output.Pipes{
-		output.NewPipe(format.NewJSON(), nil, os.Stdout),
-	}
-
-	// Add the metrics pipe if the user has enabled Prometheus metrics.
-	if promAddr != "" {
-		pipes = append(pipes, http.NewMetricsPipe(httpTimeout))
-	}
-
-	return pipes
 }
