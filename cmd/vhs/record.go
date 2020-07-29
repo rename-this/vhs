@@ -21,6 +21,7 @@ import (
 	"github.com/gramLabs/vhs/output/sink"
 	"github.com/gramLabs/vhs/session"
 	"github.com/gramLabs/vhs/tcp"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +38,7 @@ var recordCmd = &cobra.Command{
 func record(cmd *cobra.Command, args []string) {
 
 	//Start Prometheus endpoint if requested by the user.
-	if promMetrics {
+	if promAddr != "" {
 		_http.Handle("/metrics", promhttp.Handler())
 		go func() {
 			log.Fatal(_http.ListenAndServe(promAddr, nil))
@@ -156,8 +157,8 @@ func pipes() output.Pipes {
 
 	}
 
-	// Add the httpmetrics sink if the user has specified the prometheus-metrics flag.
-	if promMetrics {
+	// Add the httpmetrics sink if the user has enabled Prometheus metrics.
+	if promAddr != "" {
 		sinks = append(sinks, http.NewMetrics(30*time.Second))
 	}
 
