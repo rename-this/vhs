@@ -44,6 +44,7 @@ type Pipes []*Pipe
 
 func (pp Pipes) Write(n interface{}) {
 	for _, p := range pp {
+		// TODO(andrewhare): should we parallelize this?
 		p.Write(n)
 	}
 }
