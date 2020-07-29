@@ -2,62 +2,50 @@ package output
 
 import (
 	"context"
+	"io"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/gramLabs/vhs/output/format"
 	"gotest.tools/v3/assert"
 )
-
-type data struct {
-	D []*datum
-}
 
 type datum struct {
 	B bool
 }
 
 type testSink struct {
-	mu        sync.Mutex
-	data      *data
-	dataSlice []*datum
+	mu   sync.Mutex
+	data []byte
 }
 
-func (s *testSink) Data() interface{} {
+func (s *testSink) Data() []byte {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
-	if s.dataSlice != nil {
-		return s.dataSlice
-	}
 	return s.data
 }
 
 func (*testSink) Init(_ context.Context) {}
 
-func (s *testSink) Write(n interface{}) error {
+func (s *testSink) Write(p []byte) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.dataSlice != nil {
-		s.dataSlice = append(s.dataSlice, n.(*datum))
-	} else {
-		// panic(fmt.Sprintf("%#v", n))
-		s.data = n.(*data)
-	}
+	s.data = append(s.data, p...)
 
-	return nil
+	return len(p), nil
 }
 
 type formatUnbuffered struct {
 	in  chan interface{}
-	out chan interface{}
+	out chan io.Reader
 }
 
 func newFormatUnbuffered() *formatUnbuffered {
 	return &formatUnbuffered{
 		in:  make(chan interface{}),
-		out: make(chan interface{}),
+		out: make(chan io.Reader),
 	}
 }
 
@@ -67,65 +55,62 @@ func (f *formatUnbuffered) Init(ctx context.Context) {
 		case n := <-f.in:
 			d := n.(*datum)
 			d.B = true
-			f.out <- d
+			f.out <- format.NewJSONReader(d)
 		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-func (f *formatUnbuffered) In() chan<- interface{}  { return f.in }
-func (f *formatUnbuffered) Out() <-chan interface{} { return f.out }
+func (f *formatUnbuffered) In() chan<- interface{} { return f.in }
+func (f *formatUnbuffered) Out() <-chan io.Reader  { return f.out }
 
 type formatBuffered struct {
 	in  chan interface{}
-	out chan interface{}
+	out chan io.Reader
 }
 
 func newFormatBuffered() *formatBuffered {
 	return &formatBuffered{
 		in:  make(chan interface{}),
-		out: make(chan interface{}),
+		out: make(chan io.Reader),
 	}
 }
 
 func (f *formatBuffered) Init(ctx context.Context) {
-	d := &data{}
+	var d []*datum
 	for {
 		select {
 		case n := <-f.in:
 			dd := n.(*datum)
 			dd.B = true
-			d.D = append(d.D, dd)
+			d = append(d, dd)
 		case <-ctx.Done():
-			f.out <- d
+			f.out <- format.NewJSONReader(d)
+			return
 		}
 	}
 }
 
-func (f *formatBuffered) In() chan<- interface{}  { return f.in }
-func (f *formatBuffered) Out() <-chan interface{} { return f.out }
+func (f *formatBuffered) In() chan<- interface{} { return f.in }
+func (f *formatBuffered) Out() <-chan io.Reader  { return f.out }
 
 func TestSink(t *testing.T) {
 	cases := []struct {
 		desc string
 		p    *Pipe
 		data []interface{}
-		out  interface{}
+		out  string
 	}{
 		{
 			desc: "unbuffered",
-			p:    NewPipe(newFormatUnbuffered(), &testSink{dataSlice: []*datum{}}),
+			p:    NewPipe(newFormatUnbuffered(), &testSink{}),
 			data: []interface{}{
 				&datum{},
 				&datum{},
 				&datum{},
 			},
-			out: []*datum{
-				{B: true},
-				{B: true},
-				{B: true},
-			},
+			out: `{"B":true}{"B":true}{"B":true}`,
 		},
 		{
 			desc: "buffered",
@@ -135,13 +120,7 @@ func TestSink(t *testing.T) {
 				&datum{},
 				&datum{},
 			},
-			out: &data{
-				D: []*datum{
-					{B: true},
-					{B: true},
-					{B: true},
-				},
-			},
+			out: `[{"B":true},{"B":true},{"B":true}]`,
 		},
 	}
 	for _, c := range cases {
@@ -154,12 +133,14 @@ func TestSink(t *testing.T) {
 				c.p.Write(d)
 			}
 
+			time.Sleep(500 * time.Millisecond)
+
 			cancel()
 
 			time.Sleep(100 * time.Millisecond)
 
 			s := c.p.Sink.(*testSink)
-			assert.DeepEqual(t, s.Data(), c.out)
+			assert.DeepEqual(t, string(s.Data()), c.out)
 		})
 	}
 }

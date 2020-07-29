@@ -1,11 +1,6 @@
 package sink
 
-import (
-	"context"
-)
+import "io"
 
 // Sink is a writable location for output.
-type Sink interface {
-	Init(context.Context)
-	Write(interface{}) error
-}
+type Sink io.Writer

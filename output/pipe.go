@@ -2,7 +2,7 @@ package output
 
 import (
 	"context"
-	"log"
+	"io"
 
 	"github.com/gramLabs/vhs/output/format"
 	"github.com/gramLabs/vhs/output/sink"
@@ -12,6 +12,7 @@ import (
 type Pipe struct {
 	Format format.Format
 	Sink   sink.Sink
+	Errors []error
 }
 
 // NewPipe creates a pipe connecting a format and a sink.
@@ -25,12 +26,10 @@ func NewPipe(f format.Format, s sink.Sink) *Pipe {
 // Init starts the pipe.
 func (p *Pipe) Init(ctx context.Context) {
 	go p.Format.Init(ctx)
-	go p.Sink.Init(ctx)
 
-	for n := range p.Format.Out() {
-		if err := p.Sink.Write(n); err != nil {
-			// TODO(andrewhare): figure out the best way to log this error
-			log.Println(err)
+	for r := range p.Format.Out() {
+		if _, err := io.Copy(p.Sink, r); err != nil {
+			p.Errors = append(p.Errors, err)
 		}
 	}
 }

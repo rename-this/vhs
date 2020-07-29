@@ -11,34 +11,37 @@ import (
 func NewJSON() Format {
 	return &jsonFormat{
 		in:  make(chan interface{}),
-		out: make(chan interface{}),
+		out: make(chan io.Reader),
 	}
 }
 
 type jsonFormat struct {
 	in  chan interface{}
-	out chan interface{}
+	out chan io.Reader
 }
 
-func (p *jsonFormat) In() chan<- interface{}  { return p.in }
-func (p *jsonFormat) Out() <-chan interface{} { return p.out }
+func (p *jsonFormat) In() chan<- interface{} { return p.in }
+func (p *jsonFormat) Out() <-chan io.Reader  { return p.out }
 
 func (p *jsonFormat) Init(_ context.Context) {
 	for n := range p.in {
-		// TODO(andrewhare): Pool these json writers.
-		p.out <- &jsonWriter{n: n}
+		p.out <- NewJSONReader(n)
 	}
 }
 
-type jsonWriter struct {
+// NewJSONReader creates an io.Reader around a type.
+func NewJSONReader(n interface{}) io.Reader {
+	return &jsonReader{n: n}
+}
+
+type jsonReader struct {
 	n interface{}
 }
 
-func (jw *jsonWriter) WriteTo(w io.Writer) (int64, error) {
-	b, err := json.Marshal(jw.n)
+func (r *jsonReader) Read(p []byte) (int, error) {
+	b, err := json.Marshal(r.n)
 	if err != nil {
 		return 0, fmt.Errorf("failed to marshal JSON: %w", err)
 	}
-	n, err := w.Write(b)
-	return int64(n), err
+	return copy(p, b), io.EOF
 }

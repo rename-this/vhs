@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	_http "net/http"
 	"net/url"
@@ -71,7 +72,7 @@ func TestHAR(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			h := NewHAR(ioutil.Discard, 30*time.Second)
+			h := NewHAR(30 * time.Second)
 
 			ctx, cancel := context.WithCancel(context.Background())
 			go h.Init(ctx)
@@ -83,7 +84,14 @@ func TestHAR(t *testing.T) {
 
 			cancel()
 
-			assert.DeepEqual(t, <-h.Out(), c.out)
+			time.Sleep(100 * time.Millisecond)
+
+			b1, err := ioutil.ReadAll(<-h.Out())
+			assert.NilError(t, err)
+			b2, err := json.Marshal(c.out)
+			assert.NilError(t, err)
+
+			assert.DeepEqual(t, b1, b2)
 		})
 	}
 }
