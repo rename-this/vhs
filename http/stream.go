@@ -73,6 +73,6 @@ func (s *Stream) handle(t MessageType, parseMessage func() (Message, error)) {
 	}
 
 	for _, p := range s.pipes {
-		p.Format.In() <- msgOut
+		p.Write(msgOut)
 	}
 }
