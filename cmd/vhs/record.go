@@ -13,6 +13,7 @@ import (
 	"github.com/gramLabs/vhs/http"
 	"github.com/gramLabs/vhs/output"
 	"github.com/gramLabs/vhs/output/format"
+	"github.com/gramLabs/vhs/output/sink"
 	"github.com/gramLabs/vhs/session"
 	"github.com/gramLabs/vhs/tcp"
 	"github.com/spf13/cobra"
@@ -56,6 +57,11 @@ func record(cmd *cobra.Command, args []string) {
 	pipes := pipes()
 	for _, p := range pipes {
 		p.Init(ctx)
+		defer func(s sink.Sink) {
+			if err := s.Close(); err != nil {
+				log.Printf("failed to close sink: %v\n", err)
+			}
+		}(p.Sink)
 	}
 
 	switch strings.ToLower(protocol) {

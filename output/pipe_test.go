@@ -37,6 +37,8 @@ func (s *testSink) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
+func (*testSink) Close() error { return nil }
+
 type formatUnbuffered struct {
 	in  chan interface{}
 	out chan io.Reader
