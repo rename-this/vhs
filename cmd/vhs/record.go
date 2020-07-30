@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"io"
+	"io/ioutil"
 	"log"
 	_http "net/http"
 	"os"
@@ -154,13 +156,19 @@ func pipes() output.Pipes {
 		output.NewPipe(format.NewJSON(), nil, os.Stdout),
 	}
 
-
-	}
-
-	// Add the httpmetrics sink if the user has enabled Prometheus metrics.
+	// Add the metrics pipe if the user has enabled Prometheus metrics.
 	if promAddr != "" {
-		sinks = append(sinks, http.NewMetrics(30*time.Second))
+		pipes = append(pipes, output.NewPipe(http.NewMetrics(30*time.Second), discardCloser{Writer: ioutil.Discard}))
+
 	}
 
-	return sinks
+	return pipes
 }
+
+// discardCloser provides a io.WriteCloser wrapper for ioutil.Discard.
+type discardCloser struct {
+	io.Writer
+}
+
+// Close is a no-op for ioutil.Discard.
+func (discardCloser) Close() error { return nil }
