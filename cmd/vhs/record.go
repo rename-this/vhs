@@ -56,7 +56,7 @@ func record(cmd *cobra.Command, args []string) {
 
 	pipes := pipes()
 	for _, p := range pipes {
-		p.Init(ctx)
+		go p.Init(ctx)
 		defer func(s sink.Sink) {
 			if err := s.Close(); err != nil {
 				log.Printf("failed to close sink: %v\n", err)
@@ -67,7 +67,9 @@ func record(cmd *cobra.Command, args []string) {
 	switch strings.ToLower(protocol) {
 	case "http":
 		factory := newStreamFactoryHTTP(ctx, sess, pipes)
-		defer factory.Middleware.Close()
+		if factory.Middleware != nil {
+			defer factory.Middleware.Close()
+		}
 		recordTCP(listener, factory)
 	default:
 		log.Fatal("invalid protocol")
