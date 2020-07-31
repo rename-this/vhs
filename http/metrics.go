@@ -15,6 +15,7 @@ var _ format.Format = &Metrics{}
 
 // Metrics is a format that calculates HTTP metrics for Prometheus monitoring
 // Note that this format does not modify data passing through it, it merely extracts metrics.
+// Also note that this is a "dead end" format: its output io.Reader is never updated and remains empty.
 type Metrics struct {
 	c        *Correlator
 	latency  *prometheus.GaugeVec
@@ -63,7 +64,7 @@ func (m *Metrics) Init(ctx context.Context) {
 		case r := <-m.c.Exchanges:
 			m.calcMetrics(r)
 		case <-ctx.Done():
-			//something?
+			// (ztreinhart): return something downstream?
 			return
 		}
 	}
@@ -76,7 +77,6 @@ func (m *Metrics) calcMetrics(req *Request) {
 			"method": req.Method,
 			"code":   fmt.Sprintf("%d", req.Response.StatusCode),
 		}).Set(req.Response.Created.Sub(req.Created).Seconds())
-
 	} else {
 		m.timeouts.With(prometheus.Labels{
 			"method": req.Method,
