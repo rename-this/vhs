@@ -10,10 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/gramLabs/vhs/capture"
