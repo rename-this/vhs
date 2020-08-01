@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"time"
 
@@ -14,28 +15,23 @@ var _ format.Format = &HAR{}
 // https://w3c.github.io/web-performance/specs/HAR/Overview.html
 // http://www.softwareishard.com/blog/har-12-spec/
 type HAR struct {
-	c   *Correlator
-	in  chan interface{}
-	out chan io.Reader
+	c  *Correlator
+	in chan interface{}
 }
 
 // NewHAR creates a mew HAR format.
 func NewHAR(reqTimeout time.Duration) format.Format {
 	return &HAR{
-		c:   NewCorrelator(reqTimeout),
-		in:  make(chan interface{}),
-		out: make(chan io.Reader),
+		c:  NewCorrelator(reqTimeout),
+		in: make(chan interface{}),
 	}
 }
 
 // In returns the input channel.
 func (h *HAR) In() chan<- interface{} { return h.in }
 
-// Out returns the output channel.
-func (h *HAR) Out() <-chan io.Reader { return h.out }
-
 // Init initializes the HAR sink.
-func (h *HAR) Init(ctx context.Context) {
+func (h *HAR) Init(ctx context.Context, w io.Writer) {
 	go h.c.Start(ctx)
 
 	hh := &har{
@@ -58,7 +54,7 @@ func (h *HAR) Init(ctx context.Context) {
 		case r := <-h.c.Exchanges:
 			h.addRequest(hh, r)
 		case <-ctx.Done():
-			h.out <- format.NewJSONReader(hh)
+			json.NewEncoder(w).Encode(hh)
 			return
 		}
 	}

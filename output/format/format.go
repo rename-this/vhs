@@ -7,7 +7,6 @@ import (
 
 // Format is an interface for formatting output
 type Format interface {
-	Init(context.Context)
+	Init(context.Context, io.Writer)
 	In() chan<- interface{}
-	Out() <-chan io.Reader
 }

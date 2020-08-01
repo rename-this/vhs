@@ -2,36 +2,35 @@ package output
 
 import (
 	"context"
-	"io"
 
 	"github.com/gramLabs/vhs/output/format"
+	"github.com/gramLabs/vhs/output/modifier"
 	"github.com/gramLabs/vhs/output/sink"
 )
 
 // Pipe joins a format and sink.
 type Pipe struct {
-	Format format.Format
-	Sink   sink.Sink
-	Errors chan error
+	Format    format.Format
+	Modifiers modifier.Modifiers
+	Sink      sink.Sink
+	Errors    chan error
 }
 
 // NewPipe creates a pipe connecting a format and a sink.
-func NewPipe(f format.Format, s sink.Sink) *Pipe {
+func NewPipe(f format.Format, ms modifier.Modifiers, s sink.Sink) *Pipe {
 	return &Pipe{
-		Format: f,
-		Sink:   s,
+		Format:    f,
+		Modifiers: ms,
+		Sink:      s,
 	}
 }
 
 // Init starts the pipe.
 func (p *Pipe) Init(ctx context.Context) {
-	go p.Format.Init(ctx)
+	w, closeAll := p.Modifiers.Wrap(p.Sink)
+	defer closeAll()
 
-	for r := range p.Format.Out() {
-		if _, err := io.Copy(p.Sink, r); err != nil {
-			p.Errors <- err
-		}
-	}
+	p.Format.Init(ctx, w)
 }
 
 // Start starts the pipe.

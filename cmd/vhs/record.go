@@ -135,6 +135,6 @@ func newStreamFactoryHTTP(ctx context.Context, sess *session.Session, pipes []*o
 
 func pipes() output.Pipes {
 	return output.Pipes{
-		output.NewPipe(format.NewJSON(), os.Stdout),
+		output.NewPipe(format.NewJSON(), nil, os.Stdout),
 	}
 }

@@ -2,12 +2,13 @@ package output
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/gramLabs/vhs/output/format"
+	"github.com/gramLabs/vhs/output/modifier"
 	"gotest.tools/v3/assert"
 )
 
@@ -40,24 +41,21 @@ func (s *testSink) Write(p []byte) (int, error) {
 func (*testSink) Close() error { return nil }
 
 type formatUnbuffered struct {
-	in  chan interface{}
-	out chan io.Reader
+	in chan interface{}
 }
 
 func newFormatUnbuffered() *formatUnbuffered {
 	return &formatUnbuffered{
-		in:  make(chan interface{}),
-		out: make(chan io.Reader),
+		in: make(chan interface{}),
 	}
 }
 
-func (f *formatUnbuffered) Init(ctx context.Context) {
+func (f *formatUnbuffered) Init(ctx context.Context, w io.Writer) {
 	for {
 		select {
 		case n := <-f.in:
-			d := n.(*datum)
-			d.B = true
-			f.out <- format.NewJSONReader(d)
+			i := n.(int)
+			w.Write([]byte(fmt.Sprint(i)))
 		case <-ctx.Done():
 			return
 		}
@@ -65,37 +63,45 @@ func (f *formatUnbuffered) Init(ctx context.Context) {
 }
 
 func (f *formatUnbuffered) In() chan<- interface{} { return f.in }
-func (f *formatUnbuffered) Out() <-chan io.Reader  { return f.out }
 
 type formatBuffered struct {
-	in  chan interface{}
-	out chan io.Reader
+	in chan interface{}
 }
 
 func newFormatBuffered() *formatBuffered {
 	return &formatBuffered{
-		in:  make(chan interface{}),
-		out: make(chan io.Reader),
+		in: make(chan interface{}),
 	}
 }
 
-func (f *formatBuffered) Init(ctx context.Context) {
-	var d []*datum
+func (f *formatBuffered) Init(ctx context.Context, w io.Writer) {
+	var total int
 	for {
 		select {
 		case n := <-f.in:
-			dd := n.(*datum)
-			dd.B = true
-			d = append(d, dd)
+			total += n.(int)
 		case <-ctx.Done():
-			f.out <- format.NewJSONReader(d)
+			w.Write([]byte(fmt.Sprint(total)))
 			return
 		}
 	}
 }
 
 func (f *formatBuffered) In() chan<- interface{} { return f.in }
-func (f *formatBuffered) Out() <-chan io.Reader  { return f.out }
+
+type doubleMod struct{}
+
+func (*doubleMod) Wrap(w io.WriteCloser) io.WriteCloser {
+	return modifier.NopWriteCloser(&double{w: w})
+}
+
+type double struct {
+	w io.WriteCloser
+}
+
+func (r *double) Write(p []byte) (int, error) {
+	return r.w.Write(append(p, p...))
+}
 
 func TestSink(t *testing.T) {
 	cases := []struct {
@@ -106,23 +112,21 @@ func TestSink(t *testing.T) {
 	}{
 		{
 			desc: "unbuffered",
-			p:    NewPipe(newFormatUnbuffered(), &testSink{}),
-			data: []interface{}{
-				&datum{},
-				&datum{},
-				&datum{},
-			},
-			out: `{"B":true}{"B":true}{"B":true}`,
+			p:    NewPipe(newFormatUnbuffered(), nil, &testSink{}),
+			data: []interface{}{1, 2, 3},
+			out:  `123`,
 		},
 		{
 			desc: "buffered",
-			p:    NewPipe(newFormatBuffered(), &testSink{}),
-			data: []interface{}{
-				&datum{},
-				&datum{},
-				&datum{},
-			},
-			out: `[{"B":true},{"B":true},{"B":true}]`,
+			p:    NewPipe(newFormatBuffered(), nil, &testSink{}),
+			data: []interface{}{1, 2, 3},
+			out:  `6`,
+		},
+		{
+			desc: "modifiers",
+			p:    NewPipe(newFormatUnbuffered(), []modifier.Modifier{&doubleMod{}, &doubleMod{}}, &testSink{}),
+			data: []interface{}{1, 2, 3},
+			out:  "111122223333",
 		},
 	}
 	for _, c := range cases {

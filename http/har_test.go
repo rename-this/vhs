@@ -1,11 +1,12 @@
 package http
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	_http "net/http"
 	"net/url"
+	"sync"
 	"testing"
 	"time"
 
@@ -74,8 +75,9 @@ func TestHAR(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			h := NewHAR(30 * time.Second)
 
+			var buf safeBuffer
 			ctx, cancel := context.WithCancel(context.Background())
-			go h.Init(ctx)
+			go h.Init(ctx, &buf)
 
 			for _, m := range c.messages {
 				h.In() <- m
@@ -86,14 +88,35 @@ func TestHAR(t *testing.T) {
 
 			time.Sleep(100 * time.Millisecond)
 
-			b1, err := ioutil.ReadAll(<-h.Out())
-			assert.NilError(t, err)
 			b2, err := json.Marshal(c.out)
 			assert.NilError(t, err)
 
-			assert.DeepEqual(t, b1, b2)
+			assert.DeepEqual(t, bytes.TrimSpace(buf.Bytes()), b2)
 		})
 	}
+}
+
+type safeBuffer struct {
+	b  bytes.Buffer
+	mu sync.Mutex
+}
+
+func (b *safeBuffer) Read(p []byte) (n int, err error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.b.Read(p)
+}
+
+func (b *safeBuffer) Write(p []byte) (n int, err error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.b.Write(p)
+}
+
+func (b *safeBuffer) Bytes() []byte {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.b.Bytes()
 }
 
 func newURL(s string) *url.URL {
