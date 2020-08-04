@@ -40,41 +40,29 @@ func (s *testSink) Write(p []byte) (int, error) {
 
 func (*testSink) Close() error { return nil }
 
-type formatUnbuffered struct {
-	in chan interface{}
+type testFormat struct {
+	in       chan interface{}
+	errs     chan error
+	buffered bool
 }
 
-func newFormatUnbuffered() *formatUnbuffered {
-	return &formatUnbuffered{
-		in: make(chan interface{}),
+func newTestFormat(buffered bool) *testFormat {
+	return &testFormat{
+		in:       make(chan interface{}),
+		errs:     make(chan error),
+		buffered: buffered,
 	}
 }
 
-func (f *formatUnbuffered) Init(ctx context.Context, w io.Writer) {
-	for {
-		select {
-		case n := <-f.in:
-			i := n.(int)
-			w.Write([]byte(fmt.Sprint(i)))
-		case <-ctx.Done():
-			return
-		}
+func (f *testFormat) Init(ctx context.Context, w io.Writer) {
+	if f.buffered {
+		f.initBuffered(ctx, w)
+	} else {
+		f.initUnbuffered(ctx, w)
 	}
 }
 
-func (f *formatUnbuffered) In() chan<- interface{} { return f.in }
-
-type formatBuffered struct {
-	in chan interface{}
-}
-
-func newFormatBuffered() *formatBuffered {
-	return &formatBuffered{
-		in: make(chan interface{}),
-	}
-}
-
-func (f *formatBuffered) Init(ctx context.Context, w io.Writer) {
+func (f *testFormat) initBuffered(ctx context.Context, w io.Writer) {
 	var total int
 	for {
 		select {
@@ -87,7 +75,20 @@ func (f *formatBuffered) Init(ctx context.Context, w io.Writer) {
 	}
 }
 
-func (f *formatBuffered) In() chan<- interface{} { return f.in }
+func (f *testFormat) initUnbuffered(ctx context.Context, w io.Writer) {
+	for {
+		select {
+		case n := <-f.in:
+			i := n.(int)
+			w.Write([]byte(fmt.Sprint(i)))
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (f *testFormat) In() chan<- interface{} { return f.in }
+func (f *testFormat) Errors() <-chan error   { return f.errs }
 
 type doubleMod struct{}
 
@@ -112,19 +113,19 @@ func TestSink(t *testing.T) {
 	}{
 		{
 			desc: "unbuffered",
-			p:    NewPipe(newFormatUnbuffered(), nil, &testSink{}),
+			p:    NewPipe(newTestFormat(false), nil, &testSink{}),
 			data: []interface{}{1, 2, 3},
 			out:  `123`,
 		},
 		{
 			desc: "buffered",
-			p:    NewPipe(newFormatBuffered(), nil, &testSink{}),
+			p:    NewPipe(newTestFormat(true), nil, &testSink{}),
 			data: []interface{}{1, 2, 3},
 			out:  `6`,
 		},
 		{
 			desc: "modifiers",
-			p:    NewPipe(newFormatUnbuffered(), []modifier.Modifier{&doubleMod{}, &doubleMod{}}, &testSink{}),
+			p:    NewPipe(newTestFormat(false), []modifier.Modifier{&doubleMod{}, &doubleMod{}}, &testSink{}),
 			data: []interface{}{1, 2, 3},
 			out:  "111122223333",
 		},

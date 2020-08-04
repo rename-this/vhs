@@ -11,6 +11,6 @@ var _ Modifier = &Gzip{}
 type Gzip struct{}
 
 // Wrap wraps a reader so it can gzip its contents.
-func (*Gzip) Wrap(r io.WriteCloser) io.WriteCloser {
-	return gzip.NewWriter(r)
+func (*Gzip) Wrap(w io.WriteCloser) io.WriteCloser {
+	return gzip.NewWriter(w)
 }

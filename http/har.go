@@ -15,20 +15,25 @@ var _ format.Format = &HAR{}
 // https://w3c.github.io/web-performance/specs/HAR/Overview.html
 // http://www.softwareishard.com/blog/har-12-spec/
 type HAR struct {
-	c  *Correlator
-	in chan interface{}
+	c    *Correlator
+	in   chan interface{}
+	errs chan error
 }
 
 // NewHAR creates a mew HAR format.
 func NewHAR(reqTimeout time.Duration) format.Format {
 	return &HAR{
-		c:  NewCorrelator(reqTimeout),
-		in: make(chan interface{}),
+		c:    NewCorrelator(reqTimeout),
+		in:   make(chan interface{}),
+		errs: make(chan error),
 	}
 }
 
 // In returns the input channel.
 func (h *HAR) In() chan<- interface{} { return h.in }
+
+// Errors returns the errors channel.
+func (h *HAR) Errors() <-chan error { return h.errs }
 
 // Init initializes the HAR sink.
 func (h *HAR) Init(ctx context.Context, w io.Writer) {

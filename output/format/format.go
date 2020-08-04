@@ -9,4 +9,5 @@ import (
 type Format interface {
 	Init(context.Context, io.Writer)
 	In() chan<- interface{}
+	Errors() <-chan error
 }

@@ -30,6 +30,12 @@ func (p *Pipe) Init(ctx context.Context) {
 	w, closeAll := p.Modifiers.Wrap(p.Sink)
 	defer closeAll()
 
+	go func() {
+		for err := range p.Format.Errors() {
+			p.Errors <- err
+		}
+	}()
+
 	p.Format.Init(ctx, w)
 }
 
