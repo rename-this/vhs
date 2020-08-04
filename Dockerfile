@@ -14,4 +14,6 @@ RUN apt-get update && \
     telnet \
     tmux
 
+ENV GOOGLE_APPLICATION_CREDENTIALS "/root/.config/gcloud/application_default_credentials.json"
+
 WORKDIR /go/vhs

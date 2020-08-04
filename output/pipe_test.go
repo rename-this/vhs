@@ -113,19 +113,19 @@ func TestSink(t *testing.T) {
 	}{
 		{
 			desc: "unbuffered",
-			p:    NewPipe(newTestFormat(false), nil, &testSink{}),
+			p:    NewPipe(newTestFormat(false), &testSink{}),
 			data: []interface{}{1, 2, 3},
 			out:  `123`,
 		},
 		{
 			desc: "buffered",
-			p:    NewPipe(newTestFormat(true), nil, &testSink{}),
+			p:    NewPipe(newTestFormat(true), &testSink{}),
 			data: []interface{}{1, 2, 3},
 			out:  `6`,
 		},
 		{
 			desc: "modifiers",
-			p:    NewPipe(newTestFormat(false), []modifier.Modifier{&doubleMod{}, &doubleMod{}}, &testSink{}),
+			p:    NewPipe(newTestFormat(false), &testSink{}, &doubleMod{}, &doubleMod{}),
 			data: []interface{}{1, 2, 3},
 			out:  "111122223333",
 		},

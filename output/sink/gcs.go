@@ -6,27 +6,26 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/gramLabs/vhs/session"
-	"google.golang.org/api/option"
 )
 
 // GCSConfig is configuration for GCS
 type GCSConfig struct {
-	Session         *session.Session
-	JSONKeyFilePath string
-	ProjectID       string
-	BucketName      string
+	Session    *session.Session
+	ProjectID  string
+	BucketName string
 }
 
 // NewGCS creates a new Google Cloud Storage sink.
-func NewGCS(ctx context.Context, cfg GCSConfig) (Sink, error) {
-	c, err := storage.NewClient(ctx, option.WithCredentialsFile(cfg.JSONKeyFilePath))
+func NewGCS(cfg GCSConfig) (Sink, error) {
+	ctx := context.Background()
+
+	c, err := storage.NewClient(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
 
-	b := c.Bucket(cfg.BucketName)
-	if err := b.Create(ctx, cfg.ProjectID, nil); err != nil {
-		return nil, fmt.Errorf("failed to create bucket: %w", err)
+	if _, err := c.Bucket(cfg.BucketName).Attrs(ctx); err != nil {
+		return nil, fmt.Errorf("failed to find bucket: %w", err)
 	}
 
 	return b.Object(cfg.Session.ID).NewWriter(ctx), nil

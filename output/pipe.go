@@ -11,24 +11,34 @@ import (
 // Pipe joins a format and sink.
 type Pipe struct {
 	Format    format.Format
-	Modifiers modifier.Modifiers
 	Sink      sink.Sink
+	Modifiers modifier.Modifiers
 	Errors    chan error
 }
 
 // NewPipe creates a pipe connecting a format and a sink.
-func NewPipe(f format.Format, ms modifier.Modifiers, s sink.Sink) *Pipe {
+func NewPipe(f format.Format, s sink.Sink, ms ...modifier.Modifier) *Pipe {
 	return &Pipe{
 		Format:    f,
-		Modifiers: ms,
 		Sink:      s,
+		Modifiers: ms,
 	}
 }
 
 // Init starts the pipe.
 func (p *Pipe) Init(ctx context.Context) {
+	defer func() {
+		if err := p.Sink.Close(); err != nil {
+			p.Errors <- err
+		}
+	}()
+
 	w, closeAll := p.Modifiers.Wrap(p.Sink)
-	defer closeAll()
+	defer func() {
+		if err := closeAll(); err != nil {
+			p.Errors <- err
+		}
+	}()
 
 	go func() {
 		for err := range p.Format.Errors() {

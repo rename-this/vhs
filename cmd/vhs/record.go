@@ -5,7 +5,10 @@ import (
 	"log"
 	_http "net/http"
 	"os"
+	"os/signal"
+	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/gramLabs/vhs/http"
@@ -13,6 +16,7 @@ import (
 	"github.com/gramLabs/vhs/capture"
 	"github.com/gramLabs/vhs/output"
 	"github.com/gramLabs/vhs/output/format"
+	"github.com/gramLabs/vhs/output/modifier"
 	"github.com/gramLabs/vhs/output/sink"
 	"github.com/gramLabs/vhs/session"
 	"github.com/gramLabs/vhs/tcp"
@@ -69,13 +73,12 @@ func record(cmd *cobra.Command, args []string) {
 	defer listener.Close()
 
 	pipes := output.Pipes{
-		output.NewPipe(format.NewJSON(), os.Stdout),
+		output.NewPipe(format.NewJSON(false), os.Stdout),
 	}
 
 	if gcsProjectID != "" {
 		var (
-			har      = http.NewHAR(30 * time.Second)
-			gcs, err = sink.NewGCS(ctx, sink.GCSConfig{
+			gcs, err = sink.NewGCS(sink.GCSConfig{
 				Session:    sess,
 				ProjectID:  gcsProjectID,
 				BucketName: gcsBucketName,
@@ -84,7 +87,8 @@ func record(cmd *cobra.Command, args []string) {
 		if err != nil {
 			log.Fatalf("failed to initialize GCS sink: %v", err)
 		}
-		pipes = append(pipes, output.NewPipe(har, gcs))
+		p := output.NewPipe(format.NewJSON(true), gcs, &modifier.Gzip{})
+		pipes = append(pipes, p)
 	}
 
 	// Add the metrics pipe if the user has enabled Prometheus metrics.
@@ -94,12 +98,28 @@ func record(cmd *cobra.Command, args []string) {
 
 	for _, p := range pipes {
 		go p.Init(ctx)
+
 		defer func(s sink.Sink) {
 			if err := s.Close(); err != nil {
 				log.Printf("failed to close sink: %v\n", err)
 			}
 		}(p.Sink)
+
+		go func(pp *output.Pipe) {
+			for err := range pp.Errors {
+				log.Printf(err.Error())
+			}
+		}(p)
 	}
+
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		log.Println("shutdown requested")
+		cancel()
+		runtime.Goexit()
+	}()
 
 	switch strings.ToLower(protocol) {
 	case "http":

@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/gramLabs/vhs/capture"
 	"github.com/spf13/cobra"
@@ -28,6 +29,8 @@ var (
 )
 
 func main() {
+	defer os.Exit(0)
+
 	rootCmd.PersistentFlags().BoolVar(&captureResponse, "capture-response", false, "Capture the responses.")
 
 	rootCmd.PersistentFlags().StringVar(&address, "address", capture.DefaultAddr, "Address VHS will use to capture traffic.")
