@@ -23,9 +23,8 @@ var (
 	//promMetrics bool
 	promAddr string
 
-	gcsJSONKeyFilePath string
-	gcsProjectID       string
-	gcsBucketName      string
+	gcsProjectID  string
+	gcsBucketName string
 )
 
 func main() {
@@ -37,7 +36,6 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&middleware, "middleware", "", "A path to an executable that VHS will use as middleware.")
 	rootCmd.PersistentFlags().StringVar(&protocol, "protocol", "http", "Protocol to be used when assembling packets.")
 
-	rootCmd.PersistentFlags().StringVar(&gcsJSONKeyFilePath, "gcs-json-key-file-path", "", "Path to Google Cloud Storage JSON key file")
 	rootCmd.PersistentFlags().StringVar(&gcsProjectID, "gcs-project-id", "", "Project ID for Google Cloud Storage")
 	rootCmd.PersistentFlags().StringVar(&gcsBucketName, "gcs-bucket-name", "", "Bucket name for Google Cloud Storage")
 
