@@ -41,3 +41,23 @@ Sample output:
 "hello, world 1594678199 [[hijacked 1]]"
 "hello, world 1594678200 [[hijacked 0]]"
 ```
+
+## GCS
+
+To write output to GCS, first create a container that you have the rights to write to.
+
+Create a JSON keyfile:
+
+```
+$ gcloud auth application-default login
+```
+
+Note the location of this file, mine is `$HOME/.config/gcloud/application_default_credentials.json`.
+
+Running `make dev` will assume this location and mount the dir from that file in the docker container, keep this in mind when you boot it up.
+
+When running `vhs`, you pass the project ID and bucket name like this:
+
+```
+$ go build ./cmd/vhs && ./vhs record --capture-response --address 0.0.0.0:1111 --gcs-project-id carbon-relay-dev --gcs-bucket-name vhs-test-andrewhare
+```
