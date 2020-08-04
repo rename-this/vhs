@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 
@@ -59,7 +60,9 @@ func (h *HAR) Init(ctx context.Context, w io.Writer) {
 		case r := <-h.c.Exchanges:
 			h.addRequest(hh, r)
 		case <-ctx.Done():
-			json.NewEncoder(w).Encode(hh)
+			if err := json.NewEncoder(w).Encode(hh); err != nil {
+				h.errs <- fmt.Errorf("failed to encode to JSON: %w", err)
+			}
 			return
 		}
 	}
