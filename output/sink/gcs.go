@@ -24,7 +24,8 @@ func NewGCS(cfg GCSConfig) (Sink, error) {
 		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
 
-	if _, err := c.Bucket(cfg.BucketName).Attrs(ctx); err != nil {
+	b := c.Bucket(cfg.BucketName)
+	if _, err := b.Attrs(ctx); err != nil {
 		return nil, fmt.Errorf("failed to find bucket: %w", err)
 	}
 
