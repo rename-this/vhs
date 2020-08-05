@@ -22,6 +22,7 @@ type Metrics struct {
 	timeouts *prometheus.CounterVec
 	in chan interface{}
 	out chan io.Reader
+	errs chan error
 }
 
 // NewMetrics creates a new Metrics format.
@@ -44,11 +45,11 @@ func NewMetrics(reqTimeout time.Duration) *Metrics {
 // In returns the input channel.
 func (m *Metrics) In() chan<- interface{} { return m.in }
 
-// Out returns the output channel.
-func (m *Metrics) Out() <-chan io.Reader { return m.out }
+// Errors returns the errors channel.
+func (m *Metrics) Errors() <-chan error { return m.errs }
 
 // Init initializes the metrics format and registers the metrics with Prometheus
-func (m *Metrics) Init(ctx context.Context) {
+func (m *Metrics) Init(ctx context.Context, _ io.Writer) {
 	prometheus.MustRegister(m.latency)
 	prometheus.MustRegister(m.timeouts)
 

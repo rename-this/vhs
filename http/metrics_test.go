@@ -85,7 +85,7 @@ func TestMetrics(t *testing.T) {
 			met := NewMetrics(50*time.Millisecond)
 			ctx, cancel := context.WithCancel(context.Background())
 
-			go met.Init(ctx)
+			go met.Init(ctx, nil)
 
 			for _, m := range c.messages {
 				met.In() <- m

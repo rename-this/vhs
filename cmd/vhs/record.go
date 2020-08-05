@@ -148,13 +148,13 @@ func newStreamFactoryHTTP(ctx context.Context, sess *session.Session, pipes []*o
 }
 
 func pipes() output.Pipes {
-	return output.Pipes{
+	pipes := output.Pipes{
 		output.NewPipe(format.NewJSON(), nil, os.Stdout),
 	}
 
 	// Add the metrics pipe if the user has enabled Prometheus metrics.
 	if promAddr != "" {
-		pipes = append(pipes, output.NewPipe(http.NewMetrics(30*time.Second), discardCloser{Writer: ioutil.Discard}))
+		pipes = append(pipes, output.NewPipe(http.NewMetrics(30*time.Second), nil, discardCloser{Writer: ioutil.Discard}))
 
 	}
 
