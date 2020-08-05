@@ -4,10 +4,15 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"time"
 
+	"github.com/gramLabs/vhs/output"
 	"github.com/gramLabs/vhs/output/format"
+	"github.com/gramLabs/vhs/output/modifier"
+
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 // Ensure Metrics conforms to Format interface.
@@ -25,20 +30,30 @@ type Metrics struct {
 	errs chan error
 }
 
+// NewMetricsPipe creates a new *output.Pipe for calculating HTTP metrics
+func NewMetricsPipe(reqTimeout time.Duration) *output.Pipe {
+	return output.NewPipe(NewMetrics(reqTimeout), nil, modifier.NopWriteCloser(ioutil.Discard))
+}
+
 // NewMetrics creates a new Metrics format.
 func NewMetrics(reqTimeout time.Duration) *Metrics {
 	return &Metrics{
 		c: NewCorrelator(reqTimeout),
-		latency: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "vhs_http_latency_seconds",
+		latency: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "vhs",
+			Subsystem: "http",
+			Name: "latency_seconds",
 			Help: "Latency of http exchanges captured by VHS.",
 		}, []string{"method", "code"}),
-		timeouts: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: "vhs_http_timeouts_total",
+		timeouts: promauto.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "vhs",
+			Subsystem: "http",
+			Name: "timeouts_total",
 			Help: "Total count of timed-out http exchanges captured by VHS.",
 		}, []string{"method"}),
 		in: make(chan interface{}),
 		out: make(chan io.Reader),
+		errs: make(chan error),
 	}
 }
 
@@ -50,9 +65,6 @@ func (m *Metrics) Errors() <-chan error { return m.errs }
 
 // Init initializes the metrics format and registers the metrics with Prometheus
 func (m *Metrics) Init(ctx context.Context, _ io.Writer) {
-	prometheus.MustRegister(m.latency)
-	prometheus.MustRegister(m.timeouts)
-
 	go m.c.Start(ctx)
 
 	for {

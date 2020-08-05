@@ -2,29 +2,29 @@ package main
 
 import (
 	"context"
-	"io"
-	"io/ioutil"
+	"github.com/gramLabs/vhs/http"
 	"log"
 	_http "net/http"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/google/gopacket/layers"
-	"github.com/google/gopacket/tcpassembly"
 	"github.com/gramLabs/vhs/capture"
-	"github.com/gramLabs/vhs/http"
 	"github.com/gramLabs/vhs/output"
 	"github.com/gramLabs/vhs/output/format"
 	"github.com/gramLabs/vhs/output/sink"
 	"github.com/gramLabs/vhs/session"
 	"github.com/gramLabs/vhs/tcp"
+
+	"github.com/google/gopacket/layers"
+	"github.com/google/gopacket/tcpassembly"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 )
 
 const (
 	tcpTimeout = 5 * time.Minute
+	httpTimeout = 30 * time.Second
 )
 
 var recordCmd = &cobra.Command{
@@ -154,17 +154,8 @@ func pipes() output.Pipes {
 
 	// Add the metrics pipe if the user has enabled Prometheus metrics.
 	if promAddr != "" {
-		pipes = append(pipes, output.NewPipe(http.NewMetrics(30*time.Second), nil, discardCloser{Writer: ioutil.Discard}))
-
+		pipes = append(pipes, http.NewMetricsPipe(httpTimeout))
 	}
 
 	return pipes
 }
-
-// discardCloser provides a io.WriteCloser wrapper for ioutil.Discard.
-type discardCloser struct {
-	io.Writer
-}
-
-// Close is a no-op for ioutil.Discard.
-func (discardCloser) Close() error { return nil }
