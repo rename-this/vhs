@@ -12,7 +12,7 @@ require (
 	go.opencensus.io v0.22.4 // indirect
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
 	golang.org/x/sys v0.0.0-20200728102440-3e129f6d46b1 // indirect
-	google.golang.org/api v0.29.0
+	google.golang.org/api v0.29.0 // indirect
 	gotest.tools v2.2.0+incompatible
 	gotest.tools/v3 v3.0.2
 
