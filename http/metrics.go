@@ -7,9 +7,9 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/gramLabs/vhs/ioutilx"
 	"github.com/gramLabs/vhs/output"
 	"github.com/gramLabs/vhs/output/format"
-	"github.com/gramLabs/vhs/output/modifier"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -25,14 +25,14 @@ type Metrics struct {
 	c        *Correlator
 	latency  *prometheus.GaugeVec
 	timeouts *prometheus.CounterVec
-	in chan interface{}
-	out chan io.Reader
-	errs chan error
+	in       chan interface{}
+	out      chan io.Reader
+	errs     chan error
 }
 
 // NewMetricsPipe creates a new *output.Pipe for calculating HTTP metrics
 func NewMetricsPipe(reqTimeout time.Duration) *output.Pipe {
-	return output.NewPipe(NewMetrics(reqTimeout), nil, modifier.NopWriteCloser(ioutil.Discard))
+	return output.NewPipe(NewMetrics(reqTimeout), ioutilx.NopWriteCloser(ioutil.Discard))
 }
 
 // NewMetrics creates a new Metrics format.
@@ -42,17 +42,17 @@ func NewMetrics(reqTimeout time.Duration) *Metrics {
 		latency: promauto.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "vhs",
 			Subsystem: "http",
-			Name: "latency_seconds",
-			Help: "Latency of http exchanges captured by VHS.",
+			Name:      "latency_seconds",
+			Help:      "Latency of http exchanges captured by VHS.",
 		}, []string{"method", "code"}),
 		timeouts: promauto.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "vhs",
 			Subsystem: "http",
-			Name: "timeouts_total",
-			Help: "Total count of timed-out http exchanges captured by VHS.",
+			Name:      "timeouts_total",
+			Help:      "Total count of timed-out http exchanges captured by VHS.",
 		}, []string{"method"}),
-		in: make(chan interface{}),
-		out: make(chan io.Reader),
+		in:   make(chan interface{}),
+		out:  make(chan io.Reader),
 		errs: make(chan error),
 	}
 }

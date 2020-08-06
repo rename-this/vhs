@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gramLabs/vhs/output/modifier"
+	"github.com/gramLabs/vhs/ioutilx"
 	"gotest.tools/v3/assert"
 )
 
@@ -93,7 +93,7 @@ func (f *testFormat) Errors() <-chan error   { return f.errs }
 type doubleMod struct{}
 
 func (*doubleMod) Wrap(w io.WriteCloser) io.WriteCloser {
-	return modifier.NopWriteCloser(&double{w: w})
+	return ioutilx.NopWriteCloser(&double{w: w})
 }
 
 type double struct {

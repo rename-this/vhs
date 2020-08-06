@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"gotest.tools/v3/assert"
+
+	"github.com/gramLabs/vhs/ioutilx"
 )
 
 type base64Mod struct{}
@@ -18,7 +20,7 @@ func (*base64Mod) Wrap(w io.WriteCloser) io.WriteCloser {
 type removeEMod struct{}
 
 func (*removeEMod) Wrap(w io.WriteCloser) io.WriteCloser {
-	return NopWriteCloser(&removeE{w: w})
+	return ioutilx.NopWriteCloser(&removeE{w: w})
 }
 
 type removeE struct {
@@ -62,7 +64,7 @@ func TestModifiers(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			var buf bytes.Buffer
-			w, closeAll := c.ms.Wrap(NopWriteCloser(&buf))
+			w, closeAll := c.ms.Wrap(ioutilx.NopWriteCloser(&buf))
 
 			defer closeAll()
 
