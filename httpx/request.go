@@ -1,10 +1,10 @@
-package http
+package httpx
 
 import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
-	_http "net/http"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -24,12 +24,12 @@ type Request struct {
 	Proto            string           `json:"proto,omitempty"`
 	ProtoMajor       int              `json:"proto_major,omitempty"`
 	ProtoMinor       int              `json:"proto_minor,omitempty"`
-	Header           _http.Header     `json:"header,omitempty"`
+	Header           http.Header      `json:"header,omitempty"`
 	Body             string           `json:"body,omitempty"`
 	ContentLength    int64            `json:"content_length,omitempty"`
 	TransferEncoding []string         `json:"transfer_encoding,omitempty"`
 	Host             string           `json:"host,omitempty"`
-	Trailer          _http.Header     `json:"trailer,omitempty"`
+	Trailer          http.Header      `json:"trailer,omitempty"`
 	RemoteAddr       string           `json:"remote_addr,omitempty"`
 	RequestURI       string           `json:"request_uri,omitempty"`
 	Response         *Response        `json:"response,omitempty"`
@@ -50,7 +50,7 @@ func (r *Request) SetSession(sess *session.Session) { r.Session = sess }
 
 // NewRequest creates a new Request.
 func NewRequest(b *bufio.Reader, connectionID string, exchangeID int64) (*Request, error) {
-	req, err := _http.ReadRequest(b)
+	req, err := http.ReadRequest(b)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read request: %w", err)
 	}

@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"log"
-	_http "net/http"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
@@ -11,9 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gramLabs/vhs/http"
-
 	"github.com/gramLabs/vhs/capture"
+	"github.com/gramLabs/vhs/httpx"
 	"github.com/gramLabs/vhs/output"
 	"github.com/gramLabs/vhs/output/format"
 	"github.com/gramLabs/vhs/output/modifier"
@@ -39,14 +38,6 @@ var recordCmd = &cobra.Command{
 }
 
 func record(cmd *cobra.Command, args []string) {
-	//Start Prometheus endpoint if requested by the user.
-	if promAddr != "" {
-		_http.Handle("/metrics", promhttp.Handler())
-		go func() {
-			log.Fatal(_http.ListenAndServe(promAddr, nil))
-		}()
-	}
-
 	// TOOD(andrehare): Use this context to coordinate
 	// all the pieces of the recording.
 	ctx, cancel := context.WithCancel(context.Background())
@@ -92,10 +83,10 @@ func record(cmd *cobra.Command, args []string) {
 
 	// Add the metrics pipe if the user has enabled Prometheus metrics.
 	if promAddr != "" {
-		pipes = append(pipes, http.NewMetricsPipe(httpTimeout))
-		_http.Handle("/metrics", promhttp.Handler())
+		pipes = append(pipes, httpx.NewMetricsPipe(httpTimeout))
+		http.Handle("/metrics", promhttp.Handler())
 		go func() {
-			log.Fatal(_http.ListenAndServe(promAddr, nil))
+			log.Fatal(http.ListenAndServe(promAddr, nil))
 		}()
 	}
 
@@ -172,14 +163,14 @@ func recordTCP(listener *capture.Listener, factory tcp.BidirectionalStreamFactor
 	}
 }
 
-func newStreamFactoryHTTP(ctx context.Context, sess *session.Session, pipes []*output.Pipe) *http.StreamFactory {
+func newStreamFactoryHTTP(ctx context.Context, sess *session.Session, pipes []*output.Pipe) *httpx.StreamFactory {
 	var (
-		m   *http.Middleware
+		m   *httpx.Middleware
 		err error
 	)
 
 	if middleware != "" {
-		m, err = http.NewMiddleware(ctx, middleware, os.Stderr)
+		m, err = httpx.NewMiddleware(ctx, middleware, os.Stderr)
 		if err != nil {
 			log.Fatalf("failed to initialize middleware: %v", err)
 		}
@@ -191,5 +182,5 @@ func newStreamFactoryHTTP(ctx context.Context, sess *session.Session, pipes []*o
 		}()
 	}
 
-	return http.NewStreamFactory(m, sess, pipes)
+	return httpx.NewStreamFactory(m, sess, pipes)
 }

@@ -1,10 +1,11 @@
-package http
+package httpx
 
 import (
 	"context"
-	"github.com/prometheus/client_golang/prometheus"
 	"testing"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"gotest.tools/v3/assert"
@@ -14,9 +15,9 @@ var refTime = time.Date(2020, 10, 12, 12, 0, 0, 0, time.UTC)
 
 func TestMetrics(t *testing.T) {
 	cases := []struct {
-		desc string
+		desc     string
 		messages []Message
-		latency float64
+		latency  float64
 		timeouts float64
 	}{
 		{
@@ -24,18 +25,18 @@ func TestMetrics(t *testing.T) {
 			messages: []Message{
 				&Request{
 					ConnectionID: "111",
-					ExchangeID: 0,
-					Created: refTime,
-					Method: "POST",
+					ExchangeID:   0,
+					Created:      refTime,
+					Method:       "POST",
 				},
 				&Response{
 					ConnectionID: "111",
-					ExchangeID: 0,
-					Created: refTime.Add(500 * time.Millisecond),
-					StatusCode: 200,
+					ExchangeID:   0,
+					Created:      refTime.Add(500 * time.Millisecond),
+					StatusCode:   200,
 				},
 			},
-			latency: 0.5,
+			latency:  0.5,
 			timeouts: 0,
 		},
 		{
@@ -43,13 +44,13 @@ func TestMetrics(t *testing.T) {
 			messages: []Message{
 				&Request{
 					ConnectionID: "222",
-					ExchangeID: 1,
-					Created: refTime.Add(750 * time.Millisecond),
-					Method: "GET",
-					Response: nil,
+					ExchangeID:   1,
+					Created:      refTime.Add(750 * time.Millisecond),
+					Method:       "GET",
+					Response:     nil,
 				},
 			},
-			latency: 0,
+			latency:  0,
 			timeouts: 1,
 		},
 		{
@@ -57,32 +58,32 @@ func TestMetrics(t *testing.T) {
 			messages: []Message{
 				&Request{
 					ConnectionID: "111",
-					ExchangeID: 0,
-					Created: refTime,
-					Method: "POST",
+					ExchangeID:   0,
+					Created:      refTime,
+					Method:       "POST",
 				},
 				&Response{
 					ConnectionID: "111",
-					ExchangeID: 0,
-					Created: refTime.Add(500 * time.Millisecond),
-					StatusCode: 200,
+					ExchangeID:   0,
+					Created:      refTime.Add(500 * time.Millisecond),
+					StatusCode:   200,
 				},
 				&Request{
 					ConnectionID: "222",
-					ExchangeID: 1,
-					Created: refTime.Add(750 * time.Millisecond),
-					Method: "GET",
-					Response: nil,
+					ExchangeID:   1,
+					Created:      refTime.Add(750 * time.Millisecond),
+					Method:       "GET",
+					Response:     nil,
 				},
 			},
-			latency: 0.5,
+			latency:  0.5,
 			timeouts: 1,
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			//Short correlator time so we can actually get some timeouts.
-			met := NewMetrics(50*time.Millisecond)
+			met := NewMetrics(50 * time.Millisecond)
 			ctx, cancel := context.WithCancel(context.Background())
 
 			go met.Init(ctx, nil)
@@ -99,7 +100,7 @@ func TestMetrics(t *testing.T) {
 
 			latencyMetric := met.latency.With(prometheus.Labels{
 				"method": "POST",
-				"code": "200",
+				"code":   "200",
 			})
 
 			timeoutMetric := met.timeouts.With(prometheus.Labels{
@@ -114,4 +115,3 @@ func TestMetrics(t *testing.T) {
 		})
 	}
 }
-

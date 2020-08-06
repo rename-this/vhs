@@ -1,10 +1,10 @@
-package http
+package httpx
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
-	_http "net/http"
+	"net/http"
 	"net/url"
 	"sync"
 	"testing"
@@ -38,7 +38,7 @@ func TestHAR(t *testing.T) {
 					ConnectionID: "111",
 					ExchangeID:   0,
 					Body:         "0",
-					Header: _http.Header{
+					Header: http.Header{
 						"a": []string{"a"},
 					},
 					URL: newURL("http://example.org"),
@@ -46,7 +46,7 @@ func TestHAR(t *testing.T) {
 				&Response{
 					ConnectionID: "111",
 					ExchangeID:   0,
-					StatusCode:   _http.StatusOK,
+					StatusCode:   http.StatusOK,
 				},
 			},
 			out: &har{
@@ -64,7 +64,7 @@ func TestHAR(t *testing.T) {
 								Headers:  []harNVP{{Name: "a", Value: "a"}},
 								BodySize: 1,
 							},
-							Response: harResponse{Status: 200},
+							Response: harResponse{Status: http.StatusOK},
 						},
 					},
 				},

@@ -1,10 +1,10 @@
-package http
+package httpx
 
 import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
-	_http "net/http"
+	"net/http"
 	"time"
 
 	"github.com/gramLabs/vhs/session"
@@ -23,13 +23,13 @@ type Response struct {
 	Proto            string           `json:"proto,omitempty"`
 	ProtoMajor       int              `json:"proto_major,omitempty"`
 	ProtoMinor       int              `json:"proto_minor,omitempty"`
-	Header           _http.Header     `json:"header,omitempty"`
+	Header           http.Header      `json:"header,omitempty"`
 	Body             string           `json:"body,omitempty"`
 	ContentLength    int64            `json:"content_length,omitempty"`
 	TransferEncoding []string         `json:"transfer_encoding,omitempty"`
 	Close            bool             `json:"close,omitempty"`
 	Uncompressed     bool             `json:"uncompressed,omitempty"`
-	Trailer          _http.Header     `json:"trailer,omitempty"`
+	Trailer          http.Header      `json:"trailer,omitempty"`
 	Session          *session.Session `json:"session,omitempty"`
 }
 
@@ -47,7 +47,7 @@ func (r *Response) SetSession(sess *session.Session) { r.Session = sess }
 
 // NewResponse creates a new Response.
 func NewResponse(b *bufio.Reader, connectionID string, exchangeID int64) (*Response, error) {
-	res, err := _http.ReadResponse(b, nil)
+	res, err := http.ReadResponse(b, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
