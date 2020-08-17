@@ -1,12 +1,12 @@
 package capture
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"sync"
 	"time"
 
+	"github.com/go-errors/errors"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 )
@@ -69,11 +69,11 @@ func (l *Listener) listenAll(fn listenFn) error {
 func (l *Listener) listen(i pcap.Interface) error {
 	handle, err := l.newActiveHandler(i.Name)
 	if err != nil {
-		return fmt.Errorf("failed to get handle: %w", err)
+		return errors.Errorf("failed to get handle: %w", err)
 	}
 
 	if err := handle.SetBPFFilter(filter(l.Capture, i)); err != nil {
-		return fmt.Errorf("failed to set filter: %w", err)
+		return errors.Errorf("failed to set filter: %w", err)
 	}
 
 	l.handleMu.Lock()
@@ -106,7 +106,7 @@ func (l *Listener) readPackets(dataSource gopacket.PacketDataSource, decoder gop
 func (l *Listener) newActiveHandler(name string) (*pcap.Handle, error) {
 	inactive, err := pcap.NewInactiveHandle(name)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create inactive handle: %w", err)
+		return nil, errors.Errorf("failed to create inactive handle: %w", err)
 	}
 
 	defer inactive.CleanUp()
@@ -120,7 +120,7 @@ func (l *Listener) newActiveHandler(name string) (*pcap.Handle, error) {
 
 	handle, err := inactive.Activate()
 	if err != nil {
-		return nil, fmt.Errorf("failed to activate handle: %w", err)
+		return nil, errors.Errorf("failed to activate handle: %w", err)
 	}
 
 	return handle, nil

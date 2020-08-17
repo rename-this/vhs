@@ -1,11 +1,11 @@
 package httpx
 
 import (
-	"context"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/gramLabs/vhs/session"
 	"gotest.tools/assert"
 )
 
@@ -29,7 +29,7 @@ func TestCorrelator(t *testing.T) {
 		}
 	}()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, _, _ := session.NewContexts(nil)
 
 	go m.Start(ctx)
 
@@ -41,7 +41,7 @@ func TestCorrelator(t *testing.T) {
 	m.Messages <- &Request{ConnectionID: "2", ExchangeID: 0}
 	time.Sleep(timeout + 100*time.Millisecond)
 
-	cancel()
+	ctx.Cancel()
 
 	exchangeMu.RLock()
 	assert.Equal(t, 2, exchangeCount)

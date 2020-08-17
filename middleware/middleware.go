@@ -1,19 +1,20 @@
-package mware
+package middleware
 
 import (
 	"bufio"
-	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os/exec"
 	"sync"
+
+	"github.com/go-errors/errors"
+	"github.com/gramLabs/vhs/session"
 )
 
-// M represents an open executable where data can
+// Middleware represents an open executable where data can
 // be written to its stdin and output is read from the executable's
 // stdout, It is designed to be wrapped by protocol-specific middleware.
-type M struct {
+type Middleware struct {
 	mu      sync.Mutex
 	cmd     *exec.Cmd
 	stdin   io.Writer
@@ -22,25 +23,25 @@ type M struct {
 }
 
 // New creates a new Mware.
-func New(ctx context.Context, command string, stderr io.Writer) (*M, error) {
+func New(ctx *session.Context, command string, stderr io.Writer) (*Middleware, error) {
 	if command == "" {
-		return &M{}, nil
+		return nil, nil
 	}
 
-	cmd := exec.CommandContext(ctx, command)
+	cmd := exec.CommandContext(ctx.StdContext, command)
 	cmd.Stderr = stderr
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get stdin pipe: %w", err)
+		return nil, errors.Errorf("failed to get stdin pipe: %w", err)
 	}
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get stdout pipe: %w", err)
+		return nil, errors.Errorf("failed to get stdout pipe: %w", err)
 	}
 
-	return &M{
+	return &Middleware{
 		cmd:    cmd,
 		stdin:  stdin,
 		stdout: stdout,
@@ -48,23 +49,23 @@ func New(ctx context.Context, command string, stderr io.Writer) (*M, error) {
 }
 
 // Start starts the middleware command and leaves it open for execution.
-func (m *M) Start() error {
+func (m *Middleware) Start() error {
 	if err := m.cmd.Run(); err != nil {
-		return fmt.Errorf("failed to run command: %w", err)
+		return errors.Errorf("failed to run command: %w", err)
 	}
 
 	return nil
 }
 
 // Close closes the middleware.
-func (m *M) Close() {
+func (m *Middleware) Close() {
 	m.stdout.Close()
 }
 
 // Exec executes the middleware for n. The header bytes are written
 // directly before the payload (which is JSON serialized) separated
 // by a single space.
-func (m *M) Exec(header []byte, n interface{}) (interface{}, error) {
+func (m *Middleware) Exec(header []byte, n interface{}) (interface{}, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -79,17 +80,17 @@ func (m *M) Exec(header []byte, n interface{}) (interface{}, error) {
 
 	err := json.NewEncoder(m.stdin).Encode(n)
 	if err != nil {
-		return nil, fmt.Errorf("failed to encode: %w", err)
+		return nil, errors.Errorf("failed to encode: %w", err)
 	}
 
 	if m.scanner.Scan() {
 		if err := json.Unmarshal(m.scanner.Bytes(), n); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal: %w", err)
+			return nil, errors.Errorf("failed to unmarshal: %w", err)
 		}
 		return n, nil
 	}
 	if err := m.scanner.Err(); err != nil {
-		return nil, fmt.Errorf("failed to scan middleware stdout: %w", err)
+		return nil, errors.Errorf("failed to scan middleware stdout: %w", err)
 	}
 
 	return nil, nil

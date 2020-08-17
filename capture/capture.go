@@ -1,9 +1,9 @@
 package capture
 
 import (
-	"fmt"
 	"net"
 
+	"github.com/go-errors/errors"
 	"github.com/google/gopacket/pcap"
 )
 
@@ -39,26 +39,27 @@ type Capture struct {
 type getAllInterfacesFn func() ([]pcap.Interface, error)
 
 // NewCapture creates a new capture.
-func NewCapture(addr string) (*Capture, error) {
+func NewCapture(addr string, response bool) (*Capture, error) {
 	host, port := splitHostPort(addr)
-	return newCapture(host, port, pcap.FindAllDevs)
+	return newCapture(host, port, response, pcap.FindAllDevs)
 }
 
-func newCapture(host string, port string, fn getAllInterfacesFn) (*Capture, error) {
+func newCapture(host string, port string, response bool, fn getAllInterfacesFn) (*Capture, error) {
 	interfaces, err := fn()
 	if err != nil {
-		return nil, fmt.Errorf("failed to find interfaces: %w", err)
+		return nil, errors.Errorf("failed to find interfaces: %w", err)
 	}
 
 	deviceType, err := getCaptureType(host)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get device type: %w", err)
+		return nil, errors.Errorf("failed to get device type: %w", err)
 	}
 
 	return &Capture{
 		Host:       host,
 		Port:       port,
 		DeviceType: deviceType,
+		Response:   response,
 		Interfaces: selectInterfaces(host, deviceType, interfaces),
 	}, nil
 }
@@ -101,7 +102,7 @@ func getCaptureType(host string) (Type, error) {
 		return CaptureIP, nil
 	}
 
-	return CaptureInvalid, fmt.Errorf("invalid address: %s", host)
+	return CaptureInvalid, errors.Errorf("invalid address: %s", host)
 }
 
 func splitHostPort(addr string) (string, string) {

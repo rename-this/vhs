@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gramLabs/vhs/session"
 	"gotest.tools/v3/assert"
 )
 
@@ -76,7 +77,9 @@ func TestHAR(t *testing.T) {
 			h := NewHAR(30 * time.Second)
 
 			var buf safeBuffer
-			ctx, cancel := context.WithCancel(context.Background())
+			stdCtx, cancel := context.WithCancel(context.Background())
+			ctx := &session.Context{StdContext: stdCtx}
+
 			go h.Init(ctx, &buf)
 
 			for _, m := range c.messages {

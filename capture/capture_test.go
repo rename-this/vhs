@@ -67,7 +67,7 @@ func TestNewCapture(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			capture, err := newCapture(c.addr, c.port, c.fn)
+			capture, err := newCapture(c.addr, c.port, false, c.fn)
 			if err != nil {
 				assert.ErrorContains(t, err, c.errContains)
 				return

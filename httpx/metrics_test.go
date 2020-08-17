@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gramLabs/vhs/session"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -84,7 +85,8 @@ func TestMetrics(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			//Short correlator time so we can actually get some timeouts.
 			met := NewMetrics(50 * time.Millisecond)
-			ctx, cancel := context.WithCancel(context.Background())
+			stdCtx, cancel := context.WithCancel(context.Background())
+			ctx := &session.Context{StdContext: stdCtx}
 
 			go met.Init(ctx, nil)
 

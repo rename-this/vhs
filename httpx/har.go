@@ -1,43 +1,38 @@
 package httpx
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"time"
 
-	"github.com/gramLabs/vhs/output/format"
+	"github.com/go-errors/errors"
+	"github.com/gramLabs/vhs/format"
+	"github.com/gramLabs/vhs/session"
 )
 
-var _ format.Format = &HAR{}
+var _ format.Output = &HAR{}
 
 // HAR is an HTTP Archive.
 // https://w3c.github.io/web-performance/specs/HAR/Overview.html
 // http://www.softwareishard.com/blog/har-12-spec/
 type HAR struct {
-	c    *Correlator
-	in   chan interface{}
-	errs chan error
+	c  *Correlator
+	in chan interface{}
 }
 
 // NewHAR creates a mew HAR format.
-func NewHAR(reqTimeout time.Duration) format.Format {
+func NewHAR(reqTimeout time.Duration) format.Output {
 	return &HAR{
-		c:    NewCorrelator(reqTimeout),
-		in:   make(chan interface{}),
-		errs: make(chan error),
+		c:  NewCorrelator(reqTimeout),
+		in: make(chan interface{}),
 	}
 }
 
 // In returns the input channel.
 func (h *HAR) In() chan<- interface{} { return h.in }
 
-// Errors returns the errors channel.
-func (h *HAR) Errors() <-chan error { return h.errs }
-
 // Init initializes the HAR sink.
-func (h *HAR) Init(ctx context.Context, w io.Writer) {
+func (h *HAR) Init(ctx *session.Context, w io.Writer) {
 	go h.c.Start(ctx)
 
 	hh := &har{
@@ -59,9 +54,9 @@ func (h *HAR) Init(ctx context.Context, w io.Writer) {
 			}
 		case r := <-h.c.Exchanges:
 			h.addRequest(hh, r)
-		case <-ctx.Done():
+		case <-ctx.StdContext.Done():
 			if err := json.NewEncoder(w).Encode(hh); err != nil {
-				h.errs <- fmt.Errorf("failed to encode to JSON: %w", err)
+				ctx.Errors <- errors.Errorf("failed to encode to JSON: %w", err)
 			}
 			return
 		}

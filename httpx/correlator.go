@@ -1,11 +1,11 @@
 package httpx
 
 import (
-	"context"
 	"fmt"
 	"time"
 
 	"github.com/gramLabs/vhs/internal/prunemap"
+	"github.com/gramLabs/vhs/session"
 )
 
 // Correlator aggregates HTTP requests and responses and
@@ -30,7 +30,7 @@ func NewCorrelator(timeout time.Duration) *Correlator {
 }
 
 // Start starts the correlator.
-func (c *Correlator) Start(ctx context.Context) {
+func (c *Correlator) Start(ctx *session.Context) {
 	for {
 		select {
 		case msg := <-c.Messages:
@@ -49,7 +49,7 @@ func (c *Correlator) Start(ctx context.Context) {
 			if req, ok := i.(*Request); ok {
 				c.Exchanges <- req
 			}
-		case <-ctx.Done():
+		case <-ctx.StdContext.Done():
 			return
 		}
 	}

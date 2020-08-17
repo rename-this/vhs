@@ -1,22 +1,22 @@
 package httpx
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"time"
 
+	"github.com/gramLabs/vhs/format"
 	"github.com/gramLabs/vhs/ioutilx"
-	"github.com/gramLabs/vhs/output"
-	"github.com/gramLabs/vhs/output/format"
+	"github.com/gramLabs/vhs/pipe"
+	"github.com/gramLabs/vhs/session"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 // Ensure Metrics conforms to Format interface.
-var _ format.Format = &Metrics{}
+var _ format.Output = &Metrics{}
 
 // Metrics is a format that calculates HTTP metrics for Prometheus monitoring
 // Note that this format does not modify data passing through it, it merely extracts metrics.
@@ -26,13 +26,11 @@ type Metrics struct {
 	latency  *prometheus.GaugeVec
 	timeouts *prometheus.CounterVec
 	in       chan interface{}
-	out      chan io.Reader
-	errs     chan error
 }
 
 // NewMetricsPipe creates a new *output.Pipe for calculating HTTP metrics
-func NewMetricsPipe(reqTimeout time.Duration) *output.Pipe {
-	return output.NewPipe(NewMetrics(reqTimeout), ioutilx.NopWriteCloser(ioutil.Discard))
+func NewMetricsPipe(reqTimeout time.Duration) *pipe.Output {
+	return pipe.NewOutput(NewMetrics(reqTimeout), ioutilx.NopWriteCloser(ioutil.Discard))
 }
 
 // NewMetrics creates a new Metrics format.
@@ -51,20 +49,15 @@ func NewMetrics(reqTimeout time.Duration) *Metrics {
 			Name:      "timeouts_total",
 			Help:      "Total count of timed-out http exchanges captured by VHS.",
 		}, []string{"method"}),
-		in:   make(chan interface{}),
-		out:  make(chan io.Reader),
-		errs: make(chan error),
+		in: make(chan interface{}),
 	}
 }
 
 // In returns the input channel.
 func (m *Metrics) In() chan<- interface{} { return m.in }
 
-// Errors returns the errors channel.
-func (m *Metrics) Errors() <-chan error { return m.errs }
-
 // Init initializes the metrics format and registers the metrics with Prometheus
-func (m *Metrics) Init(ctx context.Context, _ io.Writer) {
+func (m *Metrics) Init(ctx *session.Context, _ io.Writer) {
 	go m.c.Start(ctx)
 
 	for {
@@ -76,7 +69,7 @@ func (m *Metrics) Init(ctx context.Context, _ io.Writer) {
 			}
 		case r := <-m.c.Exchanges:
 			m.calcMetrics(r)
-		case <-ctx.Done():
+		case <-ctx.StdContext.Done():
 			// (ztreinhart): return something downstream?
 			return
 		}

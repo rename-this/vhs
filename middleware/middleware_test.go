@@ -1,4 +1,4 @@
-package mware
+package middleware
 
 import (
 	"bytes"
@@ -15,7 +15,7 @@ type leopard struct {
 func TestExec(t *testing.T) {
 	cases := []struct {
 		desc        string
-		m           *M
+		m           *Middleware
 		header      []byte
 		num         int
 		l           *leopard
@@ -24,13 +24,13 @@ func TestExec(t *testing.T) {
 	}{
 		{
 			desc: "no exec path",
-			m:    &M{},
+			m:    &Middleware{},
 			l:    &leopard{NumSpots: 111},
 			out:  []*leopard{{NumSpots: 111}},
 		},
 		{
 			desc: "change host",
-			m: &M{
+			m: &Middleware{
 				stdin:  ioutil.Discard,
 				stdout: ioutil.NopCloser(bytes.NewBufferString("{\"NumSpots\":222}\n{\"NumSpots\":333}\n")),
 			},
@@ -43,7 +43,7 @@ func TestExec(t *testing.T) {
 		},
 		{
 			desc: "change host with header",
-			m: &M{
+			m: &Middleware{
 				stdin:  ioutil.Discard,
 				stdout: ioutil.NopCloser(bytes.NewBufferString("{\"NumSpots\":222}\n{\"NumSpots\":333}\n")),
 			},
@@ -57,7 +57,7 @@ func TestExec(t *testing.T) {
 		},
 		{
 			desc: "bad JSON",
-			m: &M{
+			m: &Middleware{
 				stdin:  ioutil.Discard,
 				stdout: ioutil.NopCloser(bytes.NewBufferString("{\"NumSpots\":"))},
 			num:         1,
