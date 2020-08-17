@@ -16,17 +16,14 @@ import (
 func NewSource() source.Source {
 	return &tcpSource{
 		streams: make(chan io.ReadCloser),
-		session: session.New(),
 	}
 }
 
 type tcpSource struct {
 	streams chan io.ReadCloser
-	session *session.Session
 }
 
 func (s *tcpSource) Streams() <-chan io.ReadCloser { return s.streams }
-func (s *tcpSource) Session() *session.Session     { return s.session }
 
 func (s *tcpSource) Init(ctx *session.Context) {
 	cap, err := capture.NewCapture(ctx.Config.Addr, ctx.Config.CaptureResponse)

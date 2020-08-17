@@ -10,6 +10,5 @@ import (
 // by an input pipe.
 type Source interface {
 	Init(*session.Context)
-	Session() *session.Session
 	Streams() <-chan io.ReadCloser
 }
