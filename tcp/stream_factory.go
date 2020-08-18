@@ -30,11 +30,11 @@ type reader struct {
 
 func (r *reader) Reassembled(reassembly []tcpassembly.Reassembly) {
 	r.rs.Reassembled(reassembly)
-	r.s.conn.complete = true
 }
 
 func (r *reader) ReassemblyComplete() {
 	r.rs.ReassemblyComplete()
+	r.s.conn.complete = true
 }
 
 type stream struct {
