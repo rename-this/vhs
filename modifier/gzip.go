@@ -5,26 +5,28 @@ import (
 	"io"
 
 	"github.com/go-errors/errors"
+	"github.com/gramLabs/vhs/session"
 )
 
-var (
-	_ WriteCloser = &GzipWriteCloser{}
-	_ ReadCloser  = &GzipReadCloser{}
-)
+// NewGzipWriteCloser creates a new gzip write closer.
+func NewGzipWriteCloser(_ *session.Context) (WriteCloser, error) {
+	return &gzipWriteCloser{}, nil
+}
 
-// GzipWriteCloser is an outout modifier that compresses.
-type GzipWriteCloser struct{}
+type gzipWriteCloser struct{}
 
-// Wrap wraps a writer so it can gzip its contents.
-func (*GzipWriteCloser) Wrap(w io.WriteCloser) (io.WriteCloser, error) {
+func (*gzipWriteCloser) Wrap(w io.WriteCloser) (io.WriteCloser, error) {
 	return gzip.NewWriter(w), nil
 }
 
-// GzipReadCloser is an input modifier that decompresses.
-type GzipReadCloser struct{}
+// NewGzipReadCloser creates a new gzip read closer.
+func NewGzipReadCloser(_ *session.Context) (ReadCloser, error) {
+	return &gzipReadCloser{}, nil
+}
 
-// Wrap wraps a reader so it can decompress its contents.
-func (*GzipReadCloser) Wrap(r io.ReadCloser) (io.ReadCloser, error) {
+type gzipReadCloser struct{}
+
+func (*gzipReadCloser) Wrap(r io.ReadCloser) (io.ReadCloser, error) {
 	gr, err := gzip.NewReader(r)
 	if err != nil {
 		return nil, errors.Errorf("failed to create gzip reader: %w", err)

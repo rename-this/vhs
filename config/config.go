@@ -12,8 +12,11 @@ type Config struct {
 	CaptureResponse bool
 	Middleware      string
 	TCPTimeout      time.Duration
+	HTTPTimeout     time.Duration
 
 	PrometheusAddr string
 
 	GCSBucketName string
+
+	BufferOutput bool
 }

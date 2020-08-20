@@ -9,19 +9,19 @@ import (
 )
 
 // NewJSON creates a JSON output.
-func NewJSON() Output {
+func NewJSON(_ *session.Context) (Output, error) {
 	return &jsonFormat{
 		in:       make(chan interface{}),
 		buffered: false,
-	}
+	}, nil
 }
 
 // NewJSONBuffered creates a buffered JSON formatter.
-func NewJSONBuffered() Output {
+func NewJSONBuffered(_ *session.Context) (Output, error) {
 	return &jsonFormat{
 		in:       make(chan interface{}),
 		buffered: true,
-	}
+	}, nil
 }
 
 type jsonFormat struct {

@@ -18,11 +18,11 @@ type Input struct {
 }
 
 // NewInput creates a new input pipe.
-func NewInput(f format.Input, s source.Source, ms ...modifier.ReadCloser) *Input {
+func NewInput(f format.Input, s source.Source, rcs modifier.ReadClosers) *Input {
 	return &Input{
 		Format:    f,
 		Source:    s,
-		Modifiers: ms,
+		Modifiers: rcs,
 	}
 }
 

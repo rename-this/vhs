@@ -16,16 +16,14 @@ var _ format.Output = &HAR{}
 // https://w3c.github.io/web-performance/specs/HAR/Overview.html
 // http://www.softwareishard.com/blog/har-12-spec/
 type HAR struct {
-	c  *Correlator
 	in chan interface{}
 }
 
 // NewHAR creates a mew HAR format.
-func NewHAR(reqTimeout time.Duration) format.Output {
+func NewHAR(_ *session.Context) (format.Output, error) {
 	return &HAR{
-		c:  NewCorrelator(reqTimeout),
 		in: make(chan interface{}),
-	}
+	}, nil
 }
 
 // In returns the input channel.
@@ -33,7 +31,8 @@ func (h *HAR) In() chan<- interface{} { return h.in }
 
 // Init initializes the HAR sink.
 func (h *HAR) Init(ctx *session.Context, w io.Writer) {
-	go h.c.Start(ctx)
+	c := NewCorrelator(ctx.Config.TCPTimeout)
+	go c.Start(ctx)
 
 	hh := &har{
 		Log: harLog{
@@ -50,9 +49,9 @@ func (h *HAR) Init(ctx *session.Context, w io.Writer) {
 		case n := <-h.in:
 			switch m := n.(type) {
 			case Message:
-				h.c.Messages <- m
+				c.Messages <- m
 			}
-		case r := <-h.c.Exchanges:
+		case r := <-c.Exchanges:
 			h.addRequest(hh, r)
 		case <-ctx.StdContext.Done():
 			if err := json.NewEncoder(w).Encode(hh); err != nil {

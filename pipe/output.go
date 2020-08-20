@@ -19,11 +19,11 @@ type Output struct {
 }
 
 // NewOutput creates a pipe connecting a format and a sink.
-func NewOutput(f format.Output, s sink.Sink, ms ...modifier.WriteCloser) *Output {
+func NewOutput(f format.Output, s sink.Sink, wcs modifier.WriteClosers) *Output {
 	return &Output{
 		Format:    f,
 		Sink:      s,
-		Modifiers: ms,
+		Modifiers: wcs,
 	}
 }
 

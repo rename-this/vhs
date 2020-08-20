@@ -14,10 +14,10 @@ import (
 )
 
 // NewInputFormat creates an HTTP input formatter.
-func NewInputFormat() format.Input {
+func NewInputFormat(_ *session.Context) (format.Input, error) {
 	return &inputFormat{
 		out: make(chan interface{}),
-	}
+	}, nil
 }
 
 type inputFormat struct {

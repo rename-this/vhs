@@ -23,7 +23,7 @@ $ cd testdata && ./echo.bash
 In the other, run the following command to build `vhs`, and run it against `0.0.0.0:1111` using a dummy middleware that appends `" [[hijacked <HTTP_MESSAGE_TYPE>]]"` to the end of the request or response body (note this command discards `stderr` because it can be noisy at times):
 
 ```
-$ go build ./cmd/vhs && ./vhs record --capture-response --address 0.0.0.0:1111 --middleware ./testdata/http_middleware.bash | jq -R "fromjson | .body" 2> /dev/null
+$ go build ./cmd/vhs && ./vhs --input "tcp|http" --output "json|stdout" --capture-response --address 0.0.0.0:1111 --middleware ./testdata/http_middleware.bash | jq -R "fromjson | .body" 2> /dev/null
 ```
 
 Sample output:

@@ -13,10 +13,10 @@ import (
 )
 
 // NewSource creates a new TCP source.
-func NewSource() source.Source {
+func NewSource(_ *session.Context) (source.Source, error) {
 	return &tcpSource{
 		streams: make(chan io.ReadCloser),
-	}
+	}, nil
 }
 
 type tcpSource struct {

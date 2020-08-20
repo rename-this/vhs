@@ -5,12 +5,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gramLabs/vhs/config"
+	"github.com/gramLabs/vhs/modifier"
 	"github.com/gramLabs/vhs/session"
 	"github.com/gramLabs/vhs/testhelper"
 	"gotest.tools/assert"
 )
 
 func TestOutput(t *testing.T) {
+	ctx, _, _ := session.NewContexts(&config.Config{}, nil)
+	ctxBuffered, _, _ := session.NewContexts(&config.Config{BufferOutput: true}, nil)
+
 	cases := []struct {
 		desc string
 		o    *Output
@@ -19,19 +24,22 @@ func TestOutput(t *testing.T) {
 	}{
 		{
 			desc: "unbuffered",
-			o:    NewOutput(testhelper.NewFormat(false), &testhelper.Sink{}),
+			o:    NewOutput(testhelper.NewOutputFormatNoErr(ctx), &testhelper.Sink{}, nil),
 			data: []interface{}{1, 2, 3},
 			out:  `123`,
 		},
 		{
 			desc: "buffered",
-			o:    NewOutput(testhelper.NewFormat(true), &testhelper.Sink{}),
+			o:    NewOutput(testhelper.NewOutputFormatNoErr(ctxBuffered), &testhelper.Sink{}, nil),
 			data: []interface{}{1, 2, 3},
 			out:  `6`,
 		},
 		{
 			desc: "modifiers",
-			o:    NewOutput(testhelper.NewFormat(false), &testhelper.Sink{}, &testhelper.DoubleOutput{}, &testhelper.DoubleOutput{}),
+			o: NewOutput(testhelper.NewOutputFormatNoErr(ctx), &testhelper.Sink{}, modifier.WriteClosers{
+				&testhelper.DoubleOutput{},
+				&testhelper.DoubleOutput{},
+			}),
 			data: []interface{}{1, 2, 3},
 			out:  "111122223333",
 		},

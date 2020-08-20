@@ -2,7 +2,6 @@ package httpx
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -10,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gramLabs/vhs/config"
 	"github.com/gramLabs/vhs/session"
 	"gotest.tools/v3/assert"
 )
@@ -74,11 +74,14 @@ func TestHAR(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			h := NewHAR(30 * time.Second)
+			ctx, _, _ := session.NewContexts(&config.Config{
+				TCPTimeout: 30 * time.Second,
+			}, nil)
+
+			h, err := NewHAR(ctx)
+			assert.NilError(t, err)
 
 			var buf safeBuffer
-			stdCtx, cancel := context.WithCancel(context.Background())
-			ctx := &session.Context{StdContext: stdCtx}
 
 			go h.Init(ctx, &buf)
 
@@ -87,7 +90,7 @@ func TestHAR(t *testing.T) {
 				time.Sleep(100 * time.Millisecond)
 			}
 
-			cancel()
+			ctx.Cancel()
 
 			time.Sleep(100 * time.Millisecond)
 

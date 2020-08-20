@@ -30,7 +30,7 @@ type Metrics struct {
 
 // NewMetricsPipe creates a new *output.Pipe for calculating HTTP metrics
 func NewMetricsPipe(reqTimeout time.Duration) *pipe.Output {
-	return pipe.NewOutput(NewMetrics(reqTimeout), ioutilx.NopWriteCloser(ioutil.Discard))
+	return pipe.NewOutput(NewMetrics(reqTimeout), ioutilx.NopWriteCloser(ioutil.Discard), nil)
 }
 
 // NewMetrics creates a new Metrics format.
