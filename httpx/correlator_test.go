@@ -29,7 +29,8 @@ func TestCorrelator(t *testing.T) {
 		}
 	}()
 
-	ctx, _, _ := session.NewContexts(nil)
+	errs := make(chan error)
+	ctx, _, _ := session.NewContexts(nil, errs)
 
 	go m.Start(ctx)
 

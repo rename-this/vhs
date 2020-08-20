@@ -8,9 +8,8 @@ import (
 )
 
 // NewContexts creates a new set of contexts.
-func NewContexts(cfg *config.Config) (*Context, *Context, *Context) {
+func NewContexts(cfg *config.Config, errs chan error) (*Context, *Context, *Context) {
 	var (
-		errs      = make(chan error)
 		sessionID = uuid.New().String()
 
 		stdCtx1, cancel1 = context.WithCancel(context.Background())

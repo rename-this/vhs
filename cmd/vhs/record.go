@@ -34,11 +34,12 @@ var recordCmd = &cobra.Command{
 
 func record(cmd *cobra.Command, args []string) {
 	var (
-		ctx, inputCtx, outputCtx = session.NewContexts(cfg)
+		errs                     = make(chan error)
+		ctx, inputCtx, outputCtx = session.NewContexts(cfg, errs)
 	)
 
 	go func() {
-		for err := range ctx.Errors {
+		for err := range errs {
 			if err != nil {
 				log.Printf("ERR: %v\n", (err.(*errors.Error).ErrorStack()))
 			}

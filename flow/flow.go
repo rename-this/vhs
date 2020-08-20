@@ -32,14 +32,13 @@ func (f *Flow) Run(ctx, inputCtx, outputCtx *session.Context, m *middleware.Midd
 		f.Outputs.Close(outputCtx)
 	}()
 
-	t := time.NewTicker(inputCtx.Config.FlowDuration)
 	for {
 		select {
 		case n := <-f.Input.Format.Out():
 			f.Outputs.Write(n)
 		case <-ctx.StdContext.Done():
 			return
-		case <-t.C:
+		case <-time.After(inputCtx.Config.FlowDuration):
 			return
 		}
 	}
