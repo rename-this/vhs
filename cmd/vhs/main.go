@@ -48,12 +48,12 @@ var (
 			},
 		},
 
-		ReadClosers: map[string]flow.ReadCloserCtor{
-			"gzip": modifier.NewGzipReadCloser,
+		InputModifiers: map[string]flow.InputModifierCtor{
+			"gzip": modifier.NewGzipInput,
 		},
 
-		WriteClosers: map[string]flow.WriteCloserCtor{
-			"gzip": modifier.NewGzipWriteCloser,
+		OutputModifiers: map[string]flow.OutputModifierCtor{
+			"gzip": modifier.NewGzipOutput,
 		},
 	}
 

@@ -25,6 +25,8 @@ type inputFormat struct {
 }
 
 func (i *inputFormat) Init(ctx *session.Context, m *middleware.Middleware, r io.ReadCloser) error {
+	defer r.Close()
+
 	var (
 		resBuf bytes.Buffer
 		tee    = io.TeeReader(r, &resBuf)

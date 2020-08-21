@@ -13,16 +13,16 @@ import (
 // optional modifiers.
 type Input struct {
 	Source    source.Source
+	Modifiers modifier.Inputs
 	Format    format.Input
-	Modifiers modifier.ReadClosers
 }
 
 // NewInput creates a new input pipe.
-func NewInput(f format.Input, s source.Source, rcs modifier.ReadClosers) *Input {
+func NewInput(s source.Source, mis modifier.Inputs, f format.Input) *Input {
 	return &Input{
-		Format:    f,
 		Source:    s,
-		Modifiers: rcs,
+		Modifiers: mis,
+		Format:    f,
 	}
 }
 

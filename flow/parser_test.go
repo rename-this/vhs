@@ -32,14 +32,14 @@ var (
 			},
 		},
 
-		ReadClosers: map[string]ReadCloserCtor{
-			"dbl": func(_ *session.Context) (modifier.ReadCloser, error) {
+		InputModifiers: map[string]InputModifierCtor{
+			"dbl": func(_ *session.Context) (modifier.Input, error) {
 				return &testhelper.DoubleInput{}, nil
 			},
 		},
 
-		WriteClosers: map[string]WriteCloserCtor{
-			"dbl": func(_ *session.Context) (modifier.WriteCloser, error) {
+		OutputModifiers: map[string]OutputModifierCtor{
+			"dbl": func(_ *session.Context) (modifier.Output, error) {
 				return &testhelper.DoubleOutput{}, nil
 			},
 		},
@@ -76,17 +76,17 @@ func TestParseInput(t *testing.T) {
 		{
 			desc:      "no modifiers",
 			line:      "src|ifmt",
-			inputJSON: `{"Source":{},"Format":{},"Modifiers":null}`,
+			inputJSON: `{"Source":{},"Modifiers":null,"Format":{}}`,
 		},
 		{
 			desc:      "one modifier",
 			line:      "src|dbl|ifmt",
-			inputJSON: `{"Source":{},"Format":{},"Modifiers":[{}]}`,
+			inputJSON: `{"Source":{},"Modifiers":[{}],"Format":{}}`,
 		},
 		{
 			desc:      "many modifier",
 			line:      "src|dbl|dbl|dbl|dbl|ifmt",
-			inputJSON: `{"Source":{},"Format":{},"Modifiers":[{},{},{},{}]}`,
+			inputJSON: `{"Source":{},"Modifiers":[{},{},{},{}],"Format":{}}`,
 		},
 	}
 	for _, c := range cases {
@@ -130,17 +130,17 @@ func TestParseOutput(t *testing.T) {
 		{
 			desc:       "no modifiers",
 			line:       "ofmt|snk",
-			outputJSON: `{"Format":{},"Sink":{},"Modifiers":null}`,
+			outputJSON: `{"Format":{},"Modifiers":null,"Sink":{}}`,
 		},
 		{
 			desc:       "one modifier",
 			line:       "ofmt|dbl|snk",
-			outputJSON: `{"Format":{},"Sink":{},"Modifiers":[{}]}`,
+			outputJSON: `{"Format":{},"Modifiers":[{}],"Sink":{}}`,
 		},
 		{
 			desc:       "many modifier",
 			line:       "ofmt|dbl|dbl|dbl|dbl|snk",
-			outputJSON: `{"Format":{},"Sink":{},"Modifiers":[{},{},{},{}]}`,
+			outputJSON: `{"Format":{},"Modifiers":[{},{},{},{}],"Sink":{}}`,
 		},
 	}
 	for _, c := range cases {

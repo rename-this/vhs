@@ -19,22 +19,30 @@ const (
 )
 
 type (
-	SourceCtor       func(*session.Context) (source.Source, error)
-	InputFormatCtor  func(*session.Context) (format.Input, error)
+	// SourceCtor is a map of string to source constructors.
+	SourceCtor func(*session.Context) (source.Source, error)
+	// InputModifierCtor is a map of string to input modifier constructors.
+	InputModifierCtor func(*session.Context) (modifier.Input, error)
+	// InputFormatCtor is a map of string to input format constructors.
+	InputFormatCtor func(*session.Context) (format.Input, error)
+
+	// OutputFormatCtor is a map of string to output format constructors.
 	OutputFormatCtor func(*session.Context) (format.Output, error)
-	SinkCtor         func(*session.Context) (sink.Sink, error)
-	ReadCloserCtor   func(*session.Context) (modifier.ReadCloser, error)
-	WriteCloserCtor  func(*session.Context) (modifier.WriteCloser, error)
+	// OutputModifierCtor is a map of string to output modifier constructors.
+	OutputModifierCtor func(*session.Context) (modifier.Output, error)
+	// SinkCtor is a map of string to sink constructors.
+	SinkCtor func(*session.Context) (sink.Sink, error)
 )
 
 // Parser parses text into a *flow.Flow
 type Parser struct {
-	Sources       map[string]SourceCtor
-	InputFormats  map[string]InputFormatCtor
-	OutputFormats map[string]OutputFormatCtor
-	Sinks         map[string]SinkCtor
-	ReadClosers   map[string]ReadCloserCtor
-	WriteClosers  map[string]WriteCloserCtor
+	Sources        map[string]SourceCtor
+	InputModifiers map[string]InputModifierCtor
+	InputFormats   map[string]InputFormatCtor
+
+	OutputFormats   map[string]OutputFormatCtor
+	OutputModifiers map[string]OutputModifierCtor
+	Sinks           map[string]SinkCtor
 }
 
 // Parse parses text into a flow.
@@ -73,7 +81,7 @@ func (p *Parser) parseInput(ctx *session.Context, line string) (*pipe.Input, err
 	var (
 		s   source.Source
 		f   format.Input
-		rcs modifier.ReadClosers
+		mis modifier.Inputs
 		err error
 
 		parts = strings.Split(line, Separator)
@@ -100,7 +108,7 @@ func (p *Parser) parseInput(ctx *session.Context, line string) (*pipe.Input, err
 	}
 
 	for _, rcPart := range parts[1 : len(parts)-1] {
-		rcCtor, ok := p.ReadClosers[rcPart]
+		rcCtor, ok := p.InputModifiers[rcPart]
 		if !ok {
 			return nil, errors.Errorf("invalid modifier: %s", fPart)
 		}
@@ -108,10 +116,10 @@ func (p *Parser) parseInput(ctx *session.Context, line string) (*pipe.Input, err
 		if err != nil {
 			return nil, errors.Errorf("failed to create modifier: %v", err)
 		}
-		rcs = append(rcs, rc)
+		mis = append(mis, rc)
 	}
 
-	return pipe.NewInput(f, s, rcs), nil
+	return pipe.NewInput(s, mis, f), nil
 }
 
 // parseOutput parses an output line.
@@ -128,7 +136,7 @@ func (p *Parser) parseOutput(ctx *session.Context, line string) (*pipe.Output, e
 	var (
 		f   format.Output
 		s   sink.Sink
-		wcs modifier.WriteClosers
+		mos modifier.Outputs
 		err error
 
 		parts = strings.Split(line, Separator)
@@ -155,7 +163,7 @@ func (p *Parser) parseOutput(ctx *session.Context, line string) (*pipe.Output, e
 	}
 
 	for _, wcPart := range parts[1 : len(parts)-1] {
-		wcCtor, ok := p.WriteClosers[wcPart]
+		wcCtor, ok := p.OutputModifiers[wcPart]
 		if !ok {
 			return nil, errors.Errorf("invalid modifier: %s", fPart)
 		}
@@ -163,8 +171,8 @@ func (p *Parser) parseOutput(ctx *session.Context, line string) (*pipe.Output, e
 		if err != nil {
 			return nil, errors.Errorf("failed to create modifier: %v", err)
 		}
-		wcs = append(wcs, wc)
+		mos = append(mos, wc)
 	}
 
-	return pipe.NewOutput(f, s, wcs), nil
+	return pipe.NewOutput(f, mos, s), nil
 }

@@ -8,25 +8,25 @@ import (
 	"github.com/gramLabs/vhs/session"
 )
 
-// NewGzipWriteCloser creates a new gzip write closer.
-func NewGzipWriteCloser(_ *session.Context) (WriteCloser, error) {
-	return &gzipWriteCloser{}, nil
+// NewGzipOutput creates a new gzip write closer.
+func NewGzipOutput(_ *session.Context) (Output, error) {
+	return &gzipOutput{}, nil
 }
 
-type gzipWriteCloser struct{}
+type gzipOutput struct{}
 
-func (*gzipWriteCloser) Wrap(w io.WriteCloser) (io.WriteCloser, error) {
+func (*gzipOutput) Wrap(w io.WriteCloser) (io.WriteCloser, error) {
 	return gzip.NewWriter(w), nil
 }
 
-// NewGzipReadCloser creates a new gzip read closer.
-func NewGzipReadCloser(_ *session.Context) (ReadCloser, error) {
-	return &gzipReadCloser{}, nil
+// NewGzipInput creates a new gzip read closer.
+func NewGzipInput(_ *session.Context) (Input, error) {
+	return &gzipInput{}, nil
 }
 
-type gzipReadCloser struct{}
+type gzipInput struct{}
 
-func (*gzipReadCloser) Wrap(r io.ReadCloser) (io.ReadCloser, error) {
+func (*gzipInput) Wrap(r io.ReadCloser) (io.ReadCloser, error) {
 	gr, err := gzip.NewReader(r)
 	if err != nil {
 		return nil, errors.Errorf("failed to create gzip reader: %w", err)

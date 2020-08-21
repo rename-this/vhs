@@ -24,22 +24,22 @@ func TestOutput(t *testing.T) {
 	}{
 		{
 			desc: "unbuffered",
-			o:    NewOutput(testhelper.NewOutputFormatNoErr(ctx), &testhelper.Sink{}, nil),
+			o:    NewOutput(testhelper.NewOutputFormatNoErr(ctx), nil, &testhelper.Sink{}),
 			data: []interface{}{1, 2, 3},
 			out:  `123`,
 		},
 		{
 			desc: "buffered",
-			o:    NewOutput(testhelper.NewOutputFormatNoErr(ctxBuffered), &testhelper.Sink{}, nil),
+			o:    NewOutput(testhelper.NewOutputFormatNoErr(ctxBuffered), nil, &testhelper.Sink{}),
 			data: []interface{}{1, 2, 3},
 			out:  `6`,
 		},
 		{
 			desc: "modifiers",
-			o: NewOutput(testhelper.NewOutputFormatNoErr(ctx), &testhelper.Sink{}, modifier.WriteClosers{
+			o: NewOutput(testhelper.NewOutputFormatNoErr(ctx), modifier.Outputs{
 				&testhelper.DoubleOutput{},
 				&testhelper.DoubleOutput{},
-			}),
+			}, &testhelper.Sink{}),
 			data: []interface{}{1, 2, 3},
 			out:  "111122223333",
 		},

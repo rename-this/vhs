@@ -7,16 +7,16 @@ import (
 	"go.uber.org/multierr"
 )
 
-// ReadCloser wraps an io.ReadCloser
-type ReadCloser interface {
+// Input wraps an io.Input
+type Input interface {
 	Wrap(io.ReadCloser) (io.ReadCloser, error)
 }
 
-// ReadClosers is a slice of ReadCloser.
-type ReadClosers []ReadCloser
+// Inputs is a slice of ReadCloser.
+type Inputs []Input
 
 // Wrap wraps an io.ReadCloser in all Inputs.
-func (is ReadClosers) Wrap(r io.ReadCloser) (io.ReadCloser, Closers, error) {
+func (is Inputs) Wrap(r io.ReadCloser) (io.ReadCloser, Closers, error) {
 	closers := make(Closers, 0, len(is))
 
 	var (
@@ -33,16 +33,16 @@ func (is ReadClosers) Wrap(r io.ReadCloser) (io.ReadCloser, Closers, error) {
 	return r, closers, err
 }
 
-// WriteCloser wraps an io.WriteCloser
-type WriteCloser interface {
+// Output wraps an io.Output
+type Output interface {
 	Wrap(io.WriteCloser) (io.WriteCloser, error)
 }
 
-// WriteClosers is a slice of WriteCloser.
-type WriteClosers []WriteCloser
+// Outputs is a slice of WriteCloser.
+type Outputs []Output
 
 // Wrap wraps an io.ReadCloser in all Inputs.
-func (os WriteClosers) Wrap(w io.WriteCloser) (io.WriteCloser, Closers, error) {
+func (os Outputs) Wrap(w io.WriteCloser) (io.WriteCloser, Closers, error) {
 	closers := make(Closers, 0, len(os))
 
 	var (

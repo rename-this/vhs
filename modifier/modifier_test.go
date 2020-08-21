@@ -10,12 +10,12 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-func TestWriteCloser(t *testing.T) {
+func TestOutputs(t *testing.T) {
 	cases := []struct {
-		desc         string
-		writeClosers WriteClosers
-		in           string
-		out          string
+		desc    string
+		outputs Outputs
+		in      string
+		out     string
 	}{
 		{
 			desc: "no modifiers",
@@ -25,7 +25,7 @@ func TestWriteCloser(t *testing.T) {
 		{
 			desc: "single modifiers",
 			in:   "1",
-			writeClosers: WriteClosers{
+			outputs: Outputs{
 				&testhelper.DoubleOutput{},
 			},
 			out: "11",
@@ -33,7 +33,7 @@ func TestWriteCloser(t *testing.T) {
 		{
 			desc: "multiple modifiers",
 			in:   "1",
-			writeClosers: WriteClosers{
+			outputs: Outputs{
 				&testhelper.DoubleOutput{},
 				&testhelper.DoubleOutput{},
 				&testhelper.DoubleOutput{},
@@ -44,9 +44,9 @@ func TestWriteCloser(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			var buf bytes.Buffer
-			w, closers, err := c.writeClosers.Wrap(ioutilx.NopWriteCloser(&buf))
+			w, closers, err := c.outputs.Wrap(ioutilx.NopWriteCloser(&buf))
 			assert.NilError(t, err)
-			assert.Equal(t, len(c.writeClosers), len(closers))
+			assert.Equal(t, len(c.outputs), len(closers))
 
 			_, err = w.Write([]byte(c.in))
 			assert.NilError(t, err)
@@ -59,12 +59,12 @@ func TestWriteCloser(t *testing.T) {
 	}
 }
 
-func TestReadClosers(t *testing.T) {
+func TestInputs(t *testing.T) {
 	cases := []struct {
-		desc        string
-		readClosers ReadClosers
-		in          string
-		out         string
+		desc   string
+		inputs Inputs
+		in     string
+		out    string
 	}{
 		{
 			desc: "no modifiers",
@@ -74,7 +74,7 @@ func TestReadClosers(t *testing.T) {
 		{
 			desc: "single modifiers",
 			in:   "1",
-			readClosers: ReadClosers{
+			inputs: Inputs{
 				&testhelper.DoubleInput{},
 			},
 			out: "11",
@@ -82,7 +82,7 @@ func TestReadClosers(t *testing.T) {
 		{
 			desc: "multiple modifiers",
 			in:   "1",
-			readClosers: ReadClosers{
+			inputs: Inputs{
 				&testhelper.DoubleInput{},
 				&testhelper.DoubleInput{},
 				&testhelper.DoubleInput{},
@@ -93,9 +93,9 @@ func TestReadClosers(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			buf := ioutil.NopCloser(bytes.NewBufferString(c.in))
-			r, closers, err := c.readClosers.Wrap(buf)
+			r, closers, err := c.inputs.Wrap(buf)
 			assert.NilError(t, err)
-			assert.Equal(t, len(c.readClosers), len(closers))
+			assert.Equal(t, len(c.inputs), len(closers))
 
 			b, err := ioutil.ReadAll(r)
 			assert.NilError(t, err)

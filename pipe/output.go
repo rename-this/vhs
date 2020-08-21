@@ -12,18 +12,18 @@ import (
 // optional modifiers.
 type Output struct {
 	Format    format.Output
+	Modifiers modifier.Outputs
 	Sink      sink.Sink
-	Modifiers modifier.WriteClosers
 
 	closers modifier.Closers
 }
 
 // NewOutput creates a pipe connecting a format and a sink.
-func NewOutput(f format.Output, s sink.Sink, wcs modifier.WriteClosers) *Output {
+func NewOutput(f format.Output, mos modifier.Outputs, s sink.Sink) *Output {
 	return &Output{
 		Format:    f,
+		Modifiers: mos,
 		Sink:      s,
-		Modifiers: wcs,
 	}
 }
 
