@@ -4,7 +4,6 @@ import (
 	"errors"
 	"io"
 	"testing"
-	"time"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
@@ -55,7 +54,6 @@ func TestListenAll(t *testing.T) {
 			ctx, _, _ := session.NewContexts(nil, errs)
 
 			c.listener.listenAll(ctx, c.fn)
-			time.Sleep(1000 * time.Millisecond)
 			if c.errContains == "" {
 				assert.Equal(t, 0, len(ctx.Errors))
 			} else {
