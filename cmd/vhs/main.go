@@ -12,14 +12,51 @@ import (
 	"github.com/gramLabs/vhs/capture"
 	"github.com/gramLabs/vhs/config"
 	"github.com/gramLabs/vhs/flow"
+	"github.com/gramLabs/vhs/format"
+	"github.com/gramLabs/vhs/gcs"
 	"github.com/gramLabs/vhs/httpx"
 	"github.com/gramLabs/vhs/middleware"
+	"github.com/gramLabs/vhs/modifier"
 	"github.com/gramLabs/vhs/session"
+	"github.com/gramLabs/vhs/sink"
+	"github.com/gramLabs/vhs/tcp"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 )
 
 var (
+	parser = &flow.Parser{
+		Sources: map[string]flow.SourceCtor{
+			"tcp": tcp.NewSource,
+			"gcs": gcs.NewSource,
+		},
+
+		InputFormats: map[string]flow.InputFormatCtor{
+			"http": httpx.NewInputFormat,
+		},
+
+		OutputFormats: map[string]flow.OutputFormatCtor{
+			"har":     httpx.NewHAR,
+			"json":    format.NewJSON,
+			"jsonbuf": format.NewJSONBuffered,
+		},
+
+		Sinks: map[string]flow.SinkCtor{
+			"gcs": gcs.NewSink,
+			"stdout": func(_ *session.Context) (sink.Sink, error) {
+				return os.Stdout, nil
+			},
+		},
+
+		ReadClosers: map[string]flow.ReadCloserCtor{
+			"gzip": modifier.NewGzipReadCloser,
+		},
+
+		WriteClosers: map[string]flow.WriteCloserCtor{
+			"gzip": modifier.NewGzipWriteCloser,
+		},
+	}
+
 	rootCmd = &cobra.Command{
 		Use:   "vhs",
 		Short: "A tool for capturing and recording network traffic.",
@@ -67,7 +104,7 @@ func runRoot(cmd *cobra.Command, args []string) {
 
 	m := mustStartMiddleware(ctx)
 
-	f, err := flow.DefaultParser.Parse(ctx, inputLine, outputLines)
+	f, err := parser.Parse(ctx, inputLine, outputLines)
 	if err != nil {
 		log.Fatalf("failed to initialize: %v", err)
 	}

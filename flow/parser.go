@@ -1,18 +1,14 @@
 package flow
 
 import (
-	"os"
 	"strings"
 
 	"github.com/gramLabs/vhs/format"
-	"github.com/gramLabs/vhs/gcs"
-	"github.com/gramLabs/vhs/httpx"
 	"github.com/gramLabs/vhs/modifier"
 	"github.com/gramLabs/vhs/pipe"
 	"github.com/gramLabs/vhs/session"
 	"github.com/gramLabs/vhs/sink"
 	"github.com/gramLabs/vhs/source"
-	"github.com/gramLabs/vhs/tcp"
 
 	"github.com/go-errors/errors"
 )
@@ -23,55 +19,22 @@ const (
 )
 
 type (
-	sourceCtor       func(*session.Context) (source.Source, error)
-	inputFormatCtor  func(*session.Context) (format.Input, error)
-	outputFormatCtor func(*session.Context) (format.Output, error)
-	sinkCtor         func(*session.Context) (sink.Sink, error)
-	readCloserCtor   func(*session.Context) (modifier.ReadCloser, error)
-	writeCloserCtor  func(*session.Context) (modifier.WriteCloser, error)
+	SourceCtor       func(*session.Context) (source.Source, error)
+	InputFormatCtor  func(*session.Context) (format.Input, error)
+	OutputFormatCtor func(*session.Context) (format.Output, error)
+	SinkCtor         func(*session.Context) (sink.Sink, error)
+	ReadCloserCtor   func(*session.Context) (modifier.ReadCloser, error)
+	WriteCloserCtor  func(*session.Context) (modifier.WriteCloser, error)
 )
 
 // Parser parses text into a *flow.Flow
 type Parser struct {
-	sources       map[string]sourceCtor
-	inputFormats  map[string]inputFormatCtor
-	outputFormats map[string]outputFormatCtor
-	sinks         map[string]sinkCtor
-	readClosers   map[string]readCloserCtor
-	writeClosers  map[string]writeCloserCtor
-}
-
-// DefaultParser is the default flow parser.
-var DefaultParser = &Parser{
-	sources: map[string]sourceCtor{
-		"tcp": tcp.NewSource,
-		"gcs": gcs.NewSource,
-	},
-
-	inputFormats: map[string]inputFormatCtor{
-		"http": httpx.NewInputFormat,
-	},
-
-	outputFormats: map[string]outputFormatCtor{
-		"har":     httpx.NewHAR,
-		"json":    format.NewJSON,
-		"jsonbuf": format.NewJSONBuffered,
-	},
-
-	sinks: map[string]sinkCtor{
-		"gcs": gcs.NewSink,
-		"stdout": func(_ *session.Context) (sink.Sink, error) {
-			return os.Stdout, nil
-		},
-	},
-
-	readClosers: map[string]readCloserCtor{
-		"gzip": modifier.NewGzipReadCloser,
-	},
-
-	writeClosers: map[string]writeCloserCtor{
-		"gzip": modifier.NewGzipWriteCloser,
-	},
+	Sources       map[string]SourceCtor
+	InputFormats  map[string]InputFormatCtor
+	OutputFormats map[string]OutputFormatCtor
+	Sinks         map[string]SinkCtor
+	ReadClosers   map[string]ReadCloserCtor
+	WriteClosers  map[string]WriteCloserCtor
 }
 
 // Parse parses text into a flow.
@@ -117,7 +80,7 @@ func (p *Parser) parseInput(ctx *session.Context, line string) (*pipe.Input, err
 	)
 
 	sPart := parts[0]
-	sCtor, ok := p.sources[sPart]
+	sCtor, ok := p.Sources[sPart]
 	if !ok {
 		return nil, errors.Errorf("invalid source: %s", sPart)
 	}
@@ -127,7 +90,7 @@ func (p *Parser) parseInput(ctx *session.Context, line string) (*pipe.Input, err
 	}
 
 	fPart := parts[len(parts)-1]
-	fCtor, ok := p.inputFormats[fPart]
+	fCtor, ok := p.InputFormats[fPart]
 	if !ok {
 		return nil, errors.Errorf("invalid input format: %s", fPart)
 	}
@@ -137,7 +100,7 @@ func (p *Parser) parseInput(ctx *session.Context, line string) (*pipe.Input, err
 	}
 
 	for _, rcPart := range parts[1 : len(parts)-1] {
-		rcCtor, ok := p.readClosers[rcPart]
+		rcCtor, ok := p.ReadClosers[rcPart]
 		if !ok {
 			return nil, errors.Errorf("invalid modifier: %s", fPart)
 		}
@@ -172,7 +135,7 @@ func (p *Parser) parseOutput(ctx *session.Context, line string) (*pipe.Output, e
 	)
 
 	fPart := parts[0]
-	fCtor, ok := p.outputFormats[fPart]
+	fCtor, ok := p.OutputFormats[fPart]
 	if !ok {
 		return nil, errors.Errorf("invalid output format: %s", fPart)
 	}
@@ -182,7 +145,7 @@ func (p *Parser) parseOutput(ctx *session.Context, line string) (*pipe.Output, e
 	}
 
 	sPart := parts[len(parts)-1]
-	sCtor, ok := p.sinks[sPart]
+	sCtor, ok := p.Sinks[sPart]
 	if !ok {
 		return nil, errors.Errorf("invalid sink: %s", sPart)
 	}
@@ -192,7 +155,7 @@ func (p *Parser) parseOutput(ctx *session.Context, line string) (*pipe.Output, e
 	}
 
 	for _, wcPart := range parts[1 : len(parts)-1] {
-		wcCtor, ok := p.writeClosers[wcPart]
+		wcCtor, ok := p.WriteClosers[wcPart]
 		if !ok {
 			return nil, errors.Errorf("invalid modifier: %s", fPart)
 		}

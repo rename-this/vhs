@@ -14,31 +14,31 @@ import (
 
 var (
 	testParser = &Parser{
-		sources: map[string]sourceCtor{
+		Sources: map[string]SourceCtor{
 			"src": testhelper.NewSource,
 		},
 
-		inputFormats: map[string]inputFormatCtor{
+		InputFormats: map[string]InputFormatCtor{
 			"ifmt": testhelper.NewInputFormat,
 		},
 
-		outputFormats: map[string]outputFormatCtor{
+		OutputFormats: map[string]OutputFormatCtor{
 			"ofmt": testhelper.NewOutputFormat,
 		},
 
-		sinks: map[string]sinkCtor{
+		Sinks: map[string]SinkCtor{
 			"snk": func(_ *session.Context) (sink.Sink, error) {
 				return &testhelper.Sink{}, nil
 			},
 		},
 
-		readClosers: map[string]readCloserCtor{
+		ReadClosers: map[string]ReadCloserCtor{
 			"dbl": func(_ *session.Context) (modifier.ReadCloser, error) {
 				return &testhelper.DoubleInput{}, nil
 			},
 		},
 
-		writeClosers: map[string]writeCloserCtor{
+		WriteClosers: map[string]WriteCloserCtor{
 			"dbl": func(_ *session.Context) (modifier.WriteCloser, error) {
 				return &testhelper.DoubleOutput{}, nil
 			},
