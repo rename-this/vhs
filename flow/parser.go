@@ -78,14 +78,14 @@ var DefaultParser = &Parser{
 func (p *Parser) Parse(ctx *session.Context, inputLine string, outputLines []string) (*Flow, error) {
 	input, err := p.parseInput(ctx, inputLine)
 	if err != nil {
-		return nil, errors.Errorf("falied to parse input: %v", err)
+		return nil, errors.Errorf("failed to parse input: %v", err)
 	}
 
 	var outputs pipe.Outputs
 	for _, outputLine := range outputLines {
 		o, err := p.parseOutput(ctx, outputLine)
 		if err != nil {
-			return nil, errors.Errorf("falied to parse outputs: %v", err)
+			return nil, errors.Errorf("failed to parse outputs: %v", err)
 		}
 		outputs = append(outputs, o)
 	}

@@ -31,7 +31,7 @@ func (h *HAR) In() chan<- interface{} { return h.in }
 
 // Init initializes the HAR sink.
 func (h *HAR) Init(ctx *session.Context, w io.Writer) {
-	c := NewCorrelator(ctx.Config.TCPTimeout)
+	c := NewCorrelator(ctx.Config.HTTPTimeout)
 	go c.Start(ctx)
 
 	hh := &har{

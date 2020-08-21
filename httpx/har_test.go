@@ -75,7 +75,7 @@ func TestHAR(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			ctx, _, _ := session.NewContexts(&config.Config{
-				TCPTimeout: 30 * time.Second,
+				HTTPTimeout: 30 * time.Second,
 			}, nil)
 
 			h, err := NewHAR(ctx)
