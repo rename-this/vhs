@@ -33,15 +33,9 @@ func (s *tcpSource) Init(ctx *session.Context) {
 	}
 
 	listener := capture.NewListener(cap)
-	if err := listener.Listen(); err != nil {
-		// TODO(andrewhare): Fix this API since not all interfaces
-		// are guaranteed to work.
-		// Maybe only print errors if all interfaces fail?
-		ctx.Errors <- errors.Errorf("failed to start listening: %w", err)
-		return
-	}
-
 	defer listener.Close()
+
+	go listener.Listen(ctx)
 
 	var (
 		factory   = newStreamFactory(s.streams)

@@ -9,6 +9,7 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
+	"github.com/gramLabs/vhs/session"
 )
 
 // NewListener creates a new listener.
@@ -30,59 +31,42 @@ type Listener struct {
 	handles  []*pcap.Handle
 }
 
-// Listen starts listening.
-func (l *Listener) Listen() error {
-	return l.listenAll(l.listen)
-}
-
 // Packets retrieves a channel for all packets
 // captured by this listener.
 func (l *Listener) Packets() <-chan gopacket.Packet {
 	return l.packets
 }
 
-type listenFn func(i pcap.Interface) error
-
-func (l *Listener) listenAll(fn listenFn) error {
-	var (
-		allErrs = &Error{}
-		errChan = make(chan *InterfaceError)
-	)
-
-	for _, ii := range l.Capture.Interfaces {
-		go func(i pcap.Interface) {
-			errChan <- NewInterfaceError(i.Name, fn(i))
-		}(ii)
-	}
-
-	for i := 0; i < len(l.Capture.Interfaces); i++ {
-		allErrs.Append(<-errChan)
-	}
-
-	if len(allErrs.InterfaceErrors) == 0 {
-		return nil
-	}
-
-	return allErrs
+// Listen starts listening.
+func (l *Listener) Listen(ctx *session.Context) {
+	l.listenAll(ctx, l.listen)
 }
 
-func (l *Listener) listen(i pcap.Interface) error {
+type listenFn func(ctx *session.Context, i pcap.Interface)
+
+func (l *Listener) listenAll(ctx *session.Context, fn listenFn) {
+	for _, i := range l.Capture.Interfaces {
+		go fn(ctx, i)
+	}
+}
+
+func (l *Listener) listen(ctx *session.Context, i pcap.Interface) {
 	handle, err := l.newActiveHandler(i.Name)
 	if err != nil {
-		return errors.Errorf("failed to get handle: %w", err)
+		ctx.Errors <- errors.Errorf("failed to get handle: %w", err)
+		return
 	}
 
 	if err := handle.SetBPFFilter(filter(l.Capture, i)); err != nil {
-		return errors.Errorf("failed to set filter: %w", err)
+		ctx.Errors <- errors.Errorf("failed to set filter: %w", err)
+		return
 	}
 
 	l.handleMu.Lock()
 	l.handles = append(l.handles, handle)
 	l.handleMu.Unlock()
 
-	go l.readPackets(handle, handle.LinkType())
-
-	return nil
+	l.readPackets(handle, handle.LinkType())
 }
 
 func (l *Listener) readPackets(dataSource gopacket.PacketDataSource, decoder gopacket.Decoder) {

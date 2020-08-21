@@ -4,9 +4,11 @@ import (
 	"errors"
 	"io"
 	"testing"
+	"time"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
+	"github.com/gramLabs/vhs/session"
 	"gotest.tools/v3/assert"
 )
 
@@ -27,9 +29,7 @@ func TestListenAll(t *testing.T) {
 					},
 				},
 			},
-			fn: func(i pcap.Interface) error {
-				return nil
-			},
+			fn: func(_ *session.Context, i pcap.Interface) {},
 		},
 		{
 			desc: "errors",
@@ -41,22 +41,26 @@ func TestListenAll(t *testing.T) {
 					},
 				},
 			},
-			fn: func(i pcap.Interface) error {
+			fn: func(ctx *session.Context, i pcap.Interface) {
 				if i.Name == "111" {
-					return errors.New("111")
+					ctx.Errors <- errors.New("111")
 				}
-				return nil
 			},
 			errContains: "111",
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			err := c.listener.listenAll(c.fn)
+			errs := make(chan error, 1)
+			ctx, _, _ := session.NewContexts(nil, errs)
+
+			c.listener.listenAll(ctx, c.fn)
+			time.Sleep(1000 * time.Millisecond)
 			if c.errContains == "" {
-				assert.NilError(t, err)
+				assert.Equal(t, 0, len(ctx.Errors))
 			} else {
-				assert.ErrorContains(t, err, c.errContains)
+				assert.Equal(t, 1, len(ctx.Errors))
+				assert.ErrorContains(t, <-ctx.Errors, c.errContains)
 			}
 		})
 	}
