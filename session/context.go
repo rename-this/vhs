@@ -4,11 +4,10 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/gramLabs/vhs/config"
 )
 
 // NewContexts creates a new set of contexts.
-func NewContexts(cfg *config.Config, errs chan error) (*Context, *Context, *Context) {
+func NewContexts(cfg *Config, errs chan error) (*Context, *Context, *Context) {
 	var (
 		sessionID = uuid.New().String()
 
@@ -42,7 +41,7 @@ func NewContexts(cfg *config.Config, errs chan error) (*Context, *Context, *Cont
 
 // Context is a context for an entire flow.
 type Context struct {
-	Config     *config.Config
+	Config     *Config
 	SessionID  string
 	StdContext context.Context
 	Cancel     context.CancelFunc

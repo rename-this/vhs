@@ -1,7 +1,6 @@
 package httpx
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -83,11 +82,11 @@ func TestMetrics(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			//Short correlator time so we can actually get some timeouts.
-			met := NewMetrics(50 * time.Millisecond)
-			stdCtx, cancel := context.WithCancel(context.Background())
-			ctx := &session.Context{StdContext: stdCtx}
+			ctx, _, _ := session.NewContexts(&session.Config{
+				HTTPTimeout: 50 * time.Millisecond, // Short correlator time so we can actually get some timeouts.
+			}, nil)
 
+			met := NewMetrics()
 			go met.Init(ctx, nil)
 
 			for _, m := range c.messages {
@@ -98,7 +97,7 @@ func TestMetrics(t *testing.T) {
 			//Sleep long enough to let a prune cycle run in the correlator.
 			time.Sleep(300 * time.Millisecond)
 
-			cancel()
+			ctx.Cancel()
 
 			latencyMetric := met.latency.With(prometheus.Labels{
 				"method": "POST",

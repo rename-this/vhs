@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"net/url"
-	"sync"
 	"testing"
 	"time"
 
-	"github.com/gramLabs/vhs/config"
+	"github.com/gramLabs/vhs/internal/safebuffer"
 	"github.com/gramLabs/vhs/session"
 	"gotest.tools/v3/assert"
 )
@@ -74,14 +72,14 @@ func TestHAR(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			ctx, _, _ := session.NewContexts(&config.Config{
+			ctx, _, _ := session.NewContexts(&session.Config{
 				HTTPTimeout: 30 * time.Second,
 			}, nil)
 
 			h, err := NewHAR(ctx)
 			assert.NilError(t, err)
 
-			var buf safeBuffer
+			var buf safebuffer.SafeBuffer
 
 			go h.Init(ctx, &buf)
 
@@ -100,32 +98,4 @@ func TestHAR(t *testing.T) {
 			assert.DeepEqual(t, bytes.TrimSpace(buf.Bytes()), b2)
 		})
 	}
-}
-
-type safeBuffer struct {
-	b  bytes.Buffer
-	mu sync.Mutex
-}
-
-func (b *safeBuffer) Read(p []byte) (n int, err error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	return b.b.Read(p)
-}
-
-func (b *safeBuffer) Write(p []byte) (n int, err error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	return b.b.Write(p)
-}
-
-func (b *safeBuffer) Bytes() []byte {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	return b.b.Bytes()
-}
-
-func newURL(s string) *url.URL {
-	u, _ := url.Parse(s)
-	return u
 }

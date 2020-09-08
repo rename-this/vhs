@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"io/ioutil"
 	"testing"
+	"time"
 
+	"github.com/gramLabs/vhs/session"
 	"gotest.tools/assert"
 )
 
@@ -15,7 +17,7 @@ type leopard struct {
 func TestExec(t *testing.T) {
 	cases := []struct {
 		desc        string
-		m           *Middleware
+		m           Middleware
 		header      []byte
 		num         int
 		l           *leopard
@@ -24,13 +26,13 @@ func TestExec(t *testing.T) {
 	}{
 		{
 			desc: "no exec path",
-			m:    &Middleware{},
+			m:    &mware{},
 			l:    &leopard{NumSpots: 111},
 			out:  []*leopard{{NumSpots: 111}},
 		},
 		{
 			desc: "change host",
-			m: &Middleware{
+			m: &mware{
 				stdin:  ioutil.Discard,
 				stdout: ioutil.NopCloser(bytes.NewBufferString("{\"NumSpots\":222}\n{\"NumSpots\":333}\n")),
 			},
@@ -43,7 +45,7 @@ func TestExec(t *testing.T) {
 		},
 		{
 			desc: "change host with header",
-			m: &Middleware{
+			m: &mware{
 				stdin:  ioutil.Discard,
 				stdout: ioutil.NopCloser(bytes.NewBufferString("{\"NumSpots\":222}\n{\"NumSpots\":333}\n")),
 			},
@@ -57,7 +59,7 @@ func TestExec(t *testing.T) {
 		},
 		{
 			desc: "bad JSON",
-			m: &Middleware{
+			m: &mware{
 				stdin:  ioutil.Discard,
 				stdout: ioutil.NopCloser(bytes.NewBufferString("{\"NumSpots\":"))},
 			num:         1,
@@ -74,6 +76,96 @@ func TestExec(t *testing.T) {
 				} else {
 					assert.DeepEqual(t, c.out[i], req)
 				}
+			}
+		})
+	}
+}
+
+func TestMiddleware(t *testing.T) {
+	cases := []struct {
+		desc        string
+		command     string
+		ns          []interface{}
+		expected    []interface{}
+		errContains string
+	}{
+		{
+			desc:    "success",
+			command: "../testdata/double.bash",
+			ns: []interface{}{
+				&leopard{1}, &leopard{2}, &leopard{3},
+			},
+			expected: []interface{}{
+				&leopard{2}, &leopard{4}, &leopard{6},
+			},
+		},
+		{
+			desc:    "no command",
+			command: "",
+			ns: []interface{}{
+				&leopard{1}, &leopard{2}, &leopard{3},
+			},
+			expected: []interface{}{
+				&leopard{2}, &leopard{4}, &leopard{6},
+			},
+		},
+		{
+			desc:    "unsupported JSON data",
+			command: "../testdata/double.bash",
+			ns: []interface{}{
+				make(chan struct{}),
+			},
+			errContains: "unsupported type: chan struct {}",
+		},
+		{
+			desc:        "bad middleware",
+			command:     "../testdata/cannot_exec.go",
+			errContains: "failed to start command",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.desc, func(t *testing.T) {
+			err := func() error {
+				ctx, _, _ := session.NewContexts(nil, nil)
+				m, err := New(ctx, c.command, ioutil.Discard)
+				assert.NilError(t, err)
+
+				if c.command == "" {
+					assert.Equal(t, nil, m)
+					return nil
+				}
+
+				if err := m.Start(); err != nil {
+					return err
+				}
+
+				go m.Wait()
+
+				assert.NilError(t, err)
+
+				time.Sleep(800 * time.Millisecond)
+
+				out := make([]interface{}, 0, len(c.ns))
+				for _, n := range c.ns {
+					o, err := m.Exec(nil, n)
+					if err != nil {
+						return err
+					}
+					out = append(out, o)
+				}
+
+				m.Close()
+				ctx.Cancel()
+
+				assert.DeepEqual(t, out, c.expected)
+
+				return nil
+			}()
+
+			if c.errContains != "" {
+				assert.ErrorContains(t, err, c.errContains)
+			} else {
+				assert.NilError(t, err)
 			}
 		})
 	}

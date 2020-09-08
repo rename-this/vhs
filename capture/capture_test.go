@@ -247,3 +247,37 @@ func TestSelectInterfaces(t *testing.T) {
 		})
 	}
 }
+
+func TestSplitHostPort(t *testing.T) {
+	cases := []struct {
+		desc string
+		addr string
+		host string
+		port string
+	}{
+		{
+			desc: "empty",
+			host: "0.0.0.0",
+			port: "80",
+		},
+		{
+			desc: "missing port",
+			addr: "1.1.1.1",
+			host: "0.0.0.0",
+			port: "80",
+		},
+		{
+			desc: "correct",
+			addr: "1.1.1.1:1111",
+			host: "1.1.1.1",
+			port: "1111",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.desc, func(t *testing.T) {
+			h, p := splitHostPort(c.addr)
+			assert.Equal(t, c.host, h)
+			assert.Equal(t, c.port, p)
+		})
+	}
+}

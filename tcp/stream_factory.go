@@ -1,15 +1,16 @@
 package tcp
 
 import (
-	"io"
+	"fmt"
 	"sync"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
+	"github.com/gramLabs/vhs/internal/ioutilx"
 )
 
-func newStreamFactory(out chan io.ReadCloser) *streamFactory {
+func newStreamFactory(out chan ioutilx.ReadCloserID) *streamFactory {
 	return &streamFactory{
 		out:   out,
 		conns: make(map[string]*conn),
@@ -17,7 +18,7 @@ func newStreamFactory(out chan io.ReadCloser) *streamFactory {
 }
 
 type streamFactory struct {
-	out chan io.ReadCloser
+	out chan ioutilx.ReadCloserID
 
 	mu    sync.Mutex
 	conns map[string]*conn
@@ -35,6 +36,18 @@ func (r *reader) Reassembled(reassembly []tcpassembly.Reassembly) {
 func (r *reader) ReassemblyComplete() {
 	r.rs.ReassemblyComplete()
 	r.s.conn.complete = true
+}
+
+func (r *reader) Read(p []byte) (int, error) {
+	return r.rs.Read(p)
+}
+
+func (r *reader) Close() error {
+	return r.rs.Close()
+}
+
+func (r *reader) ID() string {
+	return r.s.conn.id
 }
 
 type stream struct {
@@ -56,7 +69,7 @@ func (f *streamFactory) New(net, transport gopacket.Flow) tcpassembly.Stream {
 		s:  s,
 	}
 
-	f.out <- &r.rs
+	f.out <- r
 
 	return r
 }
@@ -82,6 +95,8 @@ func (f *streamFactory) trackStream(s *stream) {
 		id = &streamID{net: s.net, transport: s.transport}
 		c  = f.conns[id.String()]
 	)
+
+	fmt.Println(id.String())
 
 	if c == nil {
 		c = newConn(s)

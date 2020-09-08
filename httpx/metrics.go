@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"time"
 
-	"github.com/gramLabs/vhs/format"
-	"github.com/gramLabs/vhs/ioutilx"
-	"github.com/gramLabs/vhs/pipe"
+	"github.com/gramLabs/vhs/flow"
+	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/session"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -16,7 +14,7 @@ import (
 )
 
 // Ensure Metrics conforms to Format interface.
-var _ format.Output = &Metrics{}
+var _ flow.OutputFormat = &Metrics{}
 
 // Metrics is a format that calculates HTTP metrics for Prometheus monitoring
 // Note that this format does not modify data passing through it, it merely extracts metrics.
@@ -28,15 +26,14 @@ type Metrics struct {
 	in       chan interface{}
 }
 
-// NewMetricsPipe creates a new *output.Pipe for calculating HTTP metrics
-func NewMetricsPipe(reqTimeout time.Duration) *pipe.Output {
-	return pipe.NewOutput(NewMetrics(reqTimeout), nil, ioutilx.NopWriteCloser(ioutil.Discard))
+// NewMetricsOutput creates a new *output.Pipe for calculating HTTP metrics
+func NewMetricsOutput() *flow.Output {
+	return flow.NewOutput(NewMetrics(), nil, ioutilx.NopWriteCloser(ioutil.Discard))
 }
 
 // NewMetrics creates a new Metrics format.
-func NewMetrics(reqTimeout time.Duration) *Metrics {
+func NewMetrics() *Metrics {
 	return &Metrics{
-		c: NewCorrelator(reqTimeout),
 		latency: promauto.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "vhs",
 			Subsystem: "http",
@@ -58,16 +55,17 @@ func (m *Metrics) In() chan<- interface{} { return m.in }
 
 // Init initializes the metrics format and registers the metrics with Prometheus
 func (m *Metrics) Init(ctx *session.Context, _ io.Writer) {
-	go m.c.Start(ctx)
+	c := NewCorrelator(ctx.Config.HTTPTimeout)
+	go c.Start(ctx)
 
 	for {
 		select {
 		case n := <-m.in:
 			switch msg := n.(type) {
 			case Message:
-				m.c.Messages <- msg
+				c.Messages <- msg
 			}
-		case r := <-m.c.Exchanges:
+		case r := <-c.Exchanges:
 			m.calcMetrics(r)
 		case <-ctx.StdContext.Done():
 			// (ztreinhart): return something downstream?

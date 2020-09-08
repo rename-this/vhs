@@ -6,11 +6,9 @@ import (
 	"time"
 
 	"github.com/go-errors/errors"
-	"github.com/gramLabs/vhs/format"
+	"github.com/gramLabs/vhs/flow"
 	"github.com/gramLabs/vhs/session"
 )
-
-var _ format.Output = &HAR{}
 
 // HAR is an HTTP Archive.
 // https://w3c.github.io/web-performance/specs/HAR/Overview.html
@@ -20,7 +18,7 @@ type HAR struct {
 }
 
 // NewHAR creates a mew HAR format.
-func NewHAR(_ *session.Context) (format.Output, error) {
+func NewHAR(_ *session.Context) (flow.OutputFormat, error) {
 	return &HAR{
 		in: make(chan interface{}),
 	}, nil

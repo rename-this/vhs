@@ -3,6 +3,7 @@ package capture
 import (
 	"fmt"
 	"io"
+	"log"
 	"sync"
 	"time"
 
@@ -10,19 +11,28 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 	"github.com/gramLabs/vhs/session"
+
+	// See https://pkg.go.dev/github.com/google/gopacket?tab=doc#hdr-A_Final_Note
+	_ "github.com/google/gopacket/layers"
 )
 
 // NewListener creates a new listener.
-func NewListener(cap *Capture) *Listener {
-	return &Listener{
+func NewListener(cap *Capture) Listener {
+	return &listener{
 		Capture: cap,
 		packets: make(chan gopacket.Packet),
 	}
 }
 
-// Listener listens for TCP traffic on a
+// Listener listens for networl traffic on a
 // given address and port.
-type Listener struct {
+type Listener interface {
+	Packets() <-chan gopacket.Packet
+	Listen(*session.Context)
+	Close()
+}
+
+type listener struct {
 	Capture *Capture
 
 	packets chan gopacket.Packet
@@ -33,43 +43,46 @@ type Listener struct {
 
 // Packets retrieves a channel for all packets
 // captured by this listener.
-func (l *Listener) Packets() <-chan gopacket.Packet {
+func (l *listener) Packets() <-chan gopacket.Packet {
 	return l.packets
 }
 
 // Listen starts listening.
-func (l *Listener) Listen(ctx *session.Context) {
-	l.listenAll(ctx, l.listen)
-}
-
-type listenFn func(ctx *session.Context, i pcap.Interface)
-
-func (l *Listener) listenAll(ctx *session.Context, fn listenFn) {
+func (l *listener) Listen(ctx *session.Context) {
 	for _, i := range l.Capture.Interfaces {
-		go fn(ctx, i)
+		go func(ii pcap.Interface) {
+			h, err := l.newHandle(ii)
+			if err != nil {
+				ctx.Errors <- err
+				return
+			}
+			if h == nil {
+				return
+			}
+			l.readPackets(ctx, h, h.LinkType())
+		}(i)
 	}
 }
 
-func (l *Listener) listen(ctx *session.Context, i pcap.Interface) {
+func (l *listener) newHandle(i pcap.Interface) (*pcap.Handle, error) {
 	handle, err := l.newActiveHandler(i.Name)
 	if err != nil {
-		ctx.Errors <- errors.Errorf("failed to get handle: %w", err)
-		return
+		log.Printf("failed to create new inactive handle: %v\n", err)
+		return nil, nil
 	}
 
 	if err := handle.SetBPFFilter(filter(l.Capture, i)); err != nil {
-		ctx.Errors <- errors.Errorf("failed to set filter: %w", err)
-		return
+		return nil, errors.Errorf("failed to set filter: %w", err)
 	}
 
 	l.handleMu.Lock()
 	l.handles = append(l.handles, handle)
 	l.handleMu.Unlock()
 
-	l.readPackets(handle, handle.LinkType())
+	return handle, nil
 }
 
-func (l *Listener) readPackets(dataSource gopacket.PacketDataSource, decoder gopacket.Decoder) {
+func (l *listener) readPackets(ctx *session.Context, dataSource gopacket.PacketDataSource, decoder gopacket.Decoder) {
 	source := gopacket.NewPacketSource(dataSource, decoder)
 	source.Lazy = true
 	source.NoCopy = true
@@ -87,7 +100,7 @@ func (l *Listener) readPackets(dataSource gopacket.PacketDataSource, decoder gop
 	}
 }
 
-func (l *Listener) newActiveHandler(name string) (*pcap.Handle, error) {
+func (l *listener) newActiveHandler(name string) (*pcap.Handle, error) {
 	inactive, err := pcap.NewInactiveHandle(name)
 	if err != nil {
 		return nil, errors.Errorf("failed to create inactive handle: %w", err)
@@ -104,14 +117,14 @@ func (l *Listener) newActiveHandler(name string) (*pcap.Handle, error) {
 
 	handle, err := inactive.Activate()
 	if err != nil {
-		return nil, errors.Errorf("failed to activate handle: %w", err)
+		return nil, errors.Errorf("failed to activate %s: %w", name, err)
 	}
 
 	return handle, nil
 }
 
 // Close closes the listener and all open handles.
-func (l *Listener) Close() {
+func (l *listener) Close() {
 	l.handleMu.Lock()
 	defer l.handleMu.Unlock()
 

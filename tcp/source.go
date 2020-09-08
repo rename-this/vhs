@@ -1,38 +1,46 @@
 package tcp
 
 import (
-	"io"
 	"time"
 
 	"github.com/go-errors/errors"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/gramLabs/vhs/capture"
+	"github.com/gramLabs/vhs/flow"
+	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/session"
-	"github.com/gramLabs/vhs/source"
 )
 
 // NewSource creates a new TCP source.
-func NewSource(_ *session.Context) (source.Source, error) {
+func NewSource(_ *session.Context) (flow.Source, error) {
 	return &tcpSource{
-		streams: make(chan io.ReadCloser),
+		streams: make(chan ioutilx.ReadCloserID),
 	}, nil
 }
 
 type tcpSource struct {
-	streams chan io.ReadCloser
+	streams chan ioutilx.ReadCloserID
 }
 
-func (s *tcpSource) Streams() <-chan io.ReadCloser { return s.streams }
+func (s *tcpSource) Streams() <-chan ioutilx.ReadCloserID { return s.streams }
 
 func (s *tcpSource) Init(ctx *session.Context) {
-	cap, err := capture.NewCapture(ctx.Config.Addr, ctx.Config.CaptureResponse)
+	s.read(ctx, capture.NewCapture, capture.NewListener)
+}
+
+type newCaptureFn func(addr string, response bool) (*capture.Capture, error)
+type newListenereFn func(*capture.Capture) capture.Listener
+
+func (s *tcpSource) read(ctx *session.Context, newCapture newCaptureFn, newListener newListenereFn) {
+	cap, err := newCapture(ctx.Config.Addr, ctx.Config.CaptureResponse)
 	if err != nil {
 		ctx.Errors <- errors.Errorf("failed to initialize capture: %w", err)
 		return
 	}
 
-	listener := capture.NewListener(cap)
+	listener := newListener(cap)
+
 	defer listener.Close()
 
 	go listener.Listen(ctx)
@@ -41,8 +49,8 @@ func (s *tcpSource) Init(ctx *session.Context) {
 		factory   = newStreamFactory(s.streams)
 		pool      = tcpassembly.NewStreamPool(factory)
 		assembler = tcpassembly.NewAssembler(pool)
-		packets   = listener.Packets()
 		ticker    = time.Tick(ctx.Config.TCPTimeout)
+		packets   = listener.Packets()
 	)
 
 	for {

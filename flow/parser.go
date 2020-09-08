@@ -3,14 +3,8 @@ package flow
 import (
 	"strings"
 
-	"github.com/gramLabs/vhs/format"
-	"github.com/gramLabs/vhs/modifier"
-	"github.com/gramLabs/vhs/pipe"
 	"github.com/gramLabs/vhs/session"
-	"github.com/gramLabs/vhs/sink"
-	"github.com/gramLabs/vhs/source"
-
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -20,18 +14,18 @@ const (
 
 type (
 	// SourceCtor is a map of string to source constructors.
-	SourceCtor func(*session.Context) (source.Source, error)
+	SourceCtor func(*session.Context) (Source, error)
 	// InputModifierCtor is a map of string to input modifier constructors.
-	InputModifierCtor func(*session.Context) (modifier.Input, error)
+	InputModifierCtor func(*session.Context) (InputModifier, error)
 	// InputFormatCtor is a map of string to input format constructors.
-	InputFormatCtor func(*session.Context) (format.Input, error)
+	InputFormatCtor func(*session.Context) (InputFormat, error)
 
 	// OutputFormatCtor is a map of string to output format constructors.
-	OutputFormatCtor func(*session.Context) (format.Output, error)
+	OutputFormatCtor func(*session.Context) (OutputFormat, error)
 	// OutputModifierCtor is a map of string to output modifier constructors.
-	OutputModifierCtor func(*session.Context) (modifier.Output, error)
+	OutputModifierCtor func(*session.Context) (OutputModifier, error)
 	// SinkCtor is a map of string to sink constructors.
-	SinkCtor func(*session.Context) (sink.Sink, error)
+	SinkCtor func(*session.Context) (Sink, error)
 )
 
 // Parser parses text into a *flow.Flow
@@ -52,7 +46,7 @@ func (p *Parser) Parse(ctx *session.Context, inputLine string, outputLines []str
 		return nil, errors.Errorf("failed to parse input: %v", err)
 	}
 
-	var outputs pipe.Outputs
+	var outputs Outputs
 	for _, outputLine := range outputLines {
 		o, err := p.parseOutput(ctx, outputLine)
 		if err != nil {
@@ -73,15 +67,15 @@ func (p *Parser) Parse(ctx *session.Context, inputLine string, outputLines []str
 // 		gcs|gzip|json
 // The first part is expected to be a valid source, the last is expected
 // to be a valid input format. Any parts in the middle are modifiers.
-func (p *Parser) parseInput(ctx *session.Context, line string) (*pipe.Input, error) {
+func (p *Parser) parseInput(ctx *session.Context, line string) (*Input, error) {
 	if line == "" {
 		return nil, errors.New("empty input")
 	}
 
 	var (
-		s   source.Source
-		f   format.Input
-		mis modifier.Inputs
+		s   Source
+		f   InputFormat
+		mis InputModifiers
 		err error
 
 		parts = strings.Split(line, Separator)
@@ -119,7 +113,7 @@ func (p *Parser) parseInput(ctx *session.Context, line string) (*pipe.Input, err
 		mis = append(mis, rc)
 	}
 
-	return pipe.NewInput(s, mis, f), nil
+	return NewInput(s, mis, f), nil
 }
 
 // parseOutput parses an output line.
@@ -128,15 +122,15 @@ func (p *Parser) parseInput(ctx *session.Context, line string) (*pipe.Input, err
 // 		http|har
 // The first part is expected to be a valid output format, the last is expected
 // to be a valid sink. Any parts in the middle are modifiers.
-func (p *Parser) parseOutput(ctx *session.Context, line string) (*pipe.Output, error) {
+func (p *Parser) parseOutput(ctx *session.Context, line string) (*Output, error) {
 	if line == "" {
 		return nil, errors.New("empty output")
 	}
 
 	var (
-		f   format.Output
-		s   sink.Sink
-		mos modifier.Outputs
+		f   OutputFormat
+		s   Sink
+		mos OutputModifiers
 		err error
 
 		parts = strings.Split(line, Separator)
@@ -174,5 +168,5 @@ func (p *Parser) parseOutput(ctx *session.Context, line string) (*pipe.Output, e
 		mos = append(mos, wc)
 	}
 
-	return pipe.NewOutput(f, mos, s), nil
+	return NewOutput(f, mos, s), nil
 }

@@ -10,11 +10,11 @@ import (
 	"gotest.tools/assert"
 )
 
-func TestNewRequest(t *testing.T) {
+func TestNewResponset(t *testing.T) {
 	cases := []struct {
 		desc        string
 		b           *bufio.Reader
-		r           *Request
+		r           *Response
 		cID         string
 		eID         int64
 		errContains string
@@ -25,33 +25,32 @@ func TestNewRequest(t *testing.T) {
 			errContains: "EOF",
 		},
 		{
-			desc:        "invalid method",
-			b:           bufio.NewReader(strings.NewReader(" / HTTP/1.1\r\nheader:foo\r\n\r\n")),
-			errContains: "invalid method",
+			desc:        "malformed",
+			b:           bufio.NewReader(strings.NewReader("AICHTEETEEPEE/1.1 200 OK")),
+			errContains: "malformed HTTP version",
 		},
 		{
 			desc: "success",
 			cID:  "111",
 			eID:  111,
-			b:    bufio.NewReader(strings.NewReader("GET /111.html HTTP/1.1\r\nheader:foo\r\n\r\n")),
-			r: &Request{
+			b:    bufio.NewReader(strings.NewReader("HTTP/1.1 204 No Content\r\n\r\n")),
+			r: &Response{
 				ConnectionID:  "111",
 				ExchangeID:    111,
-				Method:        "GET",
-				URL:           newURL("/111.html"),
+				Status:        "204 No Content",
+				StatusCode:    http.StatusNoContent,
 				Proto:         "HTTP/1.1",
 				ProtoMajor:    1,
 				ProtoMinor:    1,
-				Header:        http.Header{"Header": {"foo"}},
+				Header:        http.Header{},
 				Body:          "",
 				ContentLength: 0,
-				RequestURI:    "/111.html",
 			},
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			r, err := NewRequest(c.b, c.cID, c.eID)
+			r, err := NewResponse(c.b, c.cID, c.eID)
 			if c.errContains != "" {
 				assert.ErrorContains(t, err, c.errContains)
 			} else {

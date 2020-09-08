@@ -7,14 +7,14 @@ import (
 	"time"
 
 	"github.com/go-errors/errors"
-	"github.com/google/uuid"
-	"github.com/gramLabs/vhs/format"
+	"github.com/gramLabs/vhs/flow"
+	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/middleware"
 	"github.com/gramLabs/vhs/session"
 )
 
 // NewInputFormat creates an HTTP input formatter.
-func NewInputFormat(_ *session.Context) (format.Input, error) {
+func NewInputFormat(_ *session.Context) (flow.InputFormat, error) {
 	return &inputFormat{
 		out: make(chan interface{}),
 	}, nil
@@ -24,7 +24,7 @@ type inputFormat struct {
 	out chan interface{}
 }
 
-func (i *inputFormat) Init(ctx *session.Context, m *middleware.Middleware, r io.ReadCloser) error {
+func (i *inputFormat) Init(ctx *session.Context, m middleware.Middleware, r ioutilx.ReadCloserID) error {
 	defer r.Close()
 
 	var (
@@ -34,23 +34,22 @@ func (i *inputFormat) Init(ctx *session.Context, m *middleware.Middleware, r io.
 		reqReader = bufio.NewReader(tee)
 		resReader = bufio.NewReader(&resBuf)
 
-		exchangeID   int64
-		connectionID = uuid.New().String()
+		exchangeID int64
 	)
 
 	for {
 		i.handle(ctx, m, TypeRequest, func() (Message, error) {
-			return NewRequest(reqReader, connectionID, exchangeID)
+			return NewRequest(reqReader, r.ID(), exchangeID)
 		})
 		i.handle(ctx, m, TypeResponse, func() (Message, error) {
-			return NewResponse(resReader, connectionID, exchangeID)
+			return NewResponse(resReader, r.ID(), exchangeID)
 		})
 
 		exchangeID++
 	}
 }
 
-func (i *inputFormat) handle(ctx *session.Context, m *middleware.Middleware, t MessageType, parseMessage func() (Message, error)) {
+func (i *inputFormat) handle(ctx *session.Context, m middleware.Middleware, t MessageType, parseMessage func() (Message, error)) {
 	msg, err := parseMessage()
 	if err != nil {
 		// TODO(andrewhare): ultraverbose logging.
