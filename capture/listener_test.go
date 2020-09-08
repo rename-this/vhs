@@ -38,6 +38,8 @@ func TestListen(t *testing.T) {
 		)
 		for {
 			select {
+			// Send requests once per second until
+			// the context is canceled.
 			case <-ticker:
 				_, err := client.Get(s.URL)
 				assert.NilError(t, err)
