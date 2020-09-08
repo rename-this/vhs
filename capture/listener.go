@@ -24,7 +24,7 @@ func NewListener(cap *Capture) Listener {
 	}
 }
 
-// Listener listens for networl traffic on a
+// Listener listens for network traffic on a
 // given address and port.
 type Listener interface {
 	Packets() <-chan gopacket.Packet

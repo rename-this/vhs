@@ -272,6 +272,12 @@ func TestSplitHostPort(t *testing.T) {
 			host: "1.1.1.1",
 			port: "1111",
 		},
+		{
+			desc: "correct ipv6",
+			addr: "[::1]:1111",
+			host: "::1",
+			port: "1111",
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
