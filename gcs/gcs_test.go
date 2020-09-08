@@ -192,5 +192,5 @@ func TestNewSource(t *testing.T) {
 func TestNewSinkFail(t *testing.T) {
 	ctx, _, _ := session.NewContexts(&session.Config{}, nil)
 	_, err := NewSink(ctx)
-	assert.ErrorContains(t, err, "Required parameter: project, required")
+	assert.Assert(t, err != nil)
 }
