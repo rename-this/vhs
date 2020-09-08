@@ -2,14 +2,8 @@ package capture
 
 import (
 	"errors"
-	"fmt"
 	"io"
-	"net/http"
-	"net/http/httptest"
-	"strings"
-	"sync"
 	"testing"
-	"time"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
@@ -17,89 +11,48 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-// This code is not supposed to be threadsafe.
-// This allows this test to run with the race detector.
-var listenMu sync.Mutex
-
-func TestListen(t *testing.T) {
-	listenMu.Lock()
-	defer listenMu.Unlock()
-
-	ctx, _, _ := session.NewContexts(nil, nil)
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, time.Now().UnixNano())
-	}))
-
-	go func() {
-		defer s.Close()
-		var (
-			client = s.Client()
-			ticker = time.Tick(time.Second)
-		)
-		for {
-			select {
-			// Send requests once per second until
-			// the context is canceled.
-			case <-ticker:
-				_, err := client.Get(s.URL)
-				assert.NilError(t, err)
-			case <-ctx.StdContext.Done():
-				return
-			}
-		}
-	}()
-
-	c, err := NewCapture(strings.TrimLeft(s.URL, "http://"), true)
-	assert.NilError(t, err)
-
-	l := NewListener(c)
-	l.Listen(ctx)
-
-	for i := 0; i < 3; i++ {
-		<-l.Packets()
-	}
-
-	ctx.Cancel()
-}
-
 func TestNewHandle(t *testing.T) {
 	cases := []struct {
-		desc string
-		i    pcap.Interface
-		fail bool
+		desc        string
+		i           pcap.Interface
+		activate    activateFn
+		errContains string
 	}{
 		{
-			desc: "empty interface",
-			fail: true,
+			desc: "no error",
+			i:    pcap.Interface{Name: "111"},
+			activate: func(inactive *pcap.InactiveHandle) (*pcap.Handle, error) {
+				return pcap.OpenOffline("../testdata/200722_tcp_anon.pcapng")
+			},
 		},
 		{
-			desc: "bad interface",
-			i: pcap.Interface{
-				Name: "111",
+			desc: "error",
+			i:    pcap.Interface{Name: "111"},
+			activate: func(inactive *pcap.InactiveHandle) (*pcap.Handle, error) {
+				return nil, errors.New("1111")
 			},
-			fail: true,
-		},
-		{
-			desc: "good interface",
-			i: pcap.Interface{
-				Name: "eth0",
-			},
+			errContains: "111",
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			var (
-				l    = &listener{Capture: &Capture{}}
-				_, _ = l.newHandle(c.i)
-			)
-			defer l.Close()
-			if c.fail {
-				assert.Equal(t, len(l.handles), 0)
+			l := NewListener(&Capture{})
+			_, err := l.(*listener).newHandle(c.i, c.activate)
+			if c.errContains == "" {
+				assert.NilError(t, err)
+				l.Close()
 			} else {
-				assert.Equal(t, len(l.handles), 1)
+				assert.ErrorContains(t, err, c.errContains)
 			}
 		})
 	}
+}
+
+func TestNewInactiveHandler(t *testing.T) {
+	l := NewListener(&Capture{})
+	_, err := l.(*listener).newInactiveHandler("111")
+
+	assert.NilError(t, err)
 }
 
 type testPacketDataSource struct {
@@ -156,6 +109,7 @@ func TestReadPackets(t *testing.T) {
 				p := <-packets
 				assert.Equal(t, string(p.Data()), d)
 			}
+			c.listener.Close()
 		})
 	}
 }

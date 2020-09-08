@@ -13,15 +13,13 @@ func TestNewCapture(t *testing.T) {
 	cases := []struct {
 		desc        string
 		addr        string
-		port        string
 		fn          getAllInterfacesFn
 		capture     *Capture
 		errContains string
 	}{
 		{
 			desc: "success",
-			addr: "1.1.1.1",
-			port: "1111",
+			addr: "1.1.1.1:1111",
 			fn: func() ([]pcap.Interface, error) {
 				return []pcap.Interface{
 					{
@@ -48,8 +46,7 @@ func TestNewCapture(t *testing.T) {
 		},
 		{
 			desc: "fail to get interfaces",
-			addr: "1.1.1.1",
-			port: "1111",
+			addr: "1.1.1.1:1111",
 			fn: func() ([]pcap.Interface, error) {
 				return nil, errors.New("111")
 			},
@@ -57,8 +54,7 @@ func TestNewCapture(t *testing.T) {
 		},
 		{
 			desc: "fail to get capture type",
-			addr: "1.1.1",
-			port: "1111",
+			addr: "1.1.1:1111",
 			fn: func() ([]pcap.Interface, error) {
 				return nil, nil
 			},
@@ -67,7 +63,7 @@ func TestNewCapture(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			capture, err := newCapture(c.addr, c.port, false, c.fn)
+			capture, err := newCapture(c.addr, false, c.fn)
 			if err != nil {
 				assert.ErrorContains(t, err, c.errContains)
 				return

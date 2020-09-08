@@ -32,4 +32,4 @@ jobs:
 
     - name: run tests
       run: |
-        make test-all
+        make test

@@ -40,16 +40,16 @@ type getAllInterfacesFn func() ([]pcap.Interface, error)
 
 // NewCapture creates a new capture.
 func NewCapture(addr string, response bool) (*Capture, error) {
-	host, port := splitHostPort(addr)
-	return newCapture(host, port, response, pcap.FindAllDevs)
+	return newCapture(addr, response, pcap.FindAllDevs)
 }
 
-func newCapture(host string, port string, response bool, fn getAllInterfacesFn) (*Capture, error) {
+func newCapture(addr string, response bool, fn getAllInterfacesFn) (*Capture, error) {
 	interfaces, err := fn()
 	if err != nil {
 		return nil, errors.Errorf("failed to find interfaces: %w", err)
 	}
 
+	host, port := splitHostPort(addr)
 	deviceType, err := getCaptureType(host)
 	if err != nil {
 		return nil, errors.Errorf("failed to get device type: %w", err)

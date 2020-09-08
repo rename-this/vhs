@@ -7,9 +7,9 @@ import (
 	"github.com/google/gopacket/pcap"
 )
 
-// filter creates a BPF filter based on a capture configuration
+// newBPFFilter creates a BPF newBPFFilter based on a capture configuration
 // and a given interface.
-func filter(capture *Capture, iface pcap.Interface) string {
+func newBPFFilter(capture *Capture, iface pcap.Interface) string {
 	var (
 		dst string
 		src string

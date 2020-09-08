@@ -8,7 +8,7 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-func TestFilter(t *testing.T) {
+func TestNewBPFFilter(t *testing.T) {
 	cases := []struct {
 		desc           string
 		capture        *Capture
@@ -98,9 +98,9 @@ func TestFilter(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			assert.Equal(t, c.filter, filter(c.capture, c.iface))
+			assert.Equal(t, c.filter, newBPFFilter(c.capture, c.iface))
 			c.capture.Response = true
-			assert.Equal(t, c.responseFilter, filter(c.capture, c.iface))
+			assert.Equal(t, c.responseFilter, newBPFFilter(c.capture, c.iface))
 		})
 	}
 }

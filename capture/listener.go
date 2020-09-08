@@ -50,28 +50,32 @@ func (l *listener) Packets() <-chan gopacket.Packet {
 // Listen starts listening.
 func (l *listener) Listen(ctx *session.Context) {
 	for _, i := range l.Capture.Interfaces {
-		go func(ii pcap.Interface) {
-			h, err := l.newHandle(ii)
-			if err != nil {
-				ctx.Errors <- err
-				return
-			}
-			if h == nil {
-				return
-			}
-			l.readPackets(ctx, h, h.LinkType())
-		}(i)
+		if h, err := l.newHandle(i, (*pcap.InactiveHandle).Activate); err != nil {
+			ctx.Errors <- err
+		} else {
+			go l.readPackets(ctx, h, h.LinkType())
+		}
 	}
 }
 
-func (l *listener) newHandle(i pcap.Interface) (*pcap.Handle, error) {
-	handle, err := l.newActiveHandler(i.Name)
+type activateFn func(inactive *pcap.InactiveHandle) (*pcap.Handle, error)
+
+func (l *listener) newHandle(i pcap.Interface, activate activateFn) (*pcap.Handle, error) {
+	inactive, err := l.newInactiveHandler(i.Name)
 	if err != nil {
+		// TODO(andrewhare): Log this in a structural way.
 		log.Printf("failed to create new inactive handle: %v\n", err)
 		return nil, nil
 	}
 
-	if err := handle.SetBPFFilter(filter(l.Capture, i)); err != nil {
+	defer inactive.CleanUp()
+
+	handle, err := activate(inactive)
+	if err != nil {
+		return nil, errors.Errorf("failed to activate %s: %w", i.Name, err)
+	}
+
+	if err := handle.SetBPFFilter(newBPFFilter(l.Capture, i)); err != nil {
 		return nil, errors.Errorf("failed to set filter: %w", err)
 	}
 
@@ -100,13 +104,11 @@ func (l *listener) readPackets(ctx *session.Context, dataSource gopacket.PacketD
 	}
 }
 
-func (l *listener) newActiveHandler(name string) (*pcap.Handle, error) {
+func (l *listener) newInactiveHandler(name string) (*pcap.InactiveHandle, error) {
 	inactive, err := pcap.NewInactiveHandle(name)
 	if err != nil {
 		return nil, errors.Errorf("failed to create inactive handle: %w", err)
 	}
-
-	defer inactive.CleanUp()
 
 	inactive.SetPromisc(true)
 
@@ -115,12 +117,7 @@ func (l *listener) newActiveHandler(name string) (*pcap.Handle, error) {
 	inactive.SetImmediateMode(true)
 	inactive.SetSnapLen(65536)
 
-	handle, err := inactive.Activate()
-	if err != nil {
-		return nil, errors.Errorf("failed to activate %s: %w", name, err)
-	}
-
-	return handle, nil
+	return inactive, nil
 }
 
 // Close closes the listener and all open handles.
