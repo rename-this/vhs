@@ -1,8 +1,10 @@
 package prunemap
 
 import (
+	"context"
 	"sync"
 	"time"
+
 )
 
 type item struct {
@@ -16,29 +18,45 @@ type Map struct {
 	Evictions chan interface{}
 
 	ticker *time.Ticker
+	ctx    context.Context
+	cancel context.CancelFunc
 
-	mu    sync.RWMutex
-	items map[string]*item
+	mu         sync.RWMutex
+	items      map[string]*item
+	evictCache []interface{}
 }
 
 // New creates a new Map
 func New(itemTTL, pruneInterval time.Duration) *Map {
+
 	m := &Map{
 		Evictions: make(chan interface{}),
 		ticker:    time.NewTicker(pruneInterval),
 		items:     make(map[string]*item),
 	}
+	m.ctx, m.cancel = context.WithCancel(context.Background())
 
 	go func() {
-		for now := range m.ticker.C {
-			m.mu.Lock()
-			for k, i := range m.items {
-				if now.Sub(i.last) > itemTTL {
-					m.Evictions <- m.items[k].n
-					delete(m.items, k)
+		for {
+			select {
+			case <-m.ctx.Done():
+				return
+			case now := <-m.ticker.C:
+				m.mu.Lock()
+				for k, i := range m.items {
+					if now.Sub(i.last) > itemTTL {
+						m.evictCache = append(m.evictCache, m.items[k].n)
+						delete(m.items, k)
+					}
+				}
+				m.mu.Unlock()
+
+				for len(m.evictCache) > 0 {
+					m.Evictions <- m.evictCache[0]
+					m.evictCache[0] = nil
+					m.evictCache = m.evictCache[1:]
 				}
 			}
-			m.mu.Unlock()
 		}
 	}()
 
@@ -83,4 +101,5 @@ func (m *Map) Get(k string) interface{} {
 // Close closes the map.
 func (m *Map) Close() {
 	m.ticker.Stop()
+	m.cancel()
 }

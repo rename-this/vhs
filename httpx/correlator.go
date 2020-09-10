@@ -72,6 +72,7 @@ func (c *Correlator) Start(ctx session.Context) {
 			}
 		case <-ctx.StdContext.Done():
 			ctx.Logger.Debug().Msg("context canceled")
+			c.cache.Close()
 			return
 		}
 	}

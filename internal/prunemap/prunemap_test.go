@@ -1,6 +1,7 @@
 package prunemap
 
 import (
+	"context"
 	"sync"
 	"testing"
 	"time"
@@ -21,11 +22,19 @@ func TestMap(t *testing.T) {
 		evictionCount int
 		evictionMu    sync.RWMutex
 	)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
 	go func() {
-		for range m.Evictions {
-			evictionMu.Lock()
-			evictionCount++
-			evictionMu.Unlock()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-m.Evictions:
+				evictionMu.Lock()
+				evictionCount++
+				evictionMu.Unlock()
+			}
 		}
 	}()
 
@@ -65,4 +74,11 @@ func TestMap(t *testing.T) {
 	evictionMu.RLock()
 	assert.Equal(t, 6, evictionCount)
 	evictionMu.RUnlock()
+
+	cancel()
+
+	m.Add("test", "test")
+	test := <-m.Evictions
+	assert.Equal(t, test, "test")
+
 }
