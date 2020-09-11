@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/gramLabs/vhs/session"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 func newTestParser() *Parser {
@@ -23,19 +23,19 @@ func newTestParser() *Parser {
 		},
 
 		Sinks: map[string]SinkCtor{
-			"snk": func(_ *session.Context) (Sink, error) {
+			"snk": func(_ session.Context) (Sink, error) {
 				return &testSink{}, nil
 			},
 		},
 
 		InputModifiers: map[string]InputModifierCtor{
-			"dbl": func(_ *session.Context) (InputModifier, error) {
+			"dbl": func(_ session.Context) (InputModifier, error) {
 				return &TestDoubleInputModifier{}, nil
 			},
 		},
 
 		OutputModifiers: map[string]OutputModifierCtor{
-			"dbl": func(_ *session.Context) (OutputModifier, error) {
+			"dbl": func(_ session.Context) (OutputModifier, error) {
 				return &TestDoubleOutputModifier{}, nil
 			},
 		},
@@ -135,7 +135,7 @@ func TestParseInput(t *testing.T) {
 	for _, c := range cases {
 		parser := newTestParser()
 		t.Run(c.desc, func(t *testing.T) {
-			i, err := parser.parseInput(nil, c.line)
+			i, err := parser.parseInput(session.Context{}, c.line)
 			if c.errContains == "" {
 				assert.NilError(t, err)
 				b, err := json.Marshal(i)

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gramLabs/vhs/session"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 func TestCorrelator(t *testing.T) {
@@ -30,7 +30,7 @@ func TestCorrelator(t *testing.T) {
 	}()
 
 	errs := make(chan error)
-	ctx, _, _ := session.NewContexts(nil, errs)
+	ctx, _, _ := session.NewContexts(&session.Config{DebugHHTTPMessages: true}, errs)
 
 	go m.Start(ctx)
 

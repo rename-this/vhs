@@ -29,12 +29,20 @@ func NewOutput(f OutputFormat, mos OutputModifiers, s Sink) *Output {
 }
 
 // Init starts the output.
-func (o *Output) Init(ctx *session.Context) {
+func (o *Output) Init(ctx session.Context) {
+	ctx.Logger = ctx.Logger.With().
+		Str(session.LoggerKeyComponent, "output").
+		Logger()
+
+	ctx.Logger.Debug().Msg("init")
+
 	w, closers, err := o.Modifiers.Wrap(o.Sink)
 	if err != nil {
 		ctx.Errors <- errors.Errorf("failed to wrap sink: %w", err)
 		return
 	}
+
+	ctx.Logger.Debug().Int("count", len(closers)).Msg("modifiers wrapped")
 
 	o.closersMu.Lock()
 	o.closers = closers
@@ -59,14 +67,14 @@ func (oo Outputs) Write(n interface{}) {
 }
 
 // Init initializes the outputs.
-func (oo Outputs) Init(ctx *session.Context) {
+func (oo Outputs) Init(ctx session.Context) {
 	for _, o := range oo {
 		go o.Init(ctx)
 	}
 }
 
 // Close closes all outputs.
-func (oo Outputs) Close(ctx *session.Context) {
+func (oo Outputs) Close(ctx session.Context) {
 	for _, o := range oo {
 		o.closersMu.RLock()
 		if err := o.closers.Close(); err != nil {

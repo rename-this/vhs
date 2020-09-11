@@ -1,9 +1,7 @@
 package capture
 
 import (
-	"fmt"
 	"io"
-	"log"
 	"sync"
 	"time"
 
@@ -28,7 +26,7 @@ func NewListener(cap *Capture) Listener {
 // given address and port.
 type Listener interface {
 	Packets() <-chan gopacket.Packet
-	Listen(*session.Context)
+	Listen(session.Context)
 	Close()
 }
 
@@ -48,9 +46,13 @@ func (l *listener) Packets() <-chan gopacket.Packet {
 }
 
 // Listen starts listening.
-func (l *listener) Listen(ctx *session.Context) {
+func (l *listener) Listen(ctx session.Context) {
+	ctx.Logger = ctx.Logger.With().
+		Str(session.LoggerKeyComponent, "listener").
+		Logger()
+
 	for _, i := range l.Capture.Interfaces {
-		if h, err := l.newHandle(i, (*pcap.InactiveHandle).Activate); err != nil {
+		if h, err := l.newHandle(ctx, i, (*pcap.InactiveHandle).Activate); err != nil {
 			ctx.Errors <- err
 		} else {
 			go l.readPackets(ctx, h, h.LinkType())
@@ -60,11 +62,16 @@ func (l *listener) Listen(ctx *session.Context) {
 
 type activateFn func(inactive *pcap.InactiveHandle) (*pcap.Handle, error)
 
-func (l *listener) newHandle(i pcap.Interface, activate activateFn) (*pcap.Handle, error) {
+func (l *listener) newHandle(ctx session.Context, i pcap.Interface, activate activateFn) (*pcap.Handle, error) {
+	ctx.Logger = ctx.Logger.With().
+		Interface("interface", i).
+		Logger()
+
+	ctx.Logger.Debug().Msg("creating new handle")
+
 	inactive, err := l.newInactiveHandler(i.Name)
 	if err != nil {
-		// TODO(andrewhare): Log this in a structural way.
-		log.Printf("failed to create new inactive handle: %v\n", err)
+		ctx.Logger.Debug().Err(err).Msgf("failed to create inactive handle for %s", i.Name)
 		return nil, nil
 	}
 
@@ -75,7 +82,12 @@ func (l *listener) newHandle(i pcap.Interface, activate activateFn) (*pcap.Handl
 		return nil, errors.Errorf("failed to activate %s: %w", i.Name, err)
 	}
 
-	if err := handle.SetBPFFilter(newBPFFilter(l.Capture, i)); err != nil {
+	ctx.Logger.Debug().Msg("handle activated")
+
+	filter := newBPFFilter(l.Capture, i)
+	ctx.Logger.Debug().Str("filter", filter).Msg("bpf filter created")
+
+	if err := handle.SetBPFFilter(filter); err != nil {
 		return nil, errors.Errorf("failed to set filter: %w", err)
 	}
 
@@ -86,7 +98,7 @@ func (l *listener) newHandle(i pcap.Interface, activate activateFn) (*pcap.Handl
 	return handle, nil
 }
 
-func (l *listener) readPackets(ctx *session.Context, dataSource gopacket.PacketDataSource, decoder gopacket.Decoder) {
+func (l *listener) readPackets(ctx session.Context, dataSource gopacket.PacketDataSource, decoder gopacket.Decoder) {
 	source := gopacket.NewPacketSource(dataSource, decoder)
 	source.Lazy = true
 	source.NoCopy = true
@@ -97,8 +109,13 @@ func (l *listener) readPackets(ctx *session.Context, dataSource gopacket.PacketD
 			continue
 		}
 		if err != nil {
-			fmt.Printf("read packet failed: %v\n", err)
+			if ctx.Config.DebugPackets {
+				ctx.Logger.Debug().Err(err).Msg("read packet failed")
+			}
 			continue
+		}
+		if ctx.Config.DebugPackets {
+			ctx.Logger.Debug().Str("p", p.String()).Msg("packet")
 		}
 		l.packets <- p
 	}

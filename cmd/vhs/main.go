@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"github.com/gramLabs/vhs/gcs"
 	"github.com/gramLabs/vhs/gzipx"
 	"github.com/gramLabs/vhs/httpx"
+	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/jsonx"
 	"github.com/gramLabs/vhs/middleware"
 	"github.com/gramLabs/vhs/session"
@@ -22,6 +24,10 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
+)
+
+const (
+	errBufSize = 10
 )
 
 func main() {
@@ -55,6 +61,10 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&inputLine, "input", "", "Input description.")
 	cmd.PersistentFlags().StringSliceVar(&outputLines, "output", nil, "Output description.")
 
+	cmd.PersistentFlags().BoolVar(&cfg.BufferOutput, "buffer-output", false, "Buffer output until the end of the flow.")
+	cmd.PersistentFlags().BoolVar(&cfg.Debug, "debug", false, "Emit debug logging.")
+	cmd.PersistentFlags().BoolVar(&cfg.DebugPackets, "debug-packets", false, "Emit all packets as debug logs.")
+
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		return root(cfg, inputLine, outputLines, defaultParser())
 	}
@@ -64,7 +74,7 @@ func newRootCmd() *cobra.Command {
 
 func root(cfg *session.Config, inputLine string, outputLines []string, parser *flow.Parser) error {
 	var (
-		errs                     = make(chan error)
+		errs                     = make(chan error, errBufSize)
 		allErrs                  error
 		ctx, inputCtx, outputCtx = session.NewContexts(cfg, errs)
 	)
@@ -77,6 +87,8 @@ func root(cfg *session.Config, inputLine string, outputLines []string, parser *f
 		}
 	}()
 
+	ctx.Logger.Debug().Msg("hello, vhs")
+
 	m, err := startMiddleware(ctx)
 	if err != nil {
 		return errors.Errorf("failed to start middleware: %v", err)
@@ -87,12 +99,19 @@ func root(cfg *session.Config, inputLine string, outputLines []string, parser *f
 		return errors.Errorf("failed to initialize: %v", err)
 	}
 
+	ctx.Logger.Debug().Msg("flow created")
+
 	// Add the metrics pipe if the user has enabled Prometheus metrics.
 	if cfg.PrometheusAddr != "" {
+		endpoint := "/metrics"
+		ctx.Logger.Debug().Msgf("listening for prometheus on %s%s", cfg.PrometheusAddr, endpoint)
+
 		f.Outputs = append(f.Outputs, httpx.NewMetricsOutput())
-		http.Handle("/metrics", promhttp.Handler())
+		http.Handle(endpoint, promhttp.Handler())
 		go func() {
-			log.Fatal(http.ListenAndServe(cfg.PrometheusAddr, nil))
+			if err := http.ListenAndServe(cfg.PrometheusAddr, nil); err != nil {
+				ctx.Logger.Error().Err(err).Msg("failed to listen and serve promentheus endpoint")
+			}
 		}()
 	}
 
@@ -100,7 +119,7 @@ func root(cfg *session.Config, inputLine string, outputLines []string, parser *f
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		log.Println("\ruser shutdown requested...")
+		ctx.Logger.Debug().Msg("shutdown requested")
 		ctx.Cancel()
 	}()
 
@@ -109,19 +128,24 @@ func root(cfg *session.Config, inputLine string, outputLines []string, parser *f
 	return allErrs
 }
 
-func startMiddleware(ctx *session.Context) (middleware.Middleware, error) {
+func startMiddleware(ctx session.Context) (middleware.Middleware, error) {
 	if ctx.Config.Middleware == "" {
+		ctx.Logger.Debug().Msg("no middleware configured")
 		return nil, nil
 	}
 
-	m, err := middleware.New(ctx, ctx.Config.Middleware, os.Stderr)
+	m, err := middleware.New(ctx, ctx.Config.Middleware)
 	if err != nil {
 		return nil, errors.Errorf("failed to create middleware: %w", err)
 	}
 
+	ctx.Logger.Debug().Msg("middleware created")
+
 	if err := m.Start(); err != nil {
 		return nil, errors.Errorf("failed to start middleware: %w", err)
 	}
+
+	ctx.Logger.Debug().Msg("middleware started")
 
 	go func() {
 		if err := m.Wait(); err != nil {
@@ -151,8 +175,11 @@ func defaultParser() *flow.Parser {
 
 		Sinks: map[string]flow.SinkCtor{
 			"gcs": gcs.NewSink,
-			"stdout": func(_ *session.Context) (flow.Sink, error) {
+			"stdout": func(_ session.Context) (flow.Sink, error) {
 				return os.Stdout, nil
+			},
+			"discard": func(_ session.Context) (flow.Sink, error) {
+				return ioutilx.NopWriteCloser(ioutil.Discard), nil
 			},
 		},
 

@@ -54,9 +54,17 @@ func NewMetrics() *Metrics {
 func (m *Metrics) In() chan<- interface{} { return m.in }
 
 // Init initializes the metrics format and registers the metrics with Prometheus
-func (m *Metrics) Init(ctx *session.Context, _ io.Writer) {
+func (m *Metrics) Init(ctx session.Context, _ io.Writer) {
+	ctx.Logger = ctx.Logger.With().
+		Str(session.LoggerKeyComponent, "http_metrics").
+		Logger()
+
+	ctx.Logger.Debug().Msg("init")
+
 	c := NewCorrelator(ctx.Config.HTTPTimeout)
 	go c.Start(ctx)
+
+	ctx.Logger.Debug().Msg("correlator started")
 
 	for {
 		select {
@@ -64,18 +72,28 @@ func (m *Metrics) Init(ctx *session.Context, _ io.Writer) {
 			switch msg := n.(type) {
 			case Message:
 				c.Messages <- msg
+				if ctx.Config.DebugHHTTPMessages {
+					ctx.Logger.Debug().Interface("m", msg).Msg("received message")
+				} else {
+					ctx.Logger.Debug().Msg("received message")
+				}
 			}
 		case r := <-c.Exchanges:
-			m.calcMetrics(r)
+			m.calcMetrics(ctx, r)
+			if ctx.Config.DebugHHTTPMessages {
+				ctx.Logger.Debug().Interface("r", r).Msg("received request from correlator")
+			} else {
+				ctx.Logger.Debug().Msg("received request from correlator")
+			}
 		case <-ctx.StdContext.Done():
-			// (ztreinhart): return something downstream?
+			ctx.Logger.Debug().Msg("context canceled")
 			return
 		}
 	}
 }
 
 // Calculates the desired metrics. Currently calculates latency between request and response and number of timeouts.
-func (m *Metrics) calcMetrics(req *Request) {
+func (m *Metrics) calcMetrics(ctx session.Context, req *Request) {
 	if req.Response != nil {
 		m.latency.With(prometheus.Labels{
 			"method": req.Method,
@@ -86,4 +104,5 @@ func (m *Metrics) calcMetrics(req *Request) {
 			"method": req.Method,
 		}).Inc()
 	}
+	ctx.Logger.Debug().Msg("calculated")
 }

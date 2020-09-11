@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gramLabs/vhs/session"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 type leopard struct {
@@ -69,8 +69,9 @@ func TestExec(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
+			ctx, _, _ := session.NewContexts(nil, nil)
 			for i := 0; i < c.num; i++ {
-				req, err := c.m.Exec(c.header, c.l)
+				req, err := c.m.Exec(ctx, c.header, c.l)
 				if c.errContains != "" {
 					assert.ErrorContains(t, err, c.errContains)
 				} else {
@@ -102,12 +103,6 @@ func TestMiddleware(t *testing.T) {
 		{
 			desc:    "no command",
 			command: "",
-			ns: []interface{}{
-				&leopard{1}, &leopard{2}, &leopard{3},
-			},
-			expected: []interface{}{
-				&leopard{2}, &leopard{4}, &leopard{6},
-			},
 		},
 		{
 			desc:    "unsupported JSON data",
@@ -120,14 +115,14 @@ func TestMiddleware(t *testing.T) {
 		{
 			desc:        "bad middleware",
 			command:     "../testdata/cannot_exec.go",
-			errContains: "failed to start command",
+			errContains: "failed to start middleware command",
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			err := func() error {
 				ctx, _, _ := session.NewContexts(nil, nil)
-				m, err := New(ctx, c.command, ioutil.Discard)
+				m, err := New(ctx, c.command)
 				assert.NilError(t, err)
 
 				if c.command == "" {
@@ -147,7 +142,7 @@ func TestMiddleware(t *testing.T) {
 
 				out := make([]interface{}, 0, len(c.ns))
 				for _, n := range c.ns {
-					o, err := m.Exec(nil, n)
+					o, err := m.Exec(ctx, nil, n)
 					if err != nil {
 						return err
 					}

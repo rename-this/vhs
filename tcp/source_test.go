@@ -11,7 +11,7 @@ import (
 	"github.com/google/gopacket/layers"
 	"github.com/gramLabs/vhs/capture"
 	"github.com/gramLabs/vhs/session"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 const (
@@ -79,10 +79,14 @@ func newTestListener(t *testing.T, data []string) capture.Listener {
 }
 
 func (l *testListener) Packets() <-chan gopacket.Packet { return l.packets }
-func (l *testListener) Listen(ctx *session.Context)     {}
+func (l *testListener) Listen(ctx session.Context)      {}
 func (l *testListener) Close()                          {}
 
 func TestRead(t *testing.T) {
+	cfg := &session.Config{
+		TCPTimeout:   50 * time.Millisecond,
+		DebugPackets: true,
+	}
 	cases := []struct {
 		desc     string
 		cfg      *session.Config
@@ -92,23 +96,23 @@ func TestRead(t *testing.T) {
 	}{
 		{
 			desc: "nil",
-			cfg:  &session.Config{TCPTimeout: 50 * time.Millisecond},
+			cfg:  cfg,
 			data: []string{nilPayload},
 		},
 		{
 			desc: "empty packet",
-			cfg:  &session.Config{TCPTimeout: 50 * time.Millisecond},
+			cfg:  cfg,
 			data: []string{""},
 		},
 
 		{
 			desc: "wrong packet type",
-			cfg:  &session.Config{TCPTimeout: 50 * time.Millisecond},
+			cfg:  cfg,
 			data: []string{wrongPayloadType},
 		},
 		{
 			desc: "one packet",
-			cfg:  &session.Config{TCPTimeout: 50 * time.Millisecond},
+			cfg:  cfg,
 			data: []string{"aaa"},
 			out: []string{
 				"aaa",

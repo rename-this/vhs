@@ -6,7 +6,7 @@ import (
 
 	"github.com/gramLabs/vhs/internal/safebuffer"
 	"github.com/gramLabs/vhs/session"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 type okapi struct {

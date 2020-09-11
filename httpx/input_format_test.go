@@ -22,7 +22,7 @@ func (m *testMiddleware) Start() error { return nil }
 func (m *testMiddleware) Wait() error  { return nil }
 func (m *testMiddleware) Close()       {}
 
-func (m *testMiddleware) Exec(header []byte, n interface{}) (interface{}, error) {
+func (m *testMiddleware) Exec(_ session.Context, header []byte, n interface{}) (interface{}, error) {
 	if m.expectedErr != nil {
 		return nil, m.expectedErr
 	}
@@ -111,9 +111,9 @@ func TestInputFormatInit(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			errs := make(chan error, 1)
-			ctx, _, _ := session.NewContexts(nil, errs)
+			ctx, _, _ := session.NewContexts(&session.Config{}, errs)
 			ctx.SessionID = c.sessionID
-			inputFormat, _ := NewInputFormat(nil)
+			inputFormat, _ := NewInputFormat(ctx)
 
 			go inputFormat.Init(ctx, c.m, c.r)
 

@@ -18,7 +18,7 @@ func (s *testSink) Data() []byte {
 	return s.data
 }
 
-func (*testSink) Init(_ *session.Context) {}
+func (*testSink) Init(_ session.Context) {}
 
 func (s *testSink) Write(p []byte) (int, error) {
 	s.mu.Lock()

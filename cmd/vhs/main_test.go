@@ -17,7 +17,7 @@ import (
 	"github.com/gramLabs/vhs/httpx"
 	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/session"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 func TestNewRootCmd(t *testing.T) {
@@ -197,7 +197,7 @@ func TestRoot(t *testing.T) {
 				buf    bytes.Buffer
 			)
 
-			parser.Sinks["testout"] = func(*session.Context) (flow.Sink, error) {
+			parser.Sinks["testout"] = func(session.Context) (flow.Sink, error) {
 				return ioutilx.NopWriteCloser(&buf), nil
 			}
 

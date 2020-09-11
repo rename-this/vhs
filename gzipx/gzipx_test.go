@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gramLabs/vhs/internal/ioutilx"
+	"github.com/gramLabs/vhs/session"
 	"gotest.tools/v3/assert"
 )
 
@@ -17,7 +18,7 @@ var (
 )
 
 func TestNewOutputModifier(t *testing.T) {
-	om, err := NewOutputModifier(nil)
+	om, err := NewOutputModifier(session.Context{})
 	assert.NilError(t, err)
 
 	var buf bytes.Buffer
@@ -53,7 +54,7 @@ func TestNewInputModifier(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			im, err := NewInputModifier(nil)
+			im, err := NewInputModifier(session.Context{})
 			assert.NilError(t, err)
 
 			buf := ioutilx.NopReadCloserID(ioutil.NopCloser(bytes.NewBuffer(c.in)))

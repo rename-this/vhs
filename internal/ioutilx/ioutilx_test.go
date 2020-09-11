@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-errors/errors"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 type testCloser struct {

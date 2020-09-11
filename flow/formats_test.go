@@ -12,7 +12,7 @@ import (
 	"github.com/gramLabs/vhs/session"
 )
 
-func newTestInputFormat(_ *session.Context) (InputFormat, error) {
+func newTestInputFormat(_ session.Context) (InputFormat, error) {
 	return &testFormat{
 		out: make(chan interface{}),
 	}, nil
@@ -22,7 +22,7 @@ type testFormat struct {
 	out chan interface{}
 }
 
-func (i *testFormat) Init(ctx *session.Context, m middleware.Middleware, r ioutilx.ReadCloserID) error {
+func (i *testFormat) Init(ctx session.Context, m middleware.Middleware, r ioutilx.ReadCloserID) error {
 	defer r.Close()
 
 	s := bufio.NewScanner(r)
@@ -38,12 +38,12 @@ func (i *testFormat) Init(ctx *session.Context, m middleware.Middleware, r iouti
 
 func (i *testFormat) Out() <-chan interface{} { return i.out }
 
-func newTestOutputFormatNoErr(ctx *session.Context) OutputFormat {
+func newTestOutputFormatNoErr(ctx session.Context) OutputFormat {
 	o, _ := newTestOutputFormat(ctx)
 	return o
 }
 
-func newTestOutputFormat(ctx *session.Context) (OutputFormat, error) {
+func newTestOutputFormat(ctx session.Context) (OutputFormat, error) {
 	return &testOutputFormat{
 		in:       make(chan interface{}),
 		buffered: ctx.Config.BufferOutput,
@@ -55,7 +55,7 @@ type testOutputFormat struct {
 	buffered bool
 }
 
-func (f *testOutputFormat) Init(ctx *session.Context, w io.Writer) {
+func (f *testOutputFormat) Init(ctx session.Context, w io.Writer) {
 	if f.buffered {
 		f.initBuffered(ctx, w)
 	} else {
@@ -63,7 +63,7 @@ func (f *testOutputFormat) Init(ctx *session.Context, w io.Writer) {
 	}
 }
 
-func (f *testOutputFormat) initBuffered(ctx *session.Context, w io.Writer) {
+func (f *testOutputFormat) initBuffered(ctx session.Context, w io.Writer) {
 	var total int
 	for {
 		select {
@@ -76,7 +76,7 @@ func (f *testOutputFormat) initBuffered(ctx *session.Context, w io.Writer) {
 	}
 }
 
-func (f *testOutputFormat) initUnbuffered(ctx *session.Context, w io.Writer) {
+func (f *testOutputFormat) initUnbuffered(ctx session.Context, w io.Writer) {
 	for {
 		select {
 		case n := <-f.in:

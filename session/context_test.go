@@ -12,10 +12,10 @@ func TestContexts(t *testing.T) {
 	var (
 		canceled         = make(chan struct{}, 3)
 		errs             = make(chan error, 3)
-		ctx1, ctx2, ctx3 = NewContexts(nil, errs)
+		ctx1, ctx2, ctx3 = NewContexts(&Config{}, errs)
 	)
 
-	fn := func(ctx *Context) {
+	fn := func(ctx Context) {
 		defer func() {
 			ctx.Errors <- errors.New("111")
 		}()

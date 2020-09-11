@@ -5,7 +5,7 @@ import (
 	"github.com/gramLabs/vhs/session"
 )
 
-func newTestSource(_ *session.Context) (Source, error) {
+func newTestSource(_ session.Context) (Source, error) {
 	return &testSource{
 		streams: make(chan ioutilx.ReadCloserID),
 	}, nil
@@ -18,7 +18,7 @@ type testSource struct {
 
 func (s *testSource) Streams() <-chan ioutilx.ReadCloserID { return s.streams }
 
-func (s *testSource) Init(ctx *session.Context) {
+func (s *testSource) Init(ctx session.Context) {
 	for _, d := range s.data {
 		s.streams <- d
 	}

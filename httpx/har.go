@@ -18,7 +18,7 @@ type HAR struct {
 }
 
 // NewHAR creates a mew HAR format.
-func NewHAR(_ *session.Context) (flow.OutputFormat, error) {
+func NewHAR(_ session.Context) (flow.OutputFormat, error) {
 	return &HAR{
 		in: make(chan interface{}),
 	}, nil
@@ -28,9 +28,17 @@ func NewHAR(_ *session.Context) (flow.OutputFormat, error) {
 func (h *HAR) In() chan<- interface{} { return h.in }
 
 // Init initializes the HAR sink.
-func (h *HAR) Init(ctx *session.Context, w io.Writer) {
+func (h *HAR) Init(ctx session.Context, w io.Writer) {
+	ctx.Logger = ctx.Logger.With().
+		Str(session.LoggerKeyComponent, "har").
+		Logger()
+
+	ctx.Logger.Debug().Msg("init")
+
 	c := NewCorrelator(ctx.Config.HTTPTimeout)
 	go c.Start(ctx)
+
+	ctx.Logger.Debug().Msg("correlator started")
 
 	hh := &har{
 		Log: harLog{
@@ -48,19 +56,30 @@ func (h *HAR) Init(ctx *session.Context, w io.Writer) {
 			switch m := n.(type) {
 			case Message:
 				c.Messages <- m
+				if ctx.Config.DebugHHTTPMessages {
+					ctx.Logger.Debug().Interface("m", m).Msg("received message")
+				} else {
+					ctx.Logger.Debug().Msg("received message")
+				}
 			}
 		case r := <-c.Exchanges:
-			h.addRequest(hh, r)
+			h.addRequest(ctx, hh, r)
+			if ctx.Config.DebugHHTTPMessages {
+				ctx.Logger.Debug().Interface("r", r).Msg("received request from correlator")
+			} else {
+				ctx.Logger.Debug().Msg("received request from correlator")
+			}
 		case <-ctx.StdContext.Done():
 			if err := json.NewEncoder(w).Encode(hh); err != nil {
 				ctx.Errors <- errors.Errorf("failed to encode to JSON: %w", err)
 			}
+			ctx.Logger.Debug().Msg("context canceled")
 			return
 		}
 	}
 }
 
-func (h *HAR) addRequest(hh *har, req *Request) {
+func (h *HAR) addRequest(ctx session.Context, hh *har, req *Request) {
 	var headers []harNVP
 	for n, vals := range req.Header {
 		for _, v := range vals {
@@ -113,6 +132,12 @@ func (h *HAR) addRequest(hh *har, req *Request) {
 		StartedDateTime: req.Created.Format(time.RFC3339),
 		Request:         request,
 		Response:        response,
+	}
+
+	if ctx.Config.DebugHHTTPMessages {
+		ctx.Logger.Debug().Interface("entry", entry).Msg("adding entry")
+	} else {
+		ctx.Logger.Debug().Msg("adding entry")
 	}
 
 	hh.Log.Entries = append(hh.Log.Entries, entry)

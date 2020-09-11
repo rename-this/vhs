@@ -11,7 +11,7 @@ import (
 )
 
 // NewOutputModifier creates a new gzip output modifier.
-func NewOutputModifier(_ *session.Context) (flow.OutputModifier, error) {
+func NewOutputModifier(_ session.Context) (flow.OutputModifier, error) {
 	return &outputModifier{}, nil
 }
 
@@ -22,7 +22,7 @@ func (*outputModifier) Wrap(w io.WriteCloser) (io.WriteCloser, error) {
 }
 
 // NewInputModifier creates a new gzip input modifier.
-func NewInputModifier(_ *session.Context) (flow.InputModifier, error) {
+func NewInputModifier(_ session.Context) (flow.InputModifier, error) {
 	return &inputModifier{}, nil
 }
 

@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-errors/errors"
 	"github.com/gramLabs/vhs/session"
-	"github.com/pkg/errors"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 func TestOutput(t *testing.T) {

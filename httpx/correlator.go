@@ -30,7 +30,13 @@ func NewCorrelator(timeout time.Duration) *Correlator {
 }
 
 // Start starts the correlator.
-func (c *Correlator) Start(ctx *session.Context) {
+func (c *Correlator) Start(ctx session.Context) {
+	ctx.Logger = ctx.Logger.With().
+		Str(session.LoggerKeyComponent, "correlator").
+		Logger()
+
+	ctx.Logger.Debug().Msg("start")
+
 	for {
 		select {
 		case msg := <-c.Messages:
@@ -38,18 +44,34 @@ func (c *Correlator) Start(ctx *session.Context) {
 			switch r := msg.(type) {
 			case *Request:
 				c.cache.Add(k, r)
+				if ctx.Config.DebugHHTTPMessages {
+					ctx.Logger.Debug().Interface("request", r).Msg("received request")
+				} else {
+					ctx.Logger.Debug().Msg("received request")
+				}
 			case *Response:
 				if req, ok := c.cache.Get(k).(*Request); ok {
 					req.Response = r
 					c.Exchanges <- req
 					c.cache.Remove(k)
+					if ctx.Config.DebugHHTTPMessages {
+						ctx.Logger.Debug().Interface("response", r).Msg("received response")
+					} else {
+						ctx.Logger.Debug().Msg("received response")
+					}
 				}
 			}
 		case i := <-c.cache.Evictions:
 			if req, ok := i.(*Request); ok {
 				c.Exchanges <- req
+				if ctx.Config.DebugHHTTPMessages {
+					ctx.Logger.Debug().Interface("request", req).Msg("evicting request")
+				} else {
+					ctx.Logger.Debug().Msg("evicting request")
+				}
 			}
 		case <-ctx.StdContext.Done():
+			ctx.Logger.Debug().Msg("context canceled")
 			return
 		}
 	}

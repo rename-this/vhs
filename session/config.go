@@ -20,4 +20,8 @@ type Config struct {
 	GCSObjectName string
 
 	BufferOutput bool
+
+	Debug              bool
+	DebugPackets       bool
+	DebugHHTTPMessages bool
 }

@@ -32,14 +32,14 @@ func TestNewSink(t *testing.T) {
 			bucketName: bucketName,
 			sessionID:  "111",
 			data:       "data-111",
-			newClientFn: func(_ *session.Context) (*storage.Client, error) {
+			newClientFn: func(_ session.Context) (*storage.Client, error) {
 				return server.Client(), nil
 			},
 		},
 		{
 			desc:        "error on client",
 			errContains: "111",
-			newClientFn: func(_ *session.Context) (*storage.Client, error) {
+			newClientFn: func(_ session.Context) (*storage.Client, error) {
 				return nil, errors.New("111")
 			},
 		},
@@ -47,7 +47,7 @@ func TestNewSink(t *testing.T) {
 			desc:        "missing bucket",
 			bucketName:  "none",
 			errContains: "failed to find bucket",
-			newClientFn: func(_ *session.Context) (*storage.Client, error) {
+			newClientFn: func(_ session.Context) (*storage.Client, error) {
 				return server.Client(), nil
 			},
 		},
@@ -130,14 +130,14 @@ func TestNewSource(t *testing.T) {
 			desc:       "success",
 			bucketName: bucketName,
 			objectName: objectName,
-			newClientFn: func(_ *session.Context) (*storage.Client, error) {
+			newClientFn: func(_ session.Context) (*storage.Client, error) {
 				return server.Client(), nil
 			},
 		},
 		{
 			desc:        "error on client",
 			errContains: "111",
-			newClientFn: func(_ *session.Context) (*storage.Client, error) {
+			newClientFn: func(_ session.Context) (*storage.Client, error) {
 				return nil, errors.New("111")
 			},
 		},
@@ -145,7 +145,7 @@ func TestNewSource(t *testing.T) {
 			desc:        "missing bucket",
 			bucketName:  "none",
 			errContains: "failed to find bucket",
-			newClientFn: func(_ *session.Context) (*storage.Client, error) {
+			newClientFn: func(_ session.Context) (*storage.Client, error) {
 				return server.Client(), nil
 			},
 		},
@@ -154,7 +154,7 @@ func TestNewSource(t *testing.T) {
 			bucketName:  bucketName,
 			objectName:  "none",
 			errContains: "object doesn't exist",
-			newClientFn: func(_ *session.Context) (*storage.Client, error) {
+			newClientFn: func(_ session.Context) (*storage.Client, error) {
 				return server.Client(), nil
 			},
 		},

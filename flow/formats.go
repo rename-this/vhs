@@ -10,12 +10,12 @@ import (
 
 // InputFormat is an interface for formatting input
 type InputFormat interface {
-	Init(*session.Context, middleware.Middleware, ioutilx.ReadCloserID) error
+	Init(session.Context, middleware.Middleware, ioutilx.ReadCloserID) error
 	Out() <-chan interface{}
 }
 
 // OutputFormat is an interface for formatting output
 type OutputFormat interface {
-	Init(*session.Context, io.Writer)
+	Init(session.Context, io.Writer)
 	In() chan<- interface{}
 }

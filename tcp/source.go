@@ -13,7 +13,7 @@ import (
 )
 
 // NewSource creates a new TCP source.
-func NewSource(_ *session.Context) (flow.Source, error) {
+func NewSource(_ session.Context) (flow.Source, error) {
 	return &tcpSource{
 		streams: make(chan ioutilx.ReadCloserID),
 	}, nil
@@ -25,19 +25,30 @@ type tcpSource struct {
 
 func (s *tcpSource) Streams() <-chan ioutilx.ReadCloserID { return s.streams }
 
-func (s *tcpSource) Init(ctx *session.Context) {
+func (s *tcpSource) Init(ctx session.Context) {
 	s.read(ctx, capture.NewCapture, capture.NewListener)
 }
 
-type newCaptureFn func(addr string, response bool) (*capture.Capture, error)
-type newListenereFn func(*capture.Capture) capture.Listener
+type (
+	newCaptureFn  func(addr string, response bool) (*capture.Capture, error)
+	newListenerFn func(*capture.Capture) capture.Listener
+)
 
-func (s *tcpSource) read(ctx *session.Context, newCapture newCaptureFn, newListener newListenereFn) {
+func (s *tcpSource) read(ctx session.Context, newCapture newCaptureFn, newListener newListenerFn) {
+	ctx.Logger = ctx.Logger.With().
+		Str(session.LoggerKeyComponent, "tcp_source").
+		Logger()
+
+	ctx.Logger.Debug().Msg("read")
+
 	cap, err := newCapture(ctx.Config.Addr, ctx.Config.CaptureResponse)
+
 	if err != nil {
 		ctx.Errors <- errors.Errorf("failed to initialize capture: %w", err)
 		return
 	}
+
+	ctx.Logger.Debug().Interface("cap", cap).Msg("capture created")
 
 	listener := newListener(cap)
 
@@ -46,7 +57,7 @@ func (s *tcpSource) read(ctx *session.Context, newCapture newCaptureFn, newListe
 	go listener.Listen(ctx)
 
 	var (
-		factory   = newStreamFactory(s.streams)
+		factory   = newStreamFactory(ctx, s.streams)
 		pool      = tcpassembly.NewStreamPool(factory)
 		assembler = tcpassembly.NewAssembler(pool)
 		ticker    = time.Tick(ctx.Config.TCPTimeout)
@@ -57,12 +68,18 @@ func (s *tcpSource) read(ctx *session.Context, newCapture newCaptureFn, newListe
 		select {
 		case packet := <-packets:
 			if packet == nil {
+				if ctx.Config.DebugPackets {
+					ctx.Logger.Debug().Msg("nil packet")
+				}
 				return
 			}
 
 			if packet.NetworkLayer() == nil ||
 				packet.TransportLayer() == nil ||
 				packet.TransportLayer().LayerType() != layers.LayerTypeTCP {
+				if ctx.Config.DebugPackets {
+					ctx.Logger.Debug().Str("p", packet.String()).Msg("wrong packet layers")
+				}
 				continue
 			}
 
@@ -74,7 +91,9 @@ func (s *tcpSource) read(ctx *session.Context, newCapture newCaptureFn, newListe
 			assembler.AssembleWithTimestamp(flow, tcp, time.Now())
 
 		case <-ticker:
+			ctx.Logger.Debug().Msg("flushing old streams")
 			assembler.FlushOlderThan(time.Now().Add(-ctx.Config.TCPTimeout))
+
 			factory.prune()
 
 		case <-ctx.StdContext.Done():

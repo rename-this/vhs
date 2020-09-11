@@ -24,7 +24,13 @@ func NewInput(s Source, mis InputModifiers, f InputFormat) *Input {
 }
 
 // Init starts the input.
-func (i *Input) Init(ctx *session.Context, m middleware.Middleware) {
+func (i *Input) Init(ctx session.Context, m middleware.Middleware) {
+	ctx.Logger = ctx.Logger.With().
+		Str(session.LoggerKeyComponent, "input").
+		Logger()
+
+	ctx.Logger.Debug().Msg("init")
+
 	go i.Source.Init(ctx)
 
 	for {
@@ -36,7 +42,10 @@ func (i *Input) Init(ctx *session.Context, m middleware.Middleware) {
 				continue
 			}
 
+			ctx.Logger.Debug().Int("count", len(closers)).Msg("modifiers wrapped")
+
 			defer func() {
+				ctx.Logger.Debug().Msg("closing modifiers")
 				if err := closers.Close(); err != nil {
 					ctx.Errors <- err
 				}
@@ -44,6 +53,7 @@ func (i *Input) Init(ctx *session.Context, m middleware.Middleware) {
 
 			go i.Format.Init(ctx, m, r)
 		case <-ctx.StdContext.Done():
+			ctx.Logger.Debug().Msg("context canceled")
 			return
 		}
 	}

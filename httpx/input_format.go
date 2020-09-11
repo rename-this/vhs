@@ -14,7 +14,7 @@ import (
 )
 
 // NewInputFormat creates an HTTP input formatter.
-func NewInputFormat(_ *session.Context) (flow.InputFormat, error) {
+func NewInputFormat(_ session.Context) (flow.InputFormat, error) {
 	return &inputFormat{
 		out: make(chan interface{}),
 	}, nil
@@ -24,7 +24,13 @@ type inputFormat struct {
 	out chan interface{}
 }
 
-func (i *inputFormat) Init(ctx *session.Context, m middleware.Middleware, r ioutilx.ReadCloserID) error {
+func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, r ioutilx.ReadCloserID) error {
+	ctx.Logger = ctx.Logger.With().
+		Str(session.LoggerKeyComponent, "http_input_format").
+		Logger()
+
+	ctx.Logger.Debug().Msg("init")
+
 	defer r.Close()
 
 	var (
@@ -49,10 +55,12 @@ func (i *inputFormat) Init(ctx *session.Context, m middleware.Middleware, r iout
 	}
 }
 
-func (i *inputFormat) handle(ctx *session.Context, m middleware.Middleware, t MessageType, parseMessage func() (Message, error)) {
+func (i *inputFormat) handle(ctx session.Context, m middleware.Middleware, t MessageType, parseMessage func() (Message, error)) {
 	msg, err := parseMessage()
-	if err != nil {
-		// TODO(andrewhare): ultraverbose logging.
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+		return
+	} else if err != nil {
+		ctx.Logger.Debug().Err(err).Msg("failed to parse message")
 		return
 	}
 
@@ -65,12 +73,17 @@ func (i *inputFormat) handle(ctx *session.Context, m middleware.Middleware, t Me
 	var msgOut = msg
 
 	if m != nil {
-		n, err := m.Exec([]byte{byte(t)}, msg)
+		n, err := m.Exec(ctx, []byte{byte(t)}, msg)
 		if err != nil {
 			ctx.Errors <- errors.Errorf("failed to run middleware: %w", err)
 			return
 		}
 		msgOut = n.(Message)
+		if ctx.Config.DebugHHTTPMessages {
+			ctx.Logger.Debug().Interface("msg", msgOut).Msg("message overwritten by middleware")
+		} else {
+			ctx.Logger.Debug().Msg("message overwritten by middleware")
+		}
 	}
 
 	i.out <- msgOut
