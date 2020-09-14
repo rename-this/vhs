@@ -30,7 +30,7 @@ func TestCorrelator(t *testing.T) {
 	}()
 
 	errs := make(chan error)
-	ctx, _, _ := session.NewContexts(&session.Config{DebugHHTTPMessages: true}, errs)
+	ctx, _, _ := session.NewContexts(&session.Config{DebugHTTPMessages: true}, errs)
 
 	go m.Start(ctx)
 

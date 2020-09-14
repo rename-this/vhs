@@ -72,7 +72,7 @@ func (m *Metrics) Init(ctx session.Context, _ io.Writer) {
 			switch msg := n.(type) {
 			case Message:
 				c.Messages <- msg
-				if ctx.Config.DebugHHTTPMessages {
+				if ctx.Config.DebugHTTPMessages {
 					ctx.Logger.Debug().Interface("m", msg).Msg("received message")
 				} else {
 					ctx.Logger.Debug().Msg("received message")
@@ -80,7 +80,7 @@ func (m *Metrics) Init(ctx session.Context, _ io.Writer) {
 			}
 		case r := <-c.Exchanges:
 			m.calcMetrics(ctx, r)
-			if ctx.Config.DebugHHTTPMessages {
+			if ctx.Config.DebugHTTPMessages {
 				ctx.Logger.Debug().Interface("r", r).Msg("received request from correlator")
 			} else {
 				ctx.Logger.Debug().Msg("received request from correlator")

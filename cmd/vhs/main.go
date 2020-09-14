@@ -64,7 +64,7 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().BoolVar(&cfg.BufferOutput, "buffer-output", false, "Buffer output until the end of the flow.")
 	cmd.PersistentFlags().BoolVar(&cfg.Debug, "debug", false, "Emit debug logging.")
 	cmd.PersistentFlags().BoolVar(&cfg.DebugPackets, "debug-packets", false, "Emit all packets as debug logs.")
-	cmd.PersistentFlags().BoolVar(&cfg.DebugHHTTPMessages, "debug-http-messages", false, "Emit all parsed HTTP messages as debug logs.")
+	cmd.PersistentFlags().BoolVar(&cfg.DebugHTTPMessages, "debug-http-messages", false, "Emit all parsed HTTP messages as debug logs.")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		return root(cfg, inputLine, outputLines, defaultParser())
@@ -110,7 +110,7 @@ func root(cfg *session.Config, inputLine string, outputLines []string, parser *f
 		f.Outputs = append(f.Outputs, httpx.NewMetricsOutput())
 		http.Handle(endpoint, promhttp.Handler())
 		go func() {
-			if err := http.ListenAndServe(cfg.PrometheusAddr, nil); err != nil {
+			if err := http.ListenAndServe(cfg.PrometheusAddr, nil); !errors.Is(err, http.ErrServerClosed) {
 				ctx.Logger.Error().Err(err).Msg("failed to listen and serve promentheus endpoint")
 			}
 		}()

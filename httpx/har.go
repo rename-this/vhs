@@ -56,7 +56,7 @@ func (h *HAR) Init(ctx session.Context, w io.Writer) {
 			switch m := n.(type) {
 			case Message:
 				c.Messages <- m
-				if ctx.Config.DebugHHTTPMessages {
+				if ctx.Config.DebugHTTPMessages {
 					ctx.Logger.Debug().Interface("m", m).Msg("received message")
 				} else {
 					ctx.Logger.Debug().Msg("received message")
@@ -64,7 +64,7 @@ func (h *HAR) Init(ctx session.Context, w io.Writer) {
 			}
 		case r := <-c.Exchanges:
 			h.addRequest(ctx, hh, r)
-			if ctx.Config.DebugHHTTPMessages {
+			if ctx.Config.DebugHTTPMessages {
 				ctx.Logger.Debug().Interface("r", r).Msg("received request from correlator")
 			} else {
 				ctx.Logger.Debug().Msg("received request from correlator")
@@ -134,7 +134,7 @@ func (h *HAR) addRequest(ctx session.Context, hh *har, req *Request) {
 		Response:        response,
 	}
 
-	if ctx.Config.DebugHHTTPMessages {
+	if ctx.Config.DebugHTTPMessages {
 		ctx.Logger.Debug().Interface("entry", entry).Msg("adding entry")
 	} else {
 		ctx.Logger.Debug().Msg("adding entry")

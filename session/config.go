@@ -21,7 +21,7 @@ type Config struct {
 
 	BufferOutput bool
 
-	Debug              bool
-	DebugPackets       bool
-	DebugHHTTPMessages bool
+	Debug             bool
+	DebugPackets      bool
+	DebugHTTPMessages bool
 }

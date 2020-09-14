@@ -44,7 +44,7 @@ func (c *Correlator) Start(ctx session.Context) {
 			switch r := msg.(type) {
 			case *Request:
 				c.cache.Add(k, r)
-				if ctx.Config.DebugHHTTPMessages {
+				if ctx.Config.DebugHTTPMessages {
 					ctx.Logger.Debug().Interface("request", r).Msg("received request")
 				} else {
 					ctx.Logger.Debug().Msg("received request")
@@ -54,7 +54,7 @@ func (c *Correlator) Start(ctx session.Context) {
 					req.Response = r
 					c.Exchanges <- req
 					c.cache.Remove(k)
-					if ctx.Config.DebugHHTTPMessages {
+					if ctx.Config.DebugHTTPMessages {
 						ctx.Logger.Debug().Interface("response", r).Msg("received response")
 					} else {
 						ctx.Logger.Debug().Msg("received response")
@@ -64,7 +64,7 @@ func (c *Correlator) Start(ctx session.Context) {
 		case i := <-c.cache.Evictions:
 			if req, ok := i.(*Request); ok {
 				c.Exchanges <- req
-				if ctx.Config.DebugHHTTPMessages {
+				if ctx.Config.DebugHTTPMessages {
 					ctx.Logger.Debug().Interface("request", req).Msg("evicting request")
 				} else {
 					ctx.Logger.Debug().Msg("evicting request")

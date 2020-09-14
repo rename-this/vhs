@@ -79,7 +79,7 @@ func (i *inputFormat) handle(ctx session.Context, m middleware.Middleware, t Mes
 			return
 		}
 		msgOut = n.(Message)
-		if ctx.Config.DebugHHTTPMessages {
+		if ctx.Config.DebugHTTPMessages {
 			ctx.Logger.Debug().Interface("msg", msgOut).Msg("message overwritten by middleware")
 		} else {
 			ctx.Logger.Debug().Msg("message overwritten by middleware")
