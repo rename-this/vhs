@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
+	"runtime/pprof"
 	"syscall"
 	"time"
 
@@ -66,6 +68,9 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().BoolVar(&cfg.DebugPackets, "debug-packets", false, "Emit all packets as debug logs.")
 	cmd.PersistentFlags().BoolVar(&cfg.DebugHTTPMessages, "debug-http-messages", false, "Emit all parsed HTTP messages as debug logs.")
 
+	cmd.PersistentFlags().StringVar(&cfg.ProfilePathCPU, "profile-path-cpu", "", "Output CPU profile to this path.")
+	cmd.PersistentFlags().StringVar(&cfg.ProfilePathMemory, "profile-path-memory", "", "Output memory profile to this path.")
+
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		return root(cfg, inputLine, outputLines, defaultParser())
 	}
@@ -116,6 +121,18 @@ func root(cfg *session.Config, inputLine string, outputLines []string, parser *f
 		}()
 	}
 
+	if cfg.ProfilePathCPU != "" {
+		f, err := os.Create(cfg.ProfilePathCPU)
+		if err != nil {
+			return errors.Errorf("failed to create %s: %v", cfg.ProfilePathCPU, err)
+		}
+		if err := pprof.StartCPUProfile(f); err != nil {
+			return errors.Errorf("failed to start CPU profile: %v", err)
+		}
+		ctx.Logger.Debug().Str("path", cfg.ProfilePathCPU).Msg("CPU profiling enabled")
+		defer pprof.StopCPUProfile()
+	}
+
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -125,6 +142,21 @@ func root(cfg *session.Config, inputLine string, outputLines []string, parser *f
 	}()
 
 	f.Run(ctx, inputCtx, outputCtx, m)
+
+	if cfg.ProfilePathMemory != "" {
+		f, err := os.Create(cfg.ProfilePathMemory)
+		if err != nil {
+			return errors.Errorf("failed to create %s: %v", cfg.ProfilePathMemory, err)
+		}
+		defer f.Close()
+
+		runtime.GC()
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			return errors.Errorf("failed to start write heap profile: %v", err)
+		}
+
+		ctx.Logger.Debug().Str("path", cfg.ProfilePathMemory).Msg("memory profile written")
+	}
 
 	return allErrs
 }

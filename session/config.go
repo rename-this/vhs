@@ -24,4 +24,7 @@ type Config struct {
 	Debug             bool
 	DebugPackets      bool
 	DebugHTTPMessages bool
+
+	ProfilePathCPU    string
+	ProfilePathMemory string
 }
