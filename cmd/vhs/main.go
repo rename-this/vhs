@@ -23,6 +23,8 @@ import (
 	"github.com/gramLabs/vhs/tcp"
 	"go.uber.org/multierr"
 
+	_ "net/http/pprof"
+
 	"github.com/go-errors/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
@@ -70,6 +72,7 @@ func newRootCmd() *cobra.Command {
 
 	cmd.PersistentFlags().StringVar(&cfg.ProfilePathCPU, "profile-path-cpu", "", "Output CPU profile to this path.")
 	cmd.PersistentFlags().StringVar(&cfg.ProfilePathMemory, "profile-path-memory", "", "Output memory profile to this path.")
+	cmd.PersistentFlags().StringVar(&cfg.ProfileHTTPAddr, "profile-http-address", "", "Expose profile data on this address.")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		return root(cfg, inputLine, outputLines, defaultParser())
@@ -113,10 +116,23 @@ func root(cfg *session.Config, inputLine string, outputLines []string, parser *f
 		ctx.Logger.Debug().Msgf("listening for prometheus on %s%s", cfg.PrometheusAddr, endpoint)
 
 		f.Outputs = append(f.Outputs, httpx.NewMetricsOutput())
-		http.Handle(endpoint, promhttp.Handler())
+
+		mux := http.NewServeMux()
+		mux.Handle(endpoint, promhttp.Handler())
+
 		go func() {
-			if err := http.ListenAndServe(cfg.PrometheusAddr, nil); !errors.Is(err, http.ErrServerClosed) {
+			err := http.ListenAndServe(cfg.PrometheusAddr, mux)
+			if errors.Is(err, http.ErrServerClosed) {
 				ctx.Logger.Error().Err(err).Msg("failed to listen and serve promentheus endpoint")
+			}
+		}()
+	}
+
+	if cfg.ProfileHTTPAddr != "" {
+		go func() {
+			err := http.ListenAndServe(cfg.ProfileHTTPAddr, nil)
+			if errors.Is(err, http.ErrServerClosed) {
+				ctx.Logger.Error().Err(err).Msg("failed to listen and serve pprof endpoint")
 			}
 		}()
 	}

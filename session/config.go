@@ -27,4 +27,5 @@ type Config struct {
 
 	ProfilePathCPU    string
 	ProfilePathMemory string
+	ProfileHTTPAddr   string
 }
