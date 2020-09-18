@@ -40,7 +40,7 @@ func (f *Flow) Run(ctx, inputCtx, outputCtx session.Context, m middleware.Middle
 	for {
 		select {
 		case n := <-f.Input.Format.Out():
-			f.Outputs.Write(n)
+			go f.Outputs.Write(n)
 		case <-ctx.StdContext.Done():
 			ctx.Logger.Debug().Msg("context canceled")
 			return
