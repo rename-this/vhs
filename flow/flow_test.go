@@ -2,6 +2,7 @@ package flow
 
 import (
 	"io/ioutil"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -33,13 +34,13 @@ func TestFlow(t *testing.T) {
 		}
 		i = NewInput(s, mis, ifmt)
 
-		ofmt1 = &testSink{}
+		ofmt1 = &testSinkInt{}
 		o1    = NewOutput(newTestOutputFormatNoErr(outputCtx), nil, ofmt1)
 
 		mos = OutputModifiers{
 			&TestDoubleOutputModifier{},
 		}
-		ofmt2 = &testSink{}
+		ofmt2 = &testSinkInt{}
 		o2    = NewOutput(newTestOutputFormatNoErr(outputCtx), mos, ofmt2)
 
 		oo = Outputs{o1, o2}
@@ -50,6 +51,10 @@ func TestFlow(t *testing.T) {
 	f.Run(ctx, inputCtx, outputCtx, nil)
 
 	assert.Equal(t, 0, len(errs))
-	assert.Equal(t, string(ofmt1.data), "123123")
-	assert.Equal(t, string(ofmt2.data), "112233112233")
+
+	sort.Ints(ofmt1.data)
+	sort.Ints(ofmt2.data)
+
+	assert.DeepEqual(t, ofmt1.data, []int{1, 1, 2, 2, 3, 3})
+	assert.DeepEqual(t, ofmt2.data, []int{11, 11, 22, 22, 33, 33})
 }
