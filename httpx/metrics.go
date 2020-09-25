@@ -62,7 +62,7 @@ func (m *Metrics) Init(ctx session.Context, _ io.Writer) {
 	ctx.Logger.Debug().Msg("init")
 
 	c := NewCorrelator(ctx.Config.HTTPTimeout)
-	go c.Start(ctx)
+	c.Start(ctx)
 
 	ctx.Logger.Debug().Msg("correlator started")
 

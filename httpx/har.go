@@ -36,7 +36,7 @@ func (h *HAR) Init(ctx session.Context, w io.Writer) {
 	ctx.Logger.Debug().Msg("init")
 
 	c := NewCorrelator(ctx.Config.HTTPTimeout)
-	go c.Start(ctx)
+	c.Start(ctx)
 
 	ctx.Logger.Debug().Msg("correlator started")
 

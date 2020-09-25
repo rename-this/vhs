@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gramLabs/vhs/session"
 	"gotest.tools/v3/assert"
+
+	"github.com/gramLabs/vhs/session"
 )
 
 func TestCorrelator(t *testing.T) {
@@ -34,7 +35,7 @@ func TestCorrelator(t *testing.T) {
 	errs := make(chan error)
 	ctx, _, _ := session.NewContexts(&session.Config{DebugHTTPMessages: true}, errs)
 
-	go m.Start(ctx)
+	m.Start(ctx)
 
 	// A paired request/response
 	m.Messages <- &Request{ConnectionID: "1", ExchangeID: 0}
@@ -73,10 +74,10 @@ func TestStressCorrelator(t *testing.T) {
 	)
 
 	errs := make(chan error)
-	genctx, recvctx, corctx := session.NewContexts(nil, errs)
+	genctx, recvctx, corctx := session.NewContexts(&session.Config{DebugHTTPMessages: true}, errs)
 
 	c := NewCorrelator(httptimeout)
-	go c.Start(corctx)
+	c.Start(corctx)
 
 	for i := 0; i < numSenders; i++ {
 		go func() {

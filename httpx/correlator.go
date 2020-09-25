@@ -29,7 +29,7 @@ func NewCorrelator(timeout time.Duration) *Correlator {
 	}
 }
 
-// Start starts the correlator.
+// Start starts the correlator. Goroutines are now spawned internally within this method.
 func (c *Correlator) Start(ctx session.Context) {
 	ctx.Logger = ctx.Logger.With().
 		Str(session.LoggerKeyComponent, "correlator").
@@ -37,45 +37,60 @@ func (c *Correlator) Start(ctx session.Context) {
 
 	ctx.Logger.Debug().Msg("start")
 
-	for {
-		select {
-		case msg := <-c.Messages:
-			k := cacheKey(msg)
-			switch r := msg.(type) {
-			case *Request:
-				c.cache.Add(k, r)
-				if ctx.Config.DebugHTTPMessages {
-					ctx.Logger.Debug().Interface("request", r).Msg("received request")
-				} else {
-					ctx.Logger.Debug().Msg("received request")
-				}
-			case *Response:
-				if req, ok := c.cache.Get(k).(*Request); ok {
-					req.Response = r
-					c.Exchanges <- req
-					c.cache.Remove(k)
+	go func() {
+		for {
+			select {
+			case msg := <-c.Messages:
+				k := cacheKey(msg)
+				switch r := msg.(type) {
+				case *Request:
+					c.cache.Add(k, r)
 					if ctx.Config.DebugHTTPMessages {
-						ctx.Logger.Debug().Interface("response", r).Msg("received response")
+						ctx.Logger.Debug().Interface("request", r).Msg("received request")
 					} else {
-						ctx.Logger.Debug().Msg("received response")
+						ctx.Logger.Debug().Msg("received request")
+					}
+				case *Response:
+					if req, ok := c.cache.Get(k).(*Request); ok {
+						req.Response = r
+						c.Exchanges <- req
+						c.cache.Remove(k)
+						if ctx.Config.DebugHTTPMessages {
+							ctx.Logger.Debug().Interface("response", r).Msg("received response")
+						} else {
+							ctx.Logger.Debug().Msg("received response")
+						}
 					}
 				}
+			case <-ctx.StdContext.Done():
+				ctx.Logger.Debug().Msg("context canceled")
+				c.cache.Close()
+				return
 			}
-		case i := <-c.cache.Evictions:
-			if req, ok := i.(*Request); ok {
-				c.Exchanges <- req
-				if ctx.Config.DebugHTTPMessages {
-					ctx.Logger.Debug().Interface("request", req).Msg("evicting request")
-				} else {
-					ctx.Logger.Debug().Msg("evicting request")
-				}
-			}
-		case <-ctx.StdContext.Done():
-			ctx.Logger.Debug().Msg("context canceled")
-			c.cache.Close()
-			return
 		}
-	}
+	}()
+
+	go func() {
+		for {
+			select {
+			case i := <-c.cache.Evictions:
+				if req, ok := i.(*Request); ok {
+					c.Exchanges <- req
+					if ctx.Config.DebugHTTPMessages {
+						ctx.Logger.Debug().Interface("request", req).Msg("evicting request")
+					} else {
+						ctx.Logger.Debug().Msg("evicting request")
+					}
+				}
+			case <-ctx.StdContext.Done():
+				ctx.Logger.Debug().Msg("context canceled")
+				c.cache.Close()
+				return
+			}
+		}
+	}()
+
+
 }
 
 func cacheKey(msg Message) string {
