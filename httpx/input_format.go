@@ -16,7 +16,7 @@ import (
 // NewInputFormat creates an HTTP input formatter.
 func NewInputFormat(_ session.Context) (flow.InputFormat, error) {
 	return &inputFormat{
-		out: make(chan interface{}, 10),
+		out: make(chan interface{}),
 	}, nil
 }
 
