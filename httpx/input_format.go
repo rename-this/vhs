@@ -16,7 +16,7 @@ import (
 // NewInputFormat creates an HTTP input formatter.
 func NewInputFormat(_ session.Context) (flow.InputFormat, error) {
 	return &inputFormat{
-		out: make(chan interface{}),
+		out: make(chan interface{}, 10),
 	}, nil
 }
 
@@ -31,6 +31,7 @@ func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, r iouti
 
 	ctx.Logger.Debug().Msg("init")
 
+	defer ctx.Logger.Debug().Msg("closing")
 	defer r.Close()
 
 	var (
@@ -44,14 +45,19 @@ func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, r iouti
 	)
 
 	for {
-		i.handle(ctx, m, TypeRequest, func() (Message, error) {
-			return NewRequest(reqReader, r.ID(), exchangeID)
-		})
-		i.handle(ctx, m, TypeResponse, func() (Message, error) {
-			return NewResponse(resReader, r.ID(), exchangeID)
-		})
+		select {
+		case <-ctx.StdContext.Done():
+			return nil
+		default:
+			i.handle(ctx, m, TypeRequest, func() (Message, error) {
+				return NewRequest(reqReader, r.ID(), exchangeID)
+			})
+			i.handle(ctx, m, TypeResponse, func() (Message, error) {
+				return NewResponse(resReader, r.ID(), exchangeID)
+			})
 
-		exchangeID++
+			exchangeID++
+		}
 	}
 }
 
@@ -70,7 +76,7 @@ func (i *inputFormat) handle(ctx session.Context, m middleware.Middleware, t Mes
 	// By default, msgOut is the original message.
 	// If middleware is defined, this will be
 	// overwritten by the middleware output.
-	var msgOut = msg
+	msgOut := msg
 
 	if m != nil {
 		n, err := m.Exec(ctx, []byte{byte(t)}, msg)

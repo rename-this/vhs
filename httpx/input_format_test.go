@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/middleware"
@@ -35,6 +36,15 @@ func (m *testMiddleware) Exec(_ session.Context, header []byte, n interface{}) (
 	return n, nil
 }
 
+func newTestReadCloserID(s string) ioutilx.ReadCloserID {
+	var (
+		sr  = strings.NewReader(s)
+		br  = bufio.NewReader(sr)
+		noc = ioutil.NopCloser(br)
+	)
+	return ioutilx.NopReadCloserID(noc)
+}
+
 func TestInputFormatInit(t *testing.T) {
 	cases := []struct {
 		desc        string
@@ -51,7 +61,7 @@ func TestInputFormatInit(t *testing.T) {
 		},
 		{
 			desc:  "no middleware",
-			r:     ioutilx.NopReadCloserID(ioutil.NopCloser(bufio.NewReader(strings.NewReader("GET /111.html HTTP/1.1\r\nheader:foo\r\n\r\nHTTP/1.1 204 No Content\r\n\r\n")))),
+			r:     newTestReadCloserID("GET /111.html HTTP/1.1\r\nheader:foo\r\n\r\nHTTP/1.1 204 No Content\r\n\r\n"),
 			count: 2,
 			msgs: []Message{
 				&Request{
@@ -75,7 +85,7 @@ func TestInputFormatInit(t *testing.T) {
 		},
 		{
 			desc:  "middleware",
-			r:     ioutilx.NopReadCloserID(ioutil.NopCloser(bufio.NewReader(strings.NewReader("GET /111.html HTTP/1.1\r\nheader:foo\r\n\r\nHTTP/1.1 204 No Content\r\n\r\n")))),
+			r:     newTestReadCloserID("GET /111.html HTTP/1.1\r\nheader:foo\r\n\r\nHTTP/1.1 204 No Content\r\n\r\n"),
 			count: 2,
 			m:     &testMiddleware{},
 			msgs: []Message{
@@ -100,7 +110,7 @@ func TestInputFormatInit(t *testing.T) {
 		},
 		{
 			desc:  "middleware error",
-			r:     ioutilx.NopReadCloserID(ioutil.NopCloser(bufio.NewReader(strings.NewReader("GET /111.html HTTP/1.1\r\nheader:foo\r\n\r\n")))),
+			r:     newTestReadCloserID("GET /111.html HTTP/1.1\r\nheader:foo\r\n\r\n"),
 			count: 0,
 			m: &testMiddleware{
 				expectedErr: errors.New("111"),
@@ -110,8 +120,8 @@ func TestInputFormatInit(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			errs := make(chan error, 1)
-			ctx, _, _ := session.NewContexts(&session.Config{}, errs)
+			errs := make(chan error, 10)
+			ctx, _, _ := session.NewContexts(&session.Config{Debug: true}, errs)
 			ctx.SessionID = c.sessionID
 			inputFormat, _ := NewInputFormat(ctx)
 
@@ -126,6 +136,7 @@ func TestInputFormatInit(t *testing.T) {
 				msgs = append(msgs, m)
 			}
 
+			time.Sleep(50 * time.Millisecond)
 			ctx.Cancel()
 
 			if c.errContains == "" {

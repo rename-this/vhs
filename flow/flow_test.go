@@ -50,6 +50,8 @@ func TestFlow(t *testing.T) {
 
 	f.Run(ctx, inputCtx, outputCtx, nil)
 
+	ctx.Cancel()
+
 	assert.Equal(t, 0, len(errs))
 
 	sort.Ints(ofmt1.data)

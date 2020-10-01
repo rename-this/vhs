@@ -1,6 +1,8 @@
 package flow
 
 import (
+	"fmt"
+
 	"github.com/go-errors/errors"
 	"github.com/gramLabs/vhs/middleware"
 	"github.com/gramLabs/vhs/session"
@@ -44,14 +46,13 @@ func (i *Input) Init(ctx session.Context, m middleware.Middleware) {
 
 			ctx.Logger.Debug().Int("count", len(closers)).Msg("modifiers wrapped")
 
-			defer func() {
+			go func() {
+				i.Format.Init(ctx, m, r)
 				ctx.Logger.Debug().Msg("closing modifiers")
 				if err := closers.Close(); err != nil {
-					ctx.Errors <- err
+					ctx.Errors <- fmt.Errorf("failed to close input modifier: %w", err)
 				}
 			}()
-
-			go i.Format.Init(ctx, m, r)
 		case <-ctx.StdContext.Done():
 			ctx.Logger.Debug().Msg("context canceled")
 			return

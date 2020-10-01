@@ -25,14 +25,19 @@ type testFormat struct {
 func (i *testFormat) Init(ctx session.Context, m middleware.Middleware, r ioutilx.ReadCloserID) error {
 	defer r.Close()
 
-	s := bufio.NewScanner(r)
-	for s.Scan() {
-		ii, err := strconv.Atoi(strings.TrimSpace(s.Text()))
-		if err != nil {
-			return err
+	go func() {
+		s := bufio.NewScanner(r)
+		for s.Scan() {
+			ii, err := strconv.Atoi(strings.TrimSpace(s.Text()))
+			if err != nil {
+				ctx.Errors <- err
+			}
+			i.out <- ii
 		}
-		i.out <- ii
-	}
+	}()
+
+	<-ctx.StdContext.Done()
+
 	return nil
 }
 
