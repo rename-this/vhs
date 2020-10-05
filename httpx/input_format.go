@@ -31,10 +31,12 @@ func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, r iouti
 
 	ctx.Logger.Debug().Msg("init")
 
-	defer ctx.Logger.Debug().Msg("closing")
+	defer func() { ctx.Logger.Debug().Msg("closing") }()
 	defer r.Close()
 
 	var (
+		id = r.ID()
+
 		resBuf bytes.Buffer
 		tee    = io.TeeReader(r, &resBuf)
 
@@ -49,27 +51,29 @@ func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, r iouti
 		case <-ctx.StdContext.Done():
 			return nil
 		default:
-			i.handle(ctx, m, TypeRequest, func() (Message, error) {
-				return NewRequest(reqReader, r.ID(), exchangeID)
-			})
-			i.handle(ctx, m, TypeResponse, func() (Message, error) {
-				return NewResponse(resReader, r.ID(), exchangeID)
-			})
+			req, err := NewRequest(reqReader, id, exchangeID)
+			if req != nil {
+				ctx.Logger.Debug().Msg("request received")
+				i.handle(ctx, m, TypeRequest, req)
+			}
+
+			res, err := NewResponse(resReader, id, exchangeID)
+			if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+				ctx.Logger.Debug().Msg("EOF")
+				return nil
+			} else if res != nil {
+				ctx.Logger.Debug().Msg("response received")
+				i.handle(ctx, m, TypeResponse, res)
+			} else {
+				ctx.Logger.Debug().AnErr("err", err).Msg("bad resp")
+			}
 
 			exchangeID++
 		}
 	}
 }
 
-func (i *inputFormat) handle(ctx session.Context, m middleware.Middleware, t MessageType, parseMessage func() (Message, error)) {
-	msg, err := parseMessage()
-	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
-		return
-	} else if err != nil {
-		ctx.Logger.Debug().Err(err).Msg("failed to parse message")
-		return
-	}
-
+func (i *inputFormat) handle(ctx session.Context, m middleware.Middleware, t MessageType, msg Message) {
 	msg.SetCreated(time.Now())
 	msg.SetSessionID(ctx.SessionID)
 

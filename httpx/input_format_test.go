@@ -38,8 +38,9 @@ func (m *testMiddleware) Exec(_ session.Context, header []byte, n interface{}) (
 
 func newTestReadCloserID(s string) ioutilx.ReadCloserID {
 	var (
-		sr  = strings.NewReader(s)
-		br  = bufio.NewReader(sr)
+		sr = strings.NewReader(s)
+		br = bufio.NewReader(sr)
+
 		noc = ioutil.NopCloser(br)
 	)
 	return ioutilx.NopReadCloserID(noc)
