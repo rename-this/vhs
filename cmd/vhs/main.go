@@ -52,8 +52,8 @@ func newRootCmd() *cobra.Command {
 	)
 
 	cmd.PersistentFlags().DurationVar(&cfg.FlowDuration, "flow-duration", 10*time.Second, "The length of the running command.")
-	cmd.PersistentFlags().DurationVar(&cfg.InputDrainDuration, "input-drain-duration", 10*time.Second, "A grace period to allow for a inputs to drain.")
-	cmd.PersistentFlags().DurationVar(&cfg.ShutdownDuration, "shutdown-duration", 10*time.Second, "A grace period to allow for a clean shutdown.")
+	cmd.PersistentFlags().DurationVar(&cfg.InputDrainDuration, "input-drain-duration", 2*time.Second, "A grace period to allow for a inputs to drain.")
+	cmd.PersistentFlags().DurationVar(&cfg.ShutdownDuration, "shutdown-duration", 2*time.Second, "A grace period to allow for a clean shutdown.")
 	cmd.PersistentFlags().StringVar(&cfg.Addr, "address", capture.DefaultAddr, "Address VHS will use to capture traffic.")
 	cmd.PersistentFlags().BoolVar(&cfg.CaptureResponse, "capture-response", false, "Capture the responses.")
 	cmd.PersistentFlags().StringVar(&cfg.Middleware, "middleware", "", "A path to an executable that VHS will use as middleware.")
@@ -153,7 +153,8 @@ func root(cfg *session.Config, inputLine string, outputLines []string, parser *f
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		ctx.Logger.Debug().Msg("shutdown requested")
+		ctx.Logger.Debug().Msgf("shutdown initiated, exiting in %s",
+			ctx.Config.InputDrainDuration+ctx.Config.ShutdownDuration)
 		ctx.Cancel()
 	}()
 

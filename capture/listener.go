@@ -3,7 +3,6 @@ package capture
 import (
 	"io"
 	"sync"
-	"time"
 
 	"github.com/go-errors/errors"
 	"github.com/google/gopacket"
@@ -104,20 +103,25 @@ func (l *listener) readPackets(ctx session.Context, dataSource gopacket.PacketDa
 	source.NoCopy = true
 
 	for {
-		p, err := source.NextPacket()
-		if errors.Is(err, io.EOF) {
-			continue
-		}
-		if err != nil {
-			if ctx.Config.DebugPackets {
-				ctx.Logger.Debug().Err(err).Msg("read packet failed")
+		select {
+		case <-ctx.StdContext.Done():
+			return
+		default:
+			p, err := source.NextPacket()
+			if errors.Is(err, io.EOF) {
+				continue
 			}
-			continue
+			if err != nil {
+				if ctx.Config.DebugPackets {
+					ctx.Logger.Debug().Err(err).Msg("read packet failed")
+				}
+				continue
+			}
+			if ctx.Config.DebugPackets {
+				ctx.Logger.Debug().Str("p", p.String()).Msg("packet")
+			}
+			l.packets <- p
 		}
-		if ctx.Config.DebugPackets {
-			ctx.Logger.Debug().Str("p", p.String()).Msg("packet")
-		}
-		l.packets <- p
 	}
 }
 
@@ -128,9 +132,7 @@ func (l *listener) newInactiveHandler(name string) (*pcap.InactiveHandle, error)
 	}
 
 	inactive.SetPromisc(true)
-
-	// TODO(andrewhare): configure these
-	inactive.SetTimeout(2000 * time.Millisecond)
+	inactive.SetTimeout(pcap.BlockForever)
 	inactive.SetImmediateMode(true)
 	inactive.SetSnapLen(65536)
 
