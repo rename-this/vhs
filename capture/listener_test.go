@@ -64,6 +64,7 @@ type testPacketDataSource struct {
 
 func (tpds *testPacketDataSource) ReadPacketData() ([]byte, gopacket.CaptureInfo, error) {
 	if tpds.err != nil {
+		defer func() { tpds.err = nil }()
 		return nil, gopacket.CaptureInfo{}, tpds.err
 	}
 	defer func() { tpds.idx++ }()
@@ -95,6 +96,9 @@ func TestReadPackets(t *testing.T) {
 			desc:     "err",
 			listener: NewListener(&Capture{}),
 			source: &testPacketDataSource{
+				data: []string{
+					"---",
+				},
 				err: errors.New("111"),
 			},
 		},
@@ -110,6 +114,7 @@ func TestReadPackets(t *testing.T) {
 				p := <-packets
 				assert.Equal(t, string(p.Data()), d)
 			}
+			ctx.Cancel()
 			c.listener.Close()
 		})
 	}
