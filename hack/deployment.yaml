@@ -1,0 +1,55 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vhs-webhook
+  namespace: redsky-system
+  labels:
+    app.kubernetes.io/name: vhs-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vhs-webhook
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vhs-webhook
+    spec:
+      containers:
+        - name: vhs-webhook
+          image: sidecarinjector:latest
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /etc/webhook/config
+              name: webhook-config
+            - mountPath: /etc/certs
+              name: webhook-tls
+          command:
+            - /sidecarinjector
+          args:
+            - --logtostderr
+            - --port=443
+            - --sidecar-config-file=/etc/webhook/config/sidecarconfig.yaml
+            - --mutation-config-file=/etc/webhook/config/mutationconfig.yaml
+            - --cert-file-path=/etc/certs/cert.pem
+            - --key-file-path=/etc/certs/key.pem
+          ports:
+            - name: http
+              containerPort: 443
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: http
+          readinessProbe:
+            tcpSocket:
+              port: http
+          resources:
+            {}
+      volumes:
+        - configMap:
+            name: vhs-webhook-configmap
+          name: webhook-config
+        - secret:
+            secretName: webhook-tls
+          name: webhook-tls

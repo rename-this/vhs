@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# This misses the webhook, so we'll hardcode namespaces for now
+#namespace: redsky-system
+
+resources:
+- namespace.yaml
+- configmap.yaml
+- deployment.yaml
+- service.yaml
+- mutatingwebhook.yaml

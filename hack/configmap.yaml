@@ -1,0 +1,67 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vhs-webhook-configmap
+  namespace: redsky-system
+data:
+  sidecarconfig.yaml: |
+    volumes:
+      - name: cloud-credentials
+        {% if ne (len (index .Annotations "vhs.carbon-relay.com/secret")) 0 %}
+        secret:
+          secretName: {% index .Annotations "vhs.carbon-relay.com/secret" %}
+        {% else %}
+        emptyDir: {}
+        {% end %}
+    containers:
+      - name: vhs
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          # Since we don't know which cloud provider is being used specifically,
+          # we'll mount up the secret to each well known location
+          # GCP
+          - mountPath: /root/.config/gcloud
+            name: cloud-credentials
+          # AWS
+          - mountPath: /root/.aws
+            name: cloud-credentials
+          # Azure
+          - mountPath: /root/.azure/credentials
+            name: cloud-credentials
+
+        # Override default image
+        {% if ne (len (index .Annotations "vhs.carbon-relay.com/image")) 0 %}
+        image: {% index .Annotations "vhs.carbon-relay.com/image" %}
+        {% else %}
+        image: ubuntu:latest
+        {% end %}
+
+        # Override args
+        {% if ne (len (index .Annotations "vhs.carbon-relay.com/args")) 0 %}
+        args: {% index .Annotations "vhs.carbon-relay.com/args" %}
+        {% else %}
+        args:
+        - -c
+        - "sleep 3600"
+        {% end %}
+
+        # Override command
+        {% if ne (len (index .Annotations "vhs.carbon-relay.com/command")) 0 %}
+        command: {% index .Annotations "vhs.carbon-relay.com/command" %}
+        {% else %}
+        command:
+        - /bin/bash
+        {% end %}
+  mutationconfig.yaml: |
+    mutationConfigs:
+      - name: vhs
+        annotationNamespace: "vhs.carbon-relay.com"
+        annotationTrigger: "inject"
+        containers:
+        - vhs
+        volumes:
+        - cloud-credentials
+        ignoreNamespaces:
+        - kube-system
+        - redsky-system

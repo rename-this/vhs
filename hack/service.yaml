@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vhs-webhook
+  namespace: redsky-system
+  labels:
+    app.kubernetes.io/name: vhs-webhook
+spec:
+  type: ClusterIP
+  ports:
+    - port: 443
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: vhs-webhook
