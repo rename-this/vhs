@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -21,7 +22,6 @@ import (
 	"github.com/gramLabs/vhs/middleware"
 	"github.com/gramLabs/vhs/session"
 	"github.com/gramLabs/vhs/tcp"
-	"go.uber.org/multierr"
 
 	_ "net/http/pprof"
 
@@ -74,8 +74,11 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&cfg.ProfilePathMemory, "profile-path-memory", "", "Output memory profile to this path.")
 	cmd.PersistentFlags().StringVar(&cfg.ProfileHTTPAddr, "profile-http-address", "", "Expose profile data on this address.")
 
-	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		return root(cfg, inputLine, outputLines, defaultParser())
+	cmd.Run = func(cmd *cobra.Command, args []string) {
+		err := root(cfg, inputLine, outputLines, defaultParser())
+		if err != nil {
+			fmt.Printf("failed to initialize vhs: %v", err)
+		}
 	}
 
 	return cmd
@@ -84,14 +87,13 @@ func newRootCmd() *cobra.Command {
 func root(cfg *session.Config, inputLine string, outputLines []string, parser *flow.Parser) error {
 	var (
 		errs                     = make(chan error, errBufSize)
-		allErrs                  error
 		ctx, inputCtx, outputCtx = session.NewContexts(cfg, errs)
 	)
 
 	go func() {
 		for err := range errs {
 			if err != nil {
-				allErrs = multierr.Append(allErrs, err)
+				ctx.Logger.Err(err).Msg("flow error")
 			}
 		}
 	}()
@@ -175,7 +177,7 @@ func root(cfg *session.Config, inputLine string, outputLines []string, parser *f
 		ctx.Logger.Debug().Str("path", cfg.ProfilePathMemory).Msg("memory profile written")
 	}
 
-	return allErrs
+	return nil
 }
 
 func startMiddleware(ctx session.Context) (middleware.Middleware, error) {
