@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"net/url"
+	"sort"
 	"testing"
 	"time"
 
+	"gotest.tools/v3/assert"
+
 	"github.com/gramLabs/vhs/internal/safebuffer"
 	"github.com/gramLabs/vhs/session"
-	"gotest.tools/v3/assert"
 )
 
 func TestHAR(t *testing.T) {
@@ -58,12 +61,200 @@ func TestHAR(t *testing.T) {
 					Entries: []harEntry{
 						{
 							StartedDateTime: "0001-01-01T00:00:00Z",
+							Time:            0,
 							Request: harRequest{
-								URL:      "http://example.org",
-								Headers:  []harNVP{{Name: "a", Value: "a"}},
-								BodySize: 1,
+								URL:        "http://example.org",
+								Headers:    []harNVP{{Name: "a", Value: "a"}},
+								BodySize:   1,
+								HeaderSize: -1,
 							},
-							Response: harResponse{Status: http.StatusOK},
+							Response: harResponse{
+								Status:      http.StatusOK,
+								HeadersSize: -1,
+							},
+							Cache: harCache{},
+							Timings: harEntryTiming{
+								Send:    1,
+								Wait:    1,
+								Receive: 1,
+							},
+							ServerIPAddress: "",
+							Connection:      "111",
+						},
+					},
+				},
+			},
+		},
+		{
+			desc: "kitchen sink",
+			messages: []Message{
+				//GET with a cookie
+				&Request{
+					ConnectionID: "111",
+					ExchangeID:   0,
+					Method:       "GET",
+					URL:          newURL("/111.html"),
+					Proto:        "HTTP/1.1",
+					ProtoMajor:   1,
+					ProtoMinor:   1,
+					Header:       http.Header{"Cookie": {"quux=corge"}},
+					MimeType:     "text/plain; charset=utf-8",
+					Cookies: []*http.Cookie{{
+						Name:  "quux",
+						Value: "corge",
+					},
+					},
+					Body:          "",
+					ContentLength: 1,
+					RequestURI:    "/111.html",
+				},
+				&Response{
+					ConnectionID: "111",
+					ExchangeID:   0,
+					StatusCode:   http.StatusOK,
+				},
+				//POST url-encoded
+				&Request{
+					ConnectionID: "112",
+					ExchangeID:   1,
+					Method:       "POST",
+					URL:          newURL("/111.html"),
+					Proto:        "HTTP/1.1",
+					ProtoMajor:   1,
+					ProtoMinor:   1,
+					Header: http.Header{
+						"Content-Type":   {"application/x-www-form-urlencoded"},
+					},
+					MimeType: "application/x-www-form-urlencoded",
+					PostForm: url.Values{
+						"baz": {"qux"},
+					},
+					Cookies:       []*http.Cookie{},
+					Body:          "",
+					ContentLength: 15,
+					RequestURI:    "/111.html",
+				},
+				&Response{
+					ConnectionID: "112",
+					ExchangeID:   1,
+					StatusCode:   http.StatusOK,
+				},
+				//POST json (not url-encoded)
+				&Request{
+					ConnectionID: "113",
+					ExchangeID:   1,
+					Method:       "POST",
+					URL:          newURL("/111.html"),
+					Proto:        "HTTP/1.1",
+					ProtoMajor:   1,
+					ProtoMinor:   1,
+					Header: http.Header{
+						"Content-Type":   {"application/json"},
+					},
+					MimeType:      "application/json",
+					Cookies:       []*http.Cookie{},
+					Body:          "{\"baz\":\"qux\",\"foo\":\"bar\"}",
+					ContentLength: 25,
+					RequestURI:    "/111.html",
+				},
+				&Response{
+					ConnectionID: "113",
+					ExchangeID:   1,
+					StatusCode:   http.StatusOK,
+				},
+			},
+			out: &har{
+				Log: harLog{
+					Version: "1.2",
+					Creator: harCreator{
+						Name:    "vhs",
+						Version: "0.0.1",
+					},
+					Entries: []harEntry{
+						{   //GET with a cookie
+							StartedDateTime: "0001-01-01T00:00:00Z",
+							Time:            0,
+							Request: harRequest{
+								Method: "GET",
+								URL:        "/111.html",
+								HTTPVersion: "HTTP/1.1",
+								Cookies:    []harCookie{{Name: "quux", Value: "corge"}},
+								Headers:    []harNVP{{Name: "Cookie", Value: "quux=corge"}},
+								HeaderSize: -1,
+							},
+							Response: harResponse{
+								Status:      http.StatusOK,
+								HeadersSize: -1,
+							},
+							Cache: harCache{},
+							Timings: harEntryTiming{
+								Send:    1,
+								Wait:    1,
+								Receive: 1,
+							},
+							ServerIPAddress: "",
+							Connection:      "111",
+						},
+						{   //POST url-encoded
+							StartedDateTime: "0001-01-01T00:00:00Z",
+							Time:            0,
+							Request: harRequest{
+								Method: "POST",
+								URL:        "/111.html",
+								HTTPVersion: "HTTP/1.1",
+								Headers:    []harNVP{
+									{Name: "Content-Type", Value: "application/x-www-form-urlencoded"},
+								},
+								PostData: harPOST{
+									MIMEType: "application/x-www-form-urlencoded",
+									Params:   []harNVP{
+										{Name: "baz", Value: "qux"},
+									},
+								},
+								HeaderSize: -1,
+							},
+							Response: harResponse{
+								Status:      http.StatusOK,
+								HeadersSize: -1,
+							},
+							Cache: harCache{},
+							Timings: harEntryTiming{
+								Send:    1,
+								Wait:    1,
+								Receive: 1,
+							},
+							ServerIPAddress: "",
+							Connection:      "112",
+						},
+						{   //POST JSON (not url-encoded)
+							StartedDateTime: "0001-01-01T00:00:00Z",
+							Time:            0,
+							Request: harRequest{
+								Method: "POST",
+								URL:        "/111.html",
+								HTTPVersion: "HTTP/1.1",
+								Headers:    []harNVP{
+									{Name: "Content-Type", Value: "application/json"},
+								},
+								PostData: harPOST{
+									MIMEType: "application/json",
+									Text: "{\"baz\":\"qux\",\"foo\":\"bar\"}",
+								},
+								HeaderSize: -1,
+								BodySize: 25,
+							},
+							Response: harResponse{
+								Status:      http.StatusOK,
+								HeadersSize: -1,
+							},
+							Cache: harCache{},
+							Timings: harEntryTiming{
+								Send:    1,
+								Wait:    1,
+								Receive: 1,
+							},
+							ServerIPAddress: "",
+							Connection:      "113",
 						},
 					},
 				},
@@ -96,6 +287,171 @@ func TestHAR(t *testing.T) {
 			assert.NilError(t, err)
 
 			assert.DeepEqual(t, bytes.TrimSpace(buf.Bytes()), b2)
+		})
+	}
+}
+
+func TestExtractCookies(t *testing.T) {
+	cases := []struct {
+		desc string
+		c []*http.Cookie
+		ref []harCookie
+	}{
+		{
+			desc: "easy",
+			c: []*http.Cookie{
+				{Name: "foo", Value: "bar"},
+			},
+			ref: []harCookie{
+				{Name: "foo", Value: "bar"},
+			},
+		},
+		{
+			desc: "harder",
+			c: []*http.Cookie{
+				{Name: "foo", Value: "bar"},
+				{Name: "baz", Value: "qux", Expires: refTime},
+			},
+			ref: []harCookie{
+				{Name: "foo", Value: "bar"},
+				{Name: "baz", Value: "qux", Expires: refTime.Format(time.RFC3339)},
+			},
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.desc, func(t *testing.T) {
+			hc := extractCookies(c.c)
+			sort.SliceStable(hc, func(i, j int) bool { return hc[i].Name < hc[j].Name })
+			sort.SliceStable(c.ref, func(i, j int) bool { return c.ref[i].Name < c.ref[j].Name })
+			assert.DeepEqual(t, hc, c.ref)
+		})
+	}
+}
+
+func TestExtractPostData(t *testing.T) {
+	cases := []struct {
+		desc string
+		req  *Request
+		ref  harPOST
+	}{
+		{
+			desc: "url encoded",
+			req: &Request{
+				Method: http.MethodPost,
+				MimeType: "application/x-www-form-urlencoded",
+				PostForm: url.Values{
+					"foo": {"bar"},
+					"baz": {"qux"},
+				},
+			},
+			ref: harPOST{
+				MIMEType: "application/x-www-form-urlencoded",
+				Params:   []harNVP{
+					{Name: "foo", Value: "bar"},
+					{Name: "baz", Value: "qux"},
+				},
+			},
+		},
+		{
+			desc: "not url encoded",
+			req: &Request{
+				Method: http.MethodPost,
+				MimeType: "application/json",
+				Body: "{\"baz\":\"qux\",\"foo\":\"bar\"}",
+			},
+			ref: harPOST{
+				MIMEType: "application/json",
+				Text: "{\"baz\":\"qux\",\"foo\":\"bar\"}",
+			},
+		},
+		{
+			desc: "not POST",
+			req: &Request{
+				Method: http.MethodGet,
+			},
+			ref: harPOST{},
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.desc, func(t *testing.T) {
+			hp := extractPostData(c.req)
+			assert.DeepEqual(t, hp, c.ref)
+		})
+	}
+}
+
+func TestLookupServerIP(t *testing.T) {
+	testCases := []struct {
+		desc  string
+		req   *Request
+		refIP string
+	}{
+		{
+			desc: "default",
+			req: &Request{
+				Host: "example.com",
+			},
+			refIP: "93.184.216.34",
+		},
+		{
+			desc: "with port",
+			req: &Request{
+				Host: "example.com:80",
+			},
+			refIP: "93.184.216.34",
+		},
+		{
+			desc: "does not resolve",
+			req: &Request{
+				Host: "example.invalid.",
+			},
+			refIP: "",
+		},
+	}
+	for _, c := range testCases {
+		t.Run(c.desc, func(t *testing.T) {
+			IPstr := lookupServerIP(c.req)
+
+			assert.Equal(t, IPstr, c.refIP)
+		})
+	}
+}
+
+func TestMapToHarNVP(t *testing.T) {
+	cases := []struct {
+		desc string
+		m    map[string][]string
+		ref  []harNVP
+	}{
+		{
+			desc: "default",
+			m: map[string][]string{
+				"foo": {"bar"},
+				"baz": {"qux"},
+			},
+			ref: []harNVP{
+				{Name: "foo", Value: "bar"},
+				{Name: "baz", Value: "qux"},
+			},
+		},
+		{
+			desc: "multiple values",
+			m: map[string][]string{
+				"foo": {"bar", "baz", "qux"},
+			},
+			ref: []harNVP{
+				{Name: "foo", Value: "bar"},
+				{Name: "foo", Value: "baz"},
+				{Name: "foo", Value: "qux"},
+			},
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.desc, func(t *testing.T) {
+			h := mapToHarNVP(c.m)
+			sort.SliceStable(h, func(i, j int) bool { return h[i].Name < h[j].Name })
+			sort.SliceStable(c.ref, func(i, j int) bool { return c.ref[i].Name < c.ref[j].Name })
+			assert.DeepEqual(t, h, c.ref)
 		})
 	}
 }

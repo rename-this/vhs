@@ -5,7 +5,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-errors/errors"
@@ -84,19 +83,6 @@ func (h *HAR) Init(ctx session.Context, w io.Writer) {
 }
 
 func (h *HAR) addRequest(ctx session.Context, hh *har, req *Request) {
-	//var headers []harNVP
-	//for n, vals := range req.Header {
-	//	for _, v := range vals {
-	//		headers = append(headers, harNVP{Name: n, Value: v})
-	//	}
-	//}
-
-	//var queryString []harNVP
-	//for n, vals := range req.URL.Query() {
-	//	for _, v := range vals {
-	//		queryString = append(queryString, harNVP{Name: n, Value: v})
-	//	}
-	//}
 
 	request := harRequest{
 		Method:      req.Method,
@@ -112,12 +98,6 @@ func (h *HAR) addRequest(ctx session.Context, hh *har, req *Request) {
 
 	var response harResponse
 	if req.Response != nil {
-		//var resHeaders []harNVP
-		//for n, vals := range req.Response.Header {
-		//	for _, v := range vals {
-		//		resHeaders = append(resHeaders, harNVP{Name: n, Value: v})
-		//	}
-		//}
 
 		content := harContent{
 			Size:     req.Response.ContentLength,
@@ -149,7 +129,7 @@ func (h *HAR) addRequest(ctx session.Context, hh *har, req *Request) {
 			Wait:    1,
 			Receive: 1,
 		},
-		ServerIPAddress: extractServerIP(req),
+		ServerIPAddress: lookupServerIP(req),
 		Connection:      req.GetConnectionID(),
 	}
 
@@ -164,7 +144,8 @@ func (h *HAR) addRequest(ctx session.Context, hh *har, req *Request) {
 
 // HELPERS, ETC.
 
-
+// extractCookies pulls the cookies out of a cookie slice ([]*http.Cookie) as generated when parsing an http request
+// or response.
 func extractCookies(cookies []*http.Cookie) []harCookie {
 	harCookies := make([]harCookie, len(cookies))
 	for i, cookie := range cookies {
@@ -174,10 +155,15 @@ func extractCookies(cookies []*http.Cookie) []harCookie {
 				Value:    cookie.Value,
 				Path:     cookie.Path,
 				Domain:   cookie.Domain,
-				Expires:  cookie.Expires.Format(time.RFC3339),
 				HTTPOnly: cookie.HttpOnly,
 				Secure:   cookie.Secure,
 				Comment:  "",
+			}
+
+			if cookie.Expires.IsZero() {
+				harCookies[i].Expires = ""
+			} else {
+				harCookies[i].Expires = cookie.Expires.Format(time.RFC3339)
 			}
 		}
 	}
@@ -194,6 +180,8 @@ func extractPostData(req *Request) harPOST {
 		return post
 	}
 
+	post.MIMEType = req.MimeType
+
 	if req.PostForm != nil {
 		post.Params = mapToHarNVP(req.PostForm)
 	} else {
@@ -203,20 +191,29 @@ func extractPostData(req *Request) harPOST {
 	return post
 }
 
-func extractServerIP(req *Request) string {
-	host, _, err := net.SplitHostPort(req.RemoteAddr)
+// lookupServerIP will look up the server IP address of an httpx Request based on the Host field. Port notations
+// are handled properly. If the host resolves to multiple IPs, only the first is returned. An error in any portion
+// of the lookup results in the empty string being returned.
+func lookupServerIP(req *Request) string {
+	var adds []net.IP
+
+	host,_,err := net.SplitHostPort(req.Host)
+	if err == nil {
+		adds, err = net.LookupIP(host)
+	} else {
+		adds, err = net.LookupIP(req.Host)
+	}
+
 	if err != nil {
 		return ""
 	}
 
-	add, err := net.LookupHost(host)
-	if err != nil {
-		return ""
-	}
-
-	return strings.Join(add, ".")
+	return adds[0].String()
 }
 
+// mapToHarNVP ranges over a map[string][]string and returns a slice of harNVP.
+// For a key in the map, an instance of harNVP will be created for each element of
+// the value slice.
 func mapToHarNVP(m map[string][]string) []harNVP {
 	var nvps []harNVP
 	for n, vals := range m {
@@ -228,6 +225,7 @@ func mapToHarNVP(m map[string][]string) []harNVP {
 }
 
 // HAR FORMAT DEFINITION STRUCTS
+
 //har is the root of a HTTP Archive (HAR) file.
 type har struct {
 	Log harLog `json:"log"`
@@ -237,8 +235,6 @@ type har struct {
 type harLog struct {
 	Version string     `json:"version"`           //Required
 	Creator harCreator `json:"creator"`           //Required
-	//Browser harCreator `json:"browser,omitempty"` //Optional
-	//Pages   []harPage  `json:"pages,omitempty"`   //Optional
 	Entries []harEntry `json:"entries"`           //Required
 	Comment string     `json:"comment"`           //Optional
 }
@@ -250,31 +246,15 @@ type harCreator struct {
 	Comment string `json:"comment"` //Optional
 }
 
-//harPage is the object used for the Pages entry at the harLog level.
-//type harPage struct {
-//	StartedDateTime string          `json:"startedDateTime,omitempty"` //Required
-//	ID              string          `json:"id,omitempty"`              //Required
-//	Title           string          `json:"title,omitempty"`           //Required
-//	PageTimings     []harPageTiming `json:"pageTimings,omitempty"`     //Optional TODO: Does this depend on browserish things?
-//	Comment         string          `json:comment,omitempty`           //Optional
-//}
-
-//harPageTiming is the object for the PageTimings entry at the harPage level.
-//type harPageTiming struct { //TODO
-//	OnContentLoad int64  `json:"onContentLoad,omitempty"` //Optional TODO: Depends on browser events; -1 if unknown
-//	OnLoad        int64  `json:"onLoad,omitempty"`        //Optional TODO: Depends on browser events; -1 if unknown
-//	Comment       string `json:"comment,omitempty"`       //Optional
-//}
-
 //harEntry is the object for the Entries entry at the harLog level.
 type harEntry struct {
 	Pageref         string         `json:"pageref,omitempty"`         //Optional
-	StartedDateTime string         `json:"startedDateTime,omitempty"` //Required; timestamp of request start in ISO 8601 format
+	StartedDateTime string         `json:"startedDateTime,omitempty"` //Required; request start time in ISO 8601 format
 	Time            int64          `json:"time,omitempty"`            //Required
 	Request         harRequest     `json:"request,omitempty"`         //Required
 	Response        harResponse    `json:"response,omitempty"`        //Required
-	Cache           harCache       `json:"cache,omitempty"`           //Optional TODO: Probably doesn't make sense in VHS. Leave empty ("{}") or omit if not available.
-	Timings         harEntryTiming `json:"timings,omitempty"`         //Required TODO: Not sure if this one makes sense or not.
+	Cache           harCache       `json:"cache,omitempty"`           //Optional
+	Timings         harEntryTiming `json:"timings,omitempty"`         //Required
 	ServerIPAddress string         `json:"serverIPAddress,omitempty"` //Optional
 	Connection      string         `json:"connection,omitempty"`      //Optional
 	Comment         string         `json:"comment,omitempty"`         //Optional
@@ -285,10 +265,10 @@ type harRequest struct {
 	Method      string      `json:"method,omitempty"`      //Required
 	URL         string      `json:"url,omitempty"`         //Required
 	HTTPVersion string      `json:"httpVersion,omitempty"` //Required
-	Cookies     []harCookie `json:"cookies,omitempty"`     //Required? If present in the request. TODO: Might not be applicable to VHS
+	Cookies     []harCookie `json:"cookies,omitempty"`     //Required if present in the request.
 	Headers     []harNVP    `json:"headers,omitempty"`     //Required
 	QueryString []harNVP    `json:"queryString,omitempty"` //Required
-	PostData    harPOST     `json:"postData,omitempty"`    //Optional TODO: Probably worth implementing
+	PostData    harPOST     `json:"postData,omitempty"`    //Optional
 	HeaderSize  int         `json:"headerSize,omitempty"`  //Required; -1 if data unavailable
 	BodySize    int         `json:"bodySize,omitempty"`    //Required; -1 if data unavailable
 	Comment     string      `json:"comment,omitempty"`     //Optional
@@ -299,17 +279,17 @@ type harResponse struct {
 	Status      int         `json:"status,omitempty"`      //Required
 	StatusText  string      `json:"statusText,omitempty"`  //Required
 	HTTPVersion string      `json:"httpVersion,omitempty"` //Required
-	Cookies     []harCookie `json:"cookies,omitempty"`     //Required? If present in the request. TODO: Might not be applicable to VHS
+	Cookies     []harCookie `json:"cookies,omitempty"`     //Required if present in the request.
 	Headers     []harNVP    `json:"headers,omitempty"`     //Required
 	Content     harContent  `json:"content,omitempty"`     //Required
-	RedirectURL string      `json:"redirectURL,omitempty"` //Required if applicable?
+	RedirectURL string      `json:"redirectURL,omitempty"` //Required if applicable
 	HeadersSize int         `json:"headersSize,omitempty"` //Required; -1 if data unavailable.
 	BodySize    int         `json:"bodySize,omitempty"`    //Required; -1 if data unavailable
 	Comment     string      `json:"comment,omitempty"`     //Optional
 }
 
 //harCookie is the object for the Cookies entry at the harRequest and harResponse levels.
-type harCookie struct { //TODO
+type harCookie struct { 
 	Name     string `json:"name"`               //Required
 	Value    string `json:"value"`              //Required
 	Path     string `json:"path,omitempty"`     //Optional
@@ -321,7 +301,7 @@ type harCookie struct { //TODO
 }
 
 //harPOST is the object for the PostData entry at the harRequest level.
-type harPOST struct { //TODO
+type harPOST struct {
 	MIMEType string   `json:"mimeType"`          //Required
 	Params   []harNVP `json:"params,omitempty"`  //Mutually exclusive with Text
 	Text     string   `json:"text,omitempty"`    //Mutually exclusive with Params
@@ -346,20 +326,10 @@ type harContent struct {
 }
 
 //harCache is the object for the Cache entry at the harEntry level.
-type harCache struct { //TODO: Probably doesn't make sense in VHS. Leave empty ("{}") or omit if not available.
-	//BeforeRequest harCacheStatus `json:"beforeRequest,omitempty"` //Optional
-	//AfterRequest  harCacheStatus `json:"afterRequest,omitempty"`  //Optional
-	//Comment       string         `json:"comment,omitempty"`       //Optional
+type harCache struct {
+	// This part of the HAR specification depends on browserish things, but we will intentionally
+	// include an empty entry to denote intentional omission.
 }
-
-//harCacheStatus is the object for the BeforeRequest and AfterRequest entries at the harCache level.
-//type harCacheStatus struct { //TODO: might not be needed if cache is omitted or left blank.
-//	Expires    string `json:"expires,omitempty"`    //Optional
-//	LastAccess string `json:"lastAccess,omitempty"` //Required
-//	ETag       string `json:"eTag,omitempty"`       //Required
-//	HitCount   int64  `json:"hitCount,omitempty"`   //Required
-//	Comment    string `json:"comment,omitempty"`    //Optional
-//}
 
 //harEntryTiming is the object for the Timings entry at the harEntry level.
 type harEntryTiming struct {

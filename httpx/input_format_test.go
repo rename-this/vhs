@@ -9,10 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"gotest.tools/v3/assert"
+
 	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/middleware"
 	"github.com/gramLabs/vhs/session"
-	"gotest.tools/v3/assert"
 )
 
 type testMiddleware struct {
@@ -72,6 +73,8 @@ func TestInputFormatInit(t *testing.T) {
 					ProtoMajor: 1,
 					ProtoMinor: 1,
 					Header:     http.Header{"Header": {"foo"}},
+					MimeType: "text/plain; charset=utf-8",
+					Cookies: []*http.Cookie{},
 					RequestURI: "/111.html",
 				},
 				&Response{
@@ -81,6 +84,7 @@ func TestInputFormatInit(t *testing.T) {
 					ProtoMajor: 1,
 					ProtoMinor: 1,
 					Header:     http.Header{},
+					Cookies: []*http.Cookie{},
 				},
 			},
 		},
@@ -97,6 +101,8 @@ func TestInputFormatInit(t *testing.T) {
 					ProtoMajor: 1,
 					ProtoMinor: 1,
 					Header:     http.Header{"Header": {"foo"}},
+					MimeType: "text/plain; charset=utf-8",
+					Cookies: []*http.Cookie{},
 					RequestURI: "/111.html 111",
 				},
 				&Response{
@@ -105,6 +111,7 @@ func TestInputFormatInit(t *testing.T) {
 					Proto:      "HTTP/1.1",
 					ProtoMajor: 1,
 					ProtoMinor: 1,
+					Cookies: []*http.Cookie{},
 					Header:     http.Header{},
 				},
 			},
