@@ -124,7 +124,8 @@ func TestInputFormatInit(t *testing.T) {
 			errs := make(chan error, 10)
 			ctx, _, _ := session.NewContexts(&session.Config{Debug: true}, errs)
 			ctx.SessionID = c.sessionID
-			inputFormat, _ := NewInputFormat(ctx)
+			inputFormat, err := NewInputFormat(ctx)
+			assert.NilError(t, err)
 
 			go inputFormat.Init(ctx, c.m, c.r)
 

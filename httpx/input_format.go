@@ -48,25 +48,34 @@ func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, r iouti
 	)
 
 	go func() {
-		req, err := NewRequest(reqBuf, id, exchangeID)
-		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
-			done <- struct{}{}
-			return
-		} else if req != nil {
-			ctx.Logger.Debug().Msg("request received")
-			i.handle(ctx, m, TypeRequest, req)
-		}
+		for {
+			var (
+				req    *Request
+				res    *Response
+				reqErr error
+				resErr error
+			)
 
-		res, err := NewResponse(resBuf, id, exchangeID)
-		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
-			done <- struct{}{}
-			return
-		} else if res != nil {
-			ctx.Logger.Debug().Msg("response received")
-			i.handle(ctx, m, TypeResponse, res)
-		}
+			req, reqErr = NewRequest(reqBuf, id, exchangeID)
+			if req != nil {
+				ctx.Logger.Debug().Msg("request received")
+				i.handle(ctx, m, TypeRequest, req)
+			}
 
-		exchangeID++
+			res, resErr = NewResponse(resBuf, id, exchangeID)
+			if res != nil {
+				ctx.Logger.Debug().Msg("response received")
+				i.handle(ctx, m, TypeResponse, res)
+			}
+
+			if isEOF(reqErr, resErr) {
+				ctx.Logger.Debug().Msg("stream EOF")
+				done <- struct{}{}
+				return
+			}
+
+			exchangeID++
+		}
 	}()
 
 	go func() {
@@ -112,3 +121,12 @@ func (i *inputFormat) handle(ctx session.Context, m middleware.Middleware, t Mes
 }
 
 func (i *inputFormat) Out() <-chan interface{} { return i.out }
+
+func isEOF(errs ...error) bool {
+	for _, err := range errs {
+		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+			return true
+		}
+	}
+	return false
+}
