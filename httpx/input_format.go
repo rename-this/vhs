@@ -3,6 +3,7 @@ package httpx
 import (
 	"bufio"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/go-errors/errors"
@@ -44,6 +45,7 @@ func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, r iouti
 		reqBuf = bufio.NewReader(reqR)
 		resBuf = bufio.NewReader(resR)
 
+		wg   sync.WaitGroup
 		done = make(chan struct{})
 	)
 
@@ -56,17 +58,27 @@ func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, r iouti
 				resErr error
 			)
 
-			req, reqErr = NewRequest(reqBuf, id, exchangeID)
-			if req != nil {
-				ctx.Logger.Debug().Msg("request received")
-				i.handle(ctx, m, TypeRequest, req)
-			}
+			wg.Add(2)
 
-			res, resErr = NewResponse(resBuf, id, exchangeID)
-			if res != nil {
-				ctx.Logger.Debug().Msg("response received")
-				i.handle(ctx, m, TypeResponse, res)
-			}
+			go func() {
+				req, reqErr = NewRequest(reqBuf, id, exchangeID)
+				if req != nil {
+					ctx.Logger.Debug().Msg("request received")
+					i.handle(ctx, m, TypeRequest, req)
+				}
+				wg.Done()
+			}()
+
+			go func() {
+				res, resErr = NewResponse(resBuf, id, exchangeID)
+				if res != nil {
+					ctx.Logger.Debug().Msg("response received")
+					i.handle(ctx, m, TypeResponse, res)
+				}
+				wg.Done()
+			}()
+
+			wg.Wait()
 
 			if isEOF(reqErr, resErr) {
 				ctx.Logger.Debug().Msg("stream EOF")
