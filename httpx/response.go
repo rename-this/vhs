@@ -14,22 +14,24 @@ var _ Message = &Response{}
 
 // Response represents an HTTP response.
 type Response struct {
-	ConnectionID     string      `json:"connection_id,omitempty"`
-	ExchangeID       int64       `json:"exchange_id"`
-	Created          time.Time   `json:"created,omitempty"`
-	Status           string      `json:"status,omitempty"`
-	StatusCode       int         `json:"status_code,omitempty"`
-	Proto            string      `json:"proto,omitempty"`
-	ProtoMajor       int         `json:"proto_major,omitempty"`
-	ProtoMinor       int         `json:"proto_minor,omitempty"`
-	Header           http.Header `json:"header,omitempty"`
-	Body             string      `json:"body,omitempty"`
-	ContentLength    int64       `json:"content_length,omitempty"`
-	TransferEncoding []string    `json:"transfer_encoding,omitempty"`
-	Close            bool        `json:"close,omitempty"`
-	Uncompressed     bool        `json:"uncompressed,omitempty"`
-	Trailer          http.Header `json:"trailer,omitempty"`
-	SessionID        string      `json:"session_id,omitempty"`
+	ConnectionID     string         `json:"connection_id,omitempty"`
+	ExchangeID       int64          `json:"exchange_id"`
+	Created          time.Time      `json:"created,omitempty"`
+	Status           string         `json:"status,omitempty"`
+	StatusCode       int            `json:"status_code,omitempty"`
+	Proto            string         `json:"proto,omitempty"`
+	ProtoMajor       int            `json:"proto_major,omitempty"`
+	ProtoMinor       int            `json:"proto_minor,omitempty"`
+	Header           http.Header    `json:"header,omitempty"`
+	Cookies          []*http.Cookie `json:"cookies,omitempty"`
+	Body             string         `json:"body,omitempty"`
+	ContentLength    int64          `json:"content_length,omitempty"`
+	TransferEncoding []string       `json:"transfer_encoding,omitempty"`
+	Close            bool           `json:"close,omitempty"`
+	Uncompressed     bool           `json:"uncompressed,omitempty"`
+	Trailer          http.Header    `json:"trailer,omitempty"`
+	SessionID        string         `json:"session_id,omitempty"`
+	Location         string         `json:"location,omitempty"`
 }
 
 // GetConnectionID gets a connection ID.
@@ -58,6 +60,12 @@ func NewResponse(b *bufio.Reader, connectionID string, exchangeID int64) (*Respo
 		return nil, errors.Errorf("failed to read response body: %w", err)
 	}
 
+	var loc string
+	locurl, err := res.Location()
+	if err == nil {
+		loc = locurl.String()
+	}
+
 	return &Response{
 		ConnectionID:     connectionID,
 		ExchangeID:       exchangeID,
@@ -67,11 +75,13 @@ func NewResponse(b *bufio.Reader, connectionID string, exchangeID int64) (*Respo
 		ProtoMajor:       res.ProtoMajor,
 		ProtoMinor:       res.ProtoMinor,
 		Header:           res.Header,
+		Cookies:          res.Cookies(),
 		Body:             string(body),
 		ContentLength:    res.ContentLength,
 		TransferEncoding: res.TransferEncoding,
 		Close:            res.Close,
 		Uncompressed:     res.Uncompressed,
 		Trailer:          res.Trailer,
+		Location:         loc,
 	}, nil
 }
