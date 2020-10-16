@@ -2,7 +2,6 @@ package httpx
 
 import (
 	"bufio"
-	"bytes"
 	"io"
 	"time"
 
@@ -35,40 +34,53 @@ func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, r iouti
 	defer r.Close()
 
 	var (
-		id = r.ID()
-
-		resBuf bytes.Buffer
-		tee    = io.TeeReader(r, &resBuf)
-
-		reqReader = bufio.NewReader(tee)
-		resReader = bufio.NewReader(&resBuf)
-
+		id         = r.ID()
 		exchangeID int64
+
+		reqR, reqW = io.Pipe()
+		resR, resW = io.Pipe()
+		mw         = io.MultiWriter(reqW, resW)
+
+		reqBuf = bufio.NewReader(reqR)
+		resBuf = bufio.NewReader(resR)
+
+		done = make(chan struct{})
 	)
+
+	go func() {
+		req, err := NewRequest(reqBuf, id, exchangeID)
+		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+			done <- struct{}{}
+			return
+		} else if req != nil {
+			ctx.Logger.Debug().Msg("request received")
+			i.handle(ctx, m, TypeRequest, req)
+		}
+
+		res, err := NewResponse(resBuf, id, exchangeID)
+		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+			done <- struct{}{}
+			return
+		} else if res != nil {
+			ctx.Logger.Debug().Msg("response received")
+			i.handle(ctx, m, TypeResponse, res)
+		}
+
+		exchangeID++
+	}()
+
+	go func() {
+		defer reqW.Close()
+		defer resW.Close()
+		io.Copy(mw, r)
+	}()
 
 	for {
 		select {
 		case <-ctx.StdContext.Done():
 			return nil
-		default:
-			req, err := NewRequest(reqReader, id, exchangeID)
-			if req != nil {
-				ctx.Logger.Debug().Msg("request received")
-				i.handle(ctx, m, TypeRequest, req)
-			}
-
-			res, err := NewResponse(resReader, id, exchangeID)
-			if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
-				ctx.Logger.Debug().Msg("EOF")
-				return nil
-			} else if res != nil {
-				ctx.Logger.Debug().Msg("response received")
-				i.handle(ctx, m, TypeResponse, res)
-			} else {
-				ctx.Logger.Debug().AnErr("err", err).Msg("bad resp")
-			}
-
-			exchangeID++
+		case <-done:
+			return nil
 		}
 	}
 }
