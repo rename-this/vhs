@@ -34,24 +34,33 @@ data:
         {% if ne (len (index .Annotations "vhs.carbon-relay.com/image")) 0 %}
         image: {% index .Annotations "vhs.carbon-relay.com/image" %}
         {% else %}
-        image: ubuntu:latest
+        image: us.gcr.io/carbon-relay-dev/vhs:latest
         {% end %}
 
         # Override args
         {% if ne (len (index .Annotations "vhs.carbon-relay.com/args")) 0 %}
         args: {% index .Annotations "vhs.carbon-relay.com/args" %}
         {% else %}
+        # Set default to be metrics capture
         args:
-        - -c
-        - "sleep 3600"
+        - --input
+        - tcp|http
+        - --capture-response
+        - --address
+        {% if ne (len (index .Annotations "vhs.carbon-relay.com/port")) 0 %}
+        - 0.0.0.0:{% index .Annotations "vhs.carbon-relay.com/port" %}
+        {% else %}
+        - 0.0.0.0:80
+        {% end %}
+        - --prometheus-address
+        - 0.0.0.0:9090
+        - --flow-duration
+        - 3600s
         {% end %}
 
         # Override command
         {% if ne (len (index .Annotations "vhs.carbon-relay.com/command")) 0 %}
         command: {% index .Annotations "vhs.carbon-relay.com/command" %}
-        {% else %}
-        command:
-        - /bin/bash
         {% end %}
   mutationconfig.yaml: |
     mutationConfigs:

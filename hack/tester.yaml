@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: funsies
+  name: funsies
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: funsies
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        vhs.carbon-relay.com/inject: "true"
+        vhs.carbon-relay.com/args: "[ '--input', 'tcp|http', '--output', 'json|stdout', '--capture-response', '--address', '0.0.0.0:80', '--prometheus-address', '0.0.0.0:9090', '--flow-duration', '3600s', '--debug' ]"
+      labels:
+        app: funsies
+    spec:
+      containers:
+      - image: nginx:latest
+        name: nginx
