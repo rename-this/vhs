@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-errors/errors"
 	"github.com/gramLabs/vhs/session"
+	"github.com/rs/zerolog"
 )
 
 // Middleware is an interface that can modify objects.
@@ -31,7 +32,9 @@ func New(ctx session.Context, command string) (Middleware, error) {
 		Logger()
 
 	cmd := exec.CommandContext(ctx.StdContext, command)
-	cmd.Stderr = ctx.Logger
+	cmd.Stderr = &logWrapper{
+		l: ctx.Logger,
+	}
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -117,4 +120,13 @@ func (m *mware) Exec(ctx session.Context, header []byte, n interface{}) (interfa
 	}
 
 	return nil, m.scanner.Err()
+}
+
+type logWrapper struct {
+	l zerolog.Logger
+}
+
+func (w *logWrapper) Write(p []byte) (int, error) {
+	w.l.Debug().Str("stderr", string(p)).Msg("middleware logging")
+	return len(p), nil
 }
