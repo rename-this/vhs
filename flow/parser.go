@@ -1,6 +1,8 @@
 package flow
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/gramLabs/vhs/session"
@@ -68,7 +70,7 @@ func (p *Parser) Parse(ctx session.Context, inputLine string, outputLines []stri
 // to be a valid input format. Any parts in the middle are modifiers.
 func (p *Parser) parseInput(ctx session.Context, line string) (*Input, error) {
 	if line == "" {
-		return nil, fmt.New("empty input")
+		return nil, errors.New("empty input")
 	}
 
 	var (
@@ -123,7 +125,7 @@ func (p *Parser) parseInput(ctx session.Context, line string) (*Input, error) {
 // to be a valid sink. Any parts in the middle are modifiers.
 func (p *Parser) parseOutput(ctx session.Context, line string) (*Output, error) {
 	if line == "" {
-		return nil, fmt.New("empty output")
+		return nil, errors.New("empty output")
 	}
 
 	var (
