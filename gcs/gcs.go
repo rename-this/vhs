@@ -1,8 +1,9 @@
 package gcs
 
 import (
+	"fmt"
+
 	"cloud.google.com/go/storage"
-	"github.com/go-errors/errors"
 	"github.com/gramLabs/vhs/flow"
 	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/session"
@@ -28,14 +29,14 @@ func newSink(ctx session.Context, newClient newClientFn) (flow.Sink, error) {
 
 	c, err := newClient(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to create client: %w", err)
+		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
 
 	ctx.Logger.Debug().Msg("client created")
 
 	b := c.Bucket(ctx.Config.GCSBucketName)
 	if _, err := b.Attrs(ctx.StdContext); err != nil {
-		return nil, errors.Errorf("failed to find bucket: %w", err)
+		return nil, fmt.Errorf("failed to find bucket: %w", err)
 	}
 
 	ctx.Logger.Debug().Msg("creating writer")
@@ -70,7 +71,7 @@ func (s *gcsSource) Init(ctx session.Context) {
 
 	c, err := s.newClient(ctx)
 	if err != nil {
-		ctx.Errors <- errors.Errorf("failed to create client: %w", err)
+		ctx.Errors <- fmt.Errorf("failed to create client: %w", err)
 		return
 	}
 
@@ -78,7 +79,7 @@ func (s *gcsSource) Init(ctx session.Context) {
 
 	b := c.Bucket(ctx.Config.GCSBucketName)
 	if _, err := b.Attrs(ctx.StdContext); err != nil {
-		ctx.Errors <- errors.Errorf("failed to find bucket: %w", err)
+		ctx.Errors <- fmt.Errorf("failed to find bucket: %w", err)
 		return
 	}
 
@@ -87,7 +88,7 @@ func (s *gcsSource) Init(ctx session.Context) {
 	o := b.Object(ctx.Config.GCSObjectName)
 	r, err := o.NewReader(ctx.StdContext)
 	if err != nil {
-		ctx.Errors <- errors.Errorf("failed to create object reader: %w", err)
+		ctx.Errors <- fmt.Errorf("failed to create object reader: %w", err)
 		return
 	}
 

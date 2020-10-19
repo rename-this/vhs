@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -25,7 +26,6 @@ import (
 
 	_ "net/http/pprof"
 
-	"github.com/go-errors/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 )
@@ -102,12 +102,12 @@ func root(cfg *session.Config, inputLine string, outputLines []string, parser *f
 
 	m, err := startMiddleware(ctx)
 	if err != nil {
-		return errors.Errorf("failed to start middleware: %v", err)
+		return fmt.Errorf("failed to start middleware: %v", err)
 	}
 
 	f, err := parser.Parse(ctx, inputLine, outputLines)
 	if err != nil {
-		return errors.Errorf("failed to initialize: %v", err)
+		return fmt.Errorf("failed to initialize: %v", err)
 	}
 
 	ctx.Logger.Debug().Msg("flow created")
@@ -124,7 +124,7 @@ func root(cfg *session.Config, inputLine string, outputLines []string, parser *f
 
 		go func() {
 			err := http.ListenAndServe(cfg.PrometheusAddr, mux)
-			if errors.Is(err, http.ErrServerClosed) {
+			if fmt.Is(err, http.ErrServerClosed) {
 				ctx.Logger.Error().Err(err).Msg("failed to listen and serve promentheus endpoint")
 			}
 		}()
@@ -142,10 +142,10 @@ func root(cfg *session.Config, inputLine string, outputLines []string, parser *f
 	if cfg.ProfilePathCPU != "" {
 		f, err := os.Create(cfg.ProfilePathCPU)
 		if err != nil {
-			return errors.Errorf("failed to create %s: %v", cfg.ProfilePathCPU, err)
+			return fmt.Errorf("failed to create %s: %v", cfg.ProfilePathCPU, err)
 		}
 		if err := pprof.StartCPUProfile(f); err != nil {
-			return errors.Errorf("failed to start CPU profile: %v", err)
+			return fmt.Errorf("failed to start CPU profile: %v", err)
 		}
 		ctx.Logger.Debug().Str("path", cfg.ProfilePathCPU).Msg("CPU profiling enabled")
 		defer pprof.StopCPUProfile()
@@ -165,13 +165,13 @@ func root(cfg *session.Config, inputLine string, outputLines []string, parser *f
 	if cfg.ProfilePathMemory != "" {
 		f, err := os.Create(cfg.ProfilePathMemory)
 		if err != nil {
-			return errors.Errorf("failed to create %s: %v", cfg.ProfilePathMemory, err)
+			return fmt.Errorf("failed to create %s: %v", cfg.ProfilePathMemory, err)
 		}
 		defer f.Close()
 
 		runtime.GC()
 		if err := pprof.WriteHeapProfile(f); err != nil {
-			return errors.Errorf("failed to start write heap profile: %v", err)
+			return fmt.Errorf("failed to start write heap profile: %v", err)
 		}
 
 		ctx.Logger.Debug().Str("path", cfg.ProfilePathMemory).Msg("memory profile written")
@@ -188,20 +188,20 @@ func startMiddleware(ctx session.Context) (middleware.Middleware, error) {
 
 	m, err := middleware.New(ctx, ctx.Config.Middleware)
 	if err != nil {
-		return nil, errors.Errorf("failed to create middleware: %w", err)
+		return nil, fmt.Errorf("failed to create middleware: %w", err)
 	}
 
 	ctx.Logger.Debug().Msg("middleware created")
 
 	if err := m.Start(); err != nil {
-		return nil, errors.Errorf("failed to start middleware: %w", err)
+		return nil, fmt.Errorf("failed to start middleware: %w", err)
 	}
 
 	ctx.Logger.Debug().Msg("middleware started")
 
 	go func() {
 		if err := m.Wait(); err != nil {
-			ctx.Errors <- errors.Errorf("middleware crashed: %w", err)
+			ctx.Errors <- fmt.Errorf("middleware crashed: %w", err)
 		}
 	}()
 

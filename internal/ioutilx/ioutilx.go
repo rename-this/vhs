@@ -3,7 +3,6 @@ package ioutilx
 import (
 	"io"
 
-	"github.com/go-errors/errors"
 	"go.uber.org/multierr"
 )
 
@@ -15,7 +14,7 @@ func (cs Closers) Close() error {
 	var errs error
 	for _, c := range cs {
 		if err := c.Close(); err != nil {
-			errs = multierr.Append(errs, errors.New(err))
+			errs = multierr.Append(errs, err)
 		}
 	}
 	return errs

@@ -3,7 +3,6 @@ package flow
 import (
 	"strings"
 
-	"github.com/go-errors/errors"
 	"github.com/gramLabs/vhs/session"
 )
 
@@ -43,14 +42,14 @@ type Parser struct {
 func (p *Parser) Parse(ctx session.Context, inputLine string, outputLines []string) (*Flow, error) {
 	input, err := p.parseInput(ctx, inputLine)
 	if err != nil {
-		return nil, errors.Errorf("failed to parse input: %v", err)
+		return nil, fmt.Errorf("failed to parse input: %v", err)
 	}
 
 	var outputs Outputs
 	for _, outputLine := range outputLines {
 		o, err := p.parseOutput(ctx, outputLine)
 		if err != nil {
-			return nil, errors.Errorf("failed to parse outputs: %v", err)
+			return nil, fmt.Errorf("failed to parse outputs: %v", err)
 		}
 		outputs = append(outputs, o)
 	}
@@ -69,7 +68,7 @@ func (p *Parser) Parse(ctx session.Context, inputLine string, outputLines []stri
 // to be a valid input format. Any parts in the middle are modifiers.
 func (p *Parser) parseInput(ctx session.Context, line string) (*Input, error) {
 	if line == "" {
-		return nil, errors.New("empty input")
+		return nil, fmt.New("empty input")
 	}
 
 	var (
@@ -84,31 +83,31 @@ func (p *Parser) parseInput(ctx session.Context, line string) (*Input, error) {
 	sPart := parts[0]
 	sCtor, ok := p.Sources[sPart]
 	if !ok {
-		return nil, errors.Errorf("invalid source: %s", sPart)
+		return nil, fmt.Errorf("invalid source: %s", sPart)
 	}
 	s, err = sCtor(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to create source: %v", err)
+		return nil, fmt.Errorf("failed to create source: %v", err)
 	}
 
 	fPart := parts[len(parts)-1]
 	fCtor, ok := p.InputFormats[fPart]
 	if !ok {
-		return nil, errors.Errorf("invalid input format: %s", fPart)
+		return nil, fmt.Errorf("invalid input format: %s", fPart)
 	}
 	f, err = fCtor(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to create input format: %v", err)
+		return nil, fmt.Errorf("failed to create input format: %v", err)
 	}
 
 	for _, rcPart := range parts[1 : len(parts)-1] {
 		rcCtor, ok := p.InputModifiers[rcPart]
 		if !ok {
-			return nil, errors.Errorf("invalid modifier: %s", fPart)
+			return nil, fmt.Errorf("invalid modifier: %s", fPart)
 		}
 		rc, err := rcCtor(ctx)
 		if err != nil {
-			return nil, errors.Errorf("failed to create modifier: %v", err)
+			return nil, fmt.Errorf("failed to create modifier: %v", err)
 		}
 		mis = append(mis, rc)
 	}
@@ -124,7 +123,7 @@ func (p *Parser) parseInput(ctx session.Context, line string) (*Input, error) {
 // to be a valid sink. Any parts in the middle are modifiers.
 func (p *Parser) parseOutput(ctx session.Context, line string) (*Output, error) {
 	if line == "" {
-		return nil, errors.New("empty output")
+		return nil, fmt.New("empty output")
 	}
 
 	var (
@@ -139,31 +138,31 @@ func (p *Parser) parseOutput(ctx session.Context, line string) (*Output, error) 
 	fPart := parts[0]
 	fCtor, ok := p.OutputFormats[fPart]
 	if !ok {
-		return nil, errors.Errorf("invalid output format: %s", fPart)
+		return nil, fmt.Errorf("invalid output format: %s", fPart)
 	}
 	f, err = fCtor(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to create output format: %v", err)
+		return nil, fmt.Errorf("failed to create output format: %v", err)
 	}
 
 	sPart := parts[len(parts)-1]
 	sCtor, ok := p.Sinks[sPart]
 	if !ok {
-		return nil, errors.Errorf("invalid sink: %s", sPart)
+		return nil, fmt.Errorf("invalid sink: %s", sPart)
 	}
 	s, err = sCtor(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to create sink: %v", err)
+		return nil, fmt.Errorf("failed to create sink: %v", err)
 	}
 
 	for _, wcPart := range parts[1 : len(parts)-1] {
 		wcCtor, ok := p.OutputModifiers[wcPart]
 		if !ok {
-			return nil, errors.Errorf("invalid modifier: %s", fPart)
+			return nil, fmt.Errorf("invalid modifier: %s", fPart)
 		}
 		wc, err := wcCtor(ctx)
 		if err != nil {
-			return nil, errors.Errorf("failed to create modifier: %v", err)
+			return nil, fmt.Errorf("failed to create modifier: %v", err)
 		}
 		mos = append(mos, wc)
 	}

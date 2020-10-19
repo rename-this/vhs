@@ -1,9 +1,9 @@
 package capture
 
 import (
+	"fmt"
 	"net"
 
-	"github.com/go-errors/errors"
 	"github.com/google/gopacket/pcap"
 )
 
@@ -46,13 +46,13 @@ func NewCapture(addr string, response bool) (*Capture, error) {
 func newCapture(addr string, response bool, fn getAllInterfacesFn) (*Capture, error) {
 	interfaces, err := fn()
 	if err != nil {
-		return nil, errors.Errorf("failed to find interfaces: %w", err)
+		return nil, fmt.Errorf("failed to find interfaces: %w", err)
 	}
 
 	host, port := splitHostPort(addr)
 	deviceType, err := getCaptureType(host)
 	if err != nil {
-		return nil, errors.Errorf("failed to get device type: %w", err)
+		return nil, fmt.Errorf("failed to get device type: %w", err)
 	}
 
 	return &Capture{
@@ -102,7 +102,7 @@ func getCaptureType(host string) (Type, error) {
 		return CaptureIP, nil
 	}
 
-	return CaptureInvalid, errors.Errorf("invalid address: %s", host)
+	return CaptureInvalid, fmt.Errorf("invalid address: %s", host)
 }
 
 func splitHostPort(addr string) (string, string) {

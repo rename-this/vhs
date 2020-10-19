@@ -2,12 +2,11 @@ package httpx
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"time"
-
-	"github.com/go-errors/errors"
 
 	"github.com/gramLabs/vhs/flow"
 	"github.com/gramLabs/vhs/session"
@@ -74,7 +73,7 @@ func (h *HAR) Init(ctx session.Context, w io.Writer) {
 			}
 		case <-ctx.StdContext.Done():
 			if err := json.NewEncoder(w).Encode(hh); err != nil {
-				ctx.Errors <- errors.Errorf("failed to encode to JSON: %w", err)
+				ctx.Errors <- fmt.Errorf("failed to encode to JSON: %w", err)
 			}
 			ctx.Logger.Debug().Msg("context canceled")
 			return

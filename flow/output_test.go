@@ -1,10 +1,10 @@
 package flow
 
 import (
+	"errors"
 	"testing"
 	"time"
 
-	"github.com/go-errors/errors"
 	"github.com/gramLabs/vhs/session"
 	"gotest.tools/v3/assert"
 )

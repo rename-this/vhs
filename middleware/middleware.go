@@ -3,11 +3,11 @@ package middleware
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os/exec"
 	"sync"
 
-	"github.com/go-errors/errors"
 	"github.com/gramLabs/vhs/session"
 	"github.com/rs/zerolog"
 )
@@ -38,14 +38,14 @@ func New(ctx session.Context, command string) (Middleware, error) {
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		return nil, errors.Errorf("failed to get stdin pipe: %w", err)
+		return nil, fmt.Errorf("failed to get stdin pipe: %w", err)
 	}
 
 	ctx.Logger.Debug().Msg("stdin pipe retrieved")
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, errors.Errorf("failed to get stdout pipe: %w", err)
+		return nil, fmt.Errorf("failed to get stdout pipe: %w", err)
 	}
 
 	ctx.Logger.Debug().Msg("stdout pipe retrieved")
@@ -68,7 +68,7 @@ type mware struct {
 // Start starts the middleware command and leaves it open for execution.
 func (m *mware) Start() error {
 	if err := m.cmd.Start(); err != nil {
-		return errors.Errorf("failed to start middleware command: %w", err)
+		return fmt.Errorf("failed to start middleware command: %w", err)
 	}
 
 	return nil
@@ -103,7 +103,7 @@ func (m *mware) Exec(ctx session.Context, header []byte, n interface{}) (interfa
 
 	err := json.NewEncoder(m.stdin).Encode(n)
 	if err != nil {
-		return nil, errors.Errorf("failed to encode: %w", err)
+		return nil, fmt.Errorf("failed to encode: %w", err)
 	}
 
 	ctx.Logger.Debug().Msgf("successfully encoded to stdin with header %v", header)
@@ -112,7 +112,7 @@ func (m *mware) Exec(ctx session.Context, header []byte, n interface{}) (interfa
 		ctx.Logger.Debug().Msg("scanner value received")
 
 		if err := json.Unmarshal(m.scanner.Bytes(), n); err != nil {
-			return nil, errors.Errorf("failed to unmarshal: %w", err)
+			return nil, fmt.Errorf("failed to unmarshal: %w", err)
 		}
 
 		ctx.Logger.Debug().Msg("successfully unmarshaled scanner value")

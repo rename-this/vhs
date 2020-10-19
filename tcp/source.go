@@ -1,9 +1,9 @@
 package tcp
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/go-errors/errors"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/gramLabs/vhs/capture"
@@ -42,9 +42,8 @@ func (s *tcpSource) read(ctx session.Context, newCapture newCaptureFn, newListen
 	ctx.Logger.Debug().Msg("read")
 
 	cap, err := newCapture(ctx.Config.Addr, ctx.Config.CaptureResponse)
-
 	if err != nil {
-		ctx.Errors <- errors.Errorf("failed to initialize capture: %w", err)
+		ctx.Errors <- fmt.Errorf("failed to initialize capture: %w", err)
 		return
 	}
 

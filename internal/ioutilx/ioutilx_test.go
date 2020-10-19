@@ -2,10 +2,10 @@ package ioutilx
 
 import (
 	"bufio"
+	"errors"
 	"io/ioutil"
 	"testing"
 
-	"github.com/go-errors/errors"
 	"gotest.tools/v3/assert"
 )
 

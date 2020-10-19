@@ -1,10 +1,11 @@
 package capture
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"sync"
 
-	"github.com/go-errors/errors"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 	"github.com/gramLabs/vhs/session"
@@ -78,7 +79,7 @@ func (l *listener) newHandle(ctx session.Context, i pcap.Interface, activate act
 
 	handle, err := activate(inactive)
 	if err != nil {
-		return nil, errors.Errorf("failed to activate %s: %w", i.Name, err)
+		return nil, fmt.Errorf("failed to activate %s: %w", i.Name, err)
 	}
 
 	ctx.Logger.Debug().Msg("handle activated")
@@ -87,7 +88,7 @@ func (l *listener) newHandle(ctx session.Context, i pcap.Interface, activate act
 	ctx.Logger.Debug().Str("filter", filter).Msg("bpf filter created")
 
 	if err := handle.SetBPFFilter(filter); err != nil {
-		return nil, errors.Errorf("failed to set filter: %w", err)
+		return nil, fmt.Errorf("failed to set filter: %w", err)
 	}
 
 	l.handleMu.Lock()
@@ -128,7 +129,7 @@ func (l *listener) readPackets(ctx session.Context, dataSource gopacket.PacketDa
 func (l *listener) newInactiveHandler(name string) (*pcap.InactiveHandle, error) {
 	inactive, err := pcap.NewInactiveHandle(name)
 	if err != nil {
-		return nil, errors.Errorf("failed to create inactive handle: %w", err)
+		return nil, fmt.Errorf("failed to create inactive handle: %w", err)
 	}
 
 	inactive.SetPromisc(true)

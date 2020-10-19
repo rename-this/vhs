@@ -3,7 +3,6 @@ package flow
 import (
 	"fmt"
 
-	"github.com/go-errors/errors"
 	"github.com/gramLabs/vhs/middleware"
 	"github.com/gramLabs/vhs/session"
 )
@@ -40,7 +39,7 @@ func (i *Input) Init(ctx session.Context, m middleware.Middleware) {
 		case rs := <-i.Source.Streams():
 			r, closers, err := i.Modifiers.Wrap(rs)
 			if err != nil {
-				ctx.Errors <- errors.Errorf("failed to wrap source stream: %w", err)
+				ctx.Errors <- fmt.Errorf("failed to wrap source stream: %w", err)
 				continue
 			}
 

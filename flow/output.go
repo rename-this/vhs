@@ -1,9 +1,9 @@
 package flow
 
 import (
+	"fmt"
 	"sync"
 
-	"github.com/go-errors/errors"
 	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/session"
 )
@@ -38,7 +38,7 @@ func (o *Output) Init(ctx session.Context) {
 
 	w, closers, err := o.Modifiers.Wrap(o.Sink)
 	if err != nil {
-		ctx.Errors <- errors.Errorf("failed to wrap sink: %w", err)
+		ctx.Errors <- fmt.Errorf("failed to wrap sink: %w", err)
 		return
 	}
 

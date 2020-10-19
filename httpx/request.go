@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"time"
-
-	"github.com/go-errors/errors"
 )
 
 // Ensure Request implements the Message interface.
@@ -57,7 +55,7 @@ func (r *Request) SetSessionID(id string) { r.SessionID = id }
 func NewRequest(b *bufio.Reader, connectionID string, exchangeID int64) (*Request, error) {
 	req, err := http.ReadRequest(b)
 	if err != nil {
-		return nil, errors.Errorf("failed to read request: %w", err)
+		return nil, fmt.Errorf("failed to read request: %w", err)
 	}
 
 	defer req.Body.Close()
@@ -81,7 +79,7 @@ func NewRequest(b *bufio.Reader, connectionID string, exchangeID int64) (*Reques
 
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		return nil, errors.Errorf("failed to read request body: %w", err)
+		return nil, fmt.Errorf("failed to read request body: %w", err)
 	}
 
 	return &Request{

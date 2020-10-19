@@ -1,12 +1,12 @@
 package flow
 
 import (
+	"errors"
 	"io/ioutil"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/go-errors/errors"
 	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/middleware"
 	"github.com/gramLabs/vhs/session"

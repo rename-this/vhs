@@ -2,11 +2,12 @@ package httpx
 
 import (
 	"bufio"
+	"errors"
+	"fmt"
 	"io"
 	"sync"
 	"time"
 
-	"github.com/go-errors/errors"
 	"github.com/gramLabs/vhs/flow"
 	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/middleware"
@@ -118,7 +119,7 @@ func (i *inputFormat) handle(ctx session.Context, m middleware.Middleware, t Mes
 	if m != nil {
 		n, err := m.Exec(ctx, []byte{byte(t)}, msg)
 		if err != nil {
-			ctx.Errors <- errors.Errorf("failed to run middleware: %w", err)
+			ctx.Errors <- fmt.Errorf("failed to run middleware: %w", err)
 			return
 		}
 		msgOut = n.(Message)

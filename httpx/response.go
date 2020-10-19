@@ -2,11 +2,10 @@ package httpx
 
 import (
 	"bufio"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
-
-	"github.com/go-errors/errors"
 )
 
 // Ensure Response implements the Message interface.
@@ -50,14 +49,14 @@ func (r *Response) SetSessionID(id string) { r.SessionID = id }
 func NewResponse(b *bufio.Reader, connectionID string, exchangeID int64) (*Response, error) {
 	res, err := http.ReadResponse(b, nil)
 	if err != nil {
-		return nil, errors.Errorf("failed to read response: %w", err)
+		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return nil, errors.Errorf("failed to read response body: %w", err)
+		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	var loc string

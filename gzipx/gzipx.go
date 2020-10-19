@@ -2,9 +2,9 @@ package gzipx
 
 import (
 	"compress/gzip"
+	"fmt"
 	"io"
 
-	"github.com/go-errors/errors"
 	"github.com/gramLabs/vhs/flow"
 	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/session"
@@ -31,7 +31,7 @@ type inputModifier struct{}
 func (*inputModifier) Wrap(r ioutilx.ReadCloserID) (ioutilx.ReadCloserID, error) {
 	gr, err := gzip.NewReader(r)
 	if err != nil {
-		return nil, errors.Errorf("failed to create gzip reader: %w", err)
+		return nil, fmt.Errorf("failed to create gzip reader: %w", err)
 	}
 	return &gzipReaderID{
 		Reader: gr,

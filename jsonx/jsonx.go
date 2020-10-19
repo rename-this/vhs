@@ -2,9 +2,9 @@ package jsonx
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 
-	"github.com/go-errors/errors"
 	"github.com/gramLabs/vhs/flow"
 	"github.com/gramLabs/vhs/session"
 )
@@ -35,7 +35,7 @@ func (f *outputFormat) Init(ctx session.Context, w io.Writer) {
 
 	for n := range f.in {
 		if err := enc.Encode(n); err != nil {
-			ctx.Errors <- errors.Errorf("failed to encode to JSON: %w", err)
+			ctx.Errors <- fmt.Errorf("failed to encode to JSON: %w", err)
 		}
 		ctx.Logger.Debug().Msg("value encoded")
 	}
@@ -74,7 +74,7 @@ func (f *bufferedOutputFormat) Init(ctx session.Context, w io.Writer) {
 			ctx.Logger.Debug().Msg("value buffered")
 		case <-ctx.StdContext.Done():
 			if err := enc.Encode(buf); err != nil {
-				ctx.Errors <- errors.Errorf("failed to encode buffer to JSON: %w", err)
+				ctx.Errors <- fmt.Errorf("failed to encode buffer to JSON: %w", err)
 			}
 			ctx.Logger.Debug().Msg("context canceled")
 			return
