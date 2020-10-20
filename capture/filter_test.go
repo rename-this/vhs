@@ -38,8 +38,8 @@ func TestNewBPFFilter(t *testing.T) {
 					},
 				},
 			},
-			filter:         "tcp dst port 1111 and ((dst host 1.1.1.1 and src host 1.1.1.1))",
-			responseFilter: "(tcp dst port 1111 and ((dst host 1.1.1.1 and src host 1.1.1.1))) or (tcp src port 1111 and ((dst host 1.1.1.1 and src host 1.1.1.1)))",
+			filter:         "tcp dst port 1111 and host 1.1.1.1",
+			responseFilter: "tcp port 1111 and host 1.1.1.1",
 		},
 		{
 			desc: "loopback with multiple addrs",
@@ -61,8 +61,8 @@ func TestNewBPFFilter(t *testing.T) {
 					},
 				},
 			},
-			filter:         "tcp dst port 1111 and ((dst host 1.1.1.1 and src host 1.1.1.1) or (dst host 2.2.2.2 and src host 2.2.2.2))",
-			responseFilter: "(tcp dst port 1111 and ((dst host 1.1.1.1 and src host 1.1.1.1) or (dst host 2.2.2.2 and src host 2.2.2.2))) or (tcp src port 1111 and ((dst host 1.1.1.1 and src host 1.1.1.1) or (dst host 2.2.2.2 and src host 2.2.2.2)))",
+			filter:         "tcp dst port 1111 and (host 1.1.1.1 or host 2.2.2.2)",
+			responseFilter: "tcp port 1111 and (host 1.1.1.1 or host 2.2.2.2)",
 		},
 		{
 			desc: "interface with single addr",
@@ -76,8 +76,8 @@ func TestNewBPFFilter(t *testing.T) {
 					{IP: net.ParseIP("1.1.1.1")},
 				},
 			},
-			filter:         "tcp dst port 1111 and (dst host 1.1.1.1)",
-			responseFilter: "(tcp dst port 1111 and (src host 1.1.1.1)) or (tcp src port 1111 and (dst host 1.1.1.1))",
+			filter:         "tcp dst port 1111 and host 1.1.1.1",
+			responseFilter: "tcp port 1111 and host 1.1.1.1",
 		},
 		{
 			desc: "interface with multiple addrs",
@@ -92,8 +92,8 @@ func TestNewBPFFilter(t *testing.T) {
 					{IP: net.ParseIP("2.2.2.2")},
 				},
 			},
-			filter:         "tcp dst port 1111 and (dst host 1.1.1.1 or dst host 2.2.2.2)",
-			responseFilter: "(tcp dst port 1111 and (src host 1.1.1.1 or src host 2.2.2.2)) or (tcp src port 1111 and (dst host 1.1.1.1 or dst host 2.2.2.2))",
+			filter:         "tcp dst port 1111 and (host 1.1.1.1 or host 2.2.2.2)",
+			responseFilter: "tcp port 1111 and (host 1.1.1.1 or host 2.2.2.2)",
 		},
 	}
 	for _, c := range cases {
