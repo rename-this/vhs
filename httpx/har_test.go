@@ -375,6 +375,8 @@ func TestExtractPostData(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			hp := extractPostData(c.req)
+			sort.SliceStable(hp.Params, func(i, j int) bool { return hp.Params[i].Name < hp.Params[j].Name })
+			sort.SliceStable(c.ref.Params, func(i, j int) bool { return c.ref.Params[i].Name < c.ref.Params[j].Name })
 			assert.DeepEqual(t, hp, c.ref)
 		})
 	}

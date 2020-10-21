@@ -147,6 +147,10 @@ func (h *HAR) addRequest(ctx session.Context, hh *har, req *Request) {
 // extractCookies pulls the cookies out of a cookie slice ([]*http.Cookie) as generated when parsing an http request
 // or response.
 func extractCookies(cookies []*http.Cookie) []harCookie {
+	if cookies == nil || len(cookies) == 0 {
+		return nil
+	}
+
 	harCookies := make([]harCookie, len(cookies))
 	for i, cookie := range cookies {
 		if cookie != nil {
