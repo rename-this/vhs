@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime"
 	"net/http"
 	"net/url"
 	"time"
-	"mime"
 
 	"github.com/go-errors/errors"
 )
@@ -28,7 +28,7 @@ type Request struct {
 	ProtoMinor       int            `json:"proto_minor,omitempty"`
 	Header           http.Header    `json:"header,omitempty"`
 	MimeType         string         `json:"mimetype,omitempty"`
-	PostForm         url.Values     `json:postform,omitempty`
+	PostForm         url.Values     `json:"postform,omitempty"`
 	Cookies          []*http.Cookie `json:"cookies,omitempty"`
 	Body             string         `json:"body,omitempty"`
 	ContentLength    int64          `json:"content_length,omitempty"`
@@ -83,7 +83,6 @@ func NewRequest(b *bufio.Reader, connectionID string, exchangeID int64) (*Reques
 	if err != nil {
 		return nil, errors.Errorf("failed to read request body: %w", err)
 	}
-
 
 	return &Request{
 		ConnectionID:     connectionID,

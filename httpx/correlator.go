@@ -90,7 +90,6 @@ func (c *Correlator) Start(ctx session.Context) {
 		}
 	}()
 
-
 }
 
 func cacheKey(msg Message) string {

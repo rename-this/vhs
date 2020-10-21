@@ -13,7 +13,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build \
+RUN GODEBUG=netdns=go go build \
 	--ldflags '-extldflags "-static"' \
 	./cmd/vhs
 

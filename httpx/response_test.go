@@ -65,7 +65,7 @@ func TestNewResponset(t *testing.T) {
 					"Set-Cookie": {"grault=foo"},
 					"Location":   {"/111.html"},
 				},
-				Cookies:       []*http.Cookie{{Name:"grault", Value: "foo", Raw: "grault=foo"}},
+				Cookies:       []*http.Cookie{{Name: "grault", Value: "foo", Raw: "grault=foo"}},
 				Body:          "",
 				ContentLength: 0,
 				Location:      "/111.html",

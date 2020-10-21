@@ -123,7 +123,7 @@ func TestHAR(t *testing.T) {
 					ProtoMajor:   1,
 					ProtoMinor:   1,
 					Header: http.Header{
-						"Content-Type":   {"application/x-www-form-urlencoded"},
+						"Content-Type": {"application/x-www-form-urlencoded"},
 					},
 					MimeType: "application/x-www-form-urlencoded",
 					PostForm: url.Values{
@@ -149,7 +149,7 @@ func TestHAR(t *testing.T) {
 					ProtoMajor:   1,
 					ProtoMinor:   1,
 					Header: http.Header{
-						"Content-Type":   {"application/json"},
+						"Content-Type": {"application/json"},
 					},
 					MimeType:      "application/json",
 					Cookies:       []*http.Cookie{},
@@ -171,16 +171,16 @@ func TestHAR(t *testing.T) {
 						Version: "0.0.1",
 					},
 					Entries: []harEntry{
-						{   //GET with a cookie
+						{ //GET with a cookie
 							StartedDateTime: "0001-01-01T00:00:00Z",
 							Time:            0,
 							Request: harRequest{
-								Method: "GET",
-								URL:        "/111.html",
+								Method:      "GET",
+								URL:         "/111.html",
 								HTTPVersion: "HTTP/1.1",
-								Cookies:    []harCookie{{Name: "quux", Value: "corge"}},
-								Headers:    []harNVP{{Name: "Cookie", Value: "quux=corge"}},
-								HeaderSize: -1,
+								Cookies:     []harCookie{{Name: "quux", Value: "corge"}},
+								Headers:     []harNVP{{Name: "Cookie", Value: "quux=corge"}},
+								HeaderSize:  -1,
 							},
 							Response: harResponse{
 								Status:      http.StatusOK,
@@ -195,19 +195,19 @@ func TestHAR(t *testing.T) {
 							ServerIPAddress: "",
 							Connection:      "111",
 						},
-						{   //POST url-encoded
+						{ //POST url-encoded
 							StartedDateTime: "0001-01-01T00:00:00Z",
 							Time:            0,
 							Request: harRequest{
-								Method: "POST",
-								URL:        "/111.html",
+								Method:      "POST",
+								URL:         "/111.html",
 								HTTPVersion: "HTTP/1.1",
-								Headers:    []harNVP{
+								Headers: []harNVP{
 									{Name: "Content-Type", Value: "application/x-www-form-urlencoded"},
 								},
 								PostData: harPOST{
 									MIMEType: "application/x-www-form-urlencoded",
-									Params:   []harNVP{
+									Params: []harNVP{
 										{Name: "baz", Value: "qux"},
 									},
 								},
@@ -226,22 +226,22 @@ func TestHAR(t *testing.T) {
 							ServerIPAddress: "",
 							Connection:      "112",
 						},
-						{   //POST JSON (not url-encoded)
+						{ //POST JSON (not url-encoded)
 							StartedDateTime: "0001-01-01T00:00:00Z",
 							Time:            0,
 							Request: harRequest{
-								Method: "POST",
-								URL:        "/111.html",
+								Method:      "POST",
+								URL:         "/111.html",
 								HTTPVersion: "HTTP/1.1",
-								Headers:    []harNVP{
+								Headers: []harNVP{
 									{Name: "Content-Type", Value: "application/json"},
 								},
 								PostData: harPOST{
 									MIMEType: "application/json",
-									Text: "{\"baz\":\"qux\",\"foo\":\"bar\"}",
+									Text:     "{\"baz\":\"qux\",\"foo\":\"bar\"}",
 								},
 								HeaderSize: -1,
-								BodySize: 25,
+								BodySize:   25,
 							},
 							Response: harResponse{
 								Status:      http.StatusOK,
@@ -294,8 +294,8 @@ func TestHAR(t *testing.T) {
 func TestExtractCookies(t *testing.T) {
 	cases := []struct {
 		desc string
-		c []*http.Cookie
-		ref []harCookie
+		c    []*http.Cookie
+		ref  []harCookie
 	}{
 		{
 			desc: "easy",
@@ -337,7 +337,7 @@ func TestExtractPostData(t *testing.T) {
 		{
 			desc: "url encoded",
 			req: &Request{
-				Method: http.MethodPost,
+				Method:   http.MethodPost,
 				MimeType: "application/x-www-form-urlencoded",
 				PostForm: url.Values{
 					"foo": {"bar"},
@@ -346,7 +346,7 @@ func TestExtractPostData(t *testing.T) {
 			},
 			ref: harPOST{
 				MIMEType: "application/x-www-form-urlencoded",
-				Params:   []harNVP{
+				Params: []harNVP{
 					{Name: "foo", Value: "bar"},
 					{Name: "baz", Value: "qux"},
 				},
@@ -355,13 +355,13 @@ func TestExtractPostData(t *testing.T) {
 		{
 			desc: "not url encoded",
 			req: &Request{
-				Method: http.MethodPost,
+				Method:   http.MethodPost,
 				MimeType: "application/json",
-				Body: "{\"baz\":\"qux\",\"foo\":\"bar\"}",
+				Body:     "{\"baz\":\"qux\",\"foo\":\"bar\"}",
 			},
 			ref: harPOST{
 				MIMEType: "application/json",
-				Text: "{\"baz\":\"qux\",\"foo\":\"bar\"}",
+				Text:     "{\"baz\":\"qux\",\"foo\":\"bar\"}",
 			},
 		},
 		{

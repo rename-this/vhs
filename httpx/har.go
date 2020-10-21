@@ -89,8 +89,8 @@ func (h *HAR) addRequest(ctx session.Context, hh *har, req *Request) {
 		URL:         req.URL.String(),
 		HTTPVersion: req.Proto,
 		Cookies:     extractCookies(req.Cookies),
-		Headers:     mapToHarNVP(req.Header), //headers,
-		QueryString: mapToHarNVP(req.URL.Query()), //queryString,
+		Headers:     mapToHarNVP(req.Header),
+		QueryString: mapToHarNVP(req.URL.Query()),
 		PostData:    extractPostData(req),
 		HeaderSize:  -1,
 		BodySize:    len(req.Body),
@@ -110,7 +110,7 @@ func (h *HAR) addRequest(ctx session.Context, hh *har, req *Request) {
 			StatusText:  req.Response.Status,
 			HTTPVersion: req.Response.Proto,
 			Cookies:     extractCookies(req.Response.Cookies),
-			Headers:     mapToHarNVP(req.Response.Header),//resHeaders,
+			Headers:     mapToHarNVP(req.Response.Header),
 			Content:     content,
 			RedirectURL: req.Response.Location,
 			HeadersSize: -1,
@@ -197,7 +197,7 @@ func extractPostData(req *Request) harPOST {
 func lookupServerIP(req *Request) string {
 	var adds []net.IP
 
-	host,_,err := net.SplitHostPort(req.Host)
+	host, _, err := net.SplitHostPort(req.Host)
 	if err == nil {
 		adds, err = net.LookupIP(host)
 	} else {
@@ -212,7 +212,7 @@ func lookupServerIP(req *Request) string {
 }
 
 // mapToHarNVP ranges over a map[string][]string and returns a slice of harNVP.
-// For a key in the map, an instance of harNVP will be created for each element of
+// For each key in the map, an instance of harNVP will be created for each element of
 // the value slice.
 func mapToHarNVP(m map[string][]string) []harNVP {
 	var nvps []harNVP
@@ -233,112 +233,112 @@ type har struct {
 
 //harLog is the topmost object in a HAR file.
 type harLog struct {
-	Version string     `json:"version"`           //Required
-	Creator harCreator `json:"creator"`           //Required
-	Entries []harEntry `json:"entries"`           //Required
-	Comment string     `json:"comment"`           //Optional
+	Version string     `json:"version"`
+	Creator harCreator `json:"creator"`
+	Entries []harEntry `json:"entries"`
+	Comment string     `json:"comment,omitempty"`
 }
 
 //harCreator is the object used for Creator and Browser entries at the harLog level.
 type harCreator struct {
-	Name    string `json:"name"`    //Required
-	Version string `json:"version"` //Required
-	Comment string `json:"comment"` //Optional
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	Comment string `json:"comment,omitempty"`
 }
 
 //harEntry is the object for the Entries entry at the harLog level.
 type harEntry struct {
-	Pageref         string         `json:"pageref,omitempty"`         //Optional
-	StartedDateTime string         `json:"startedDateTime,omitempty"` //Required; request start time in ISO 8601 format
-	Time            int64          `json:"time,omitempty"`            //Required
-	Request         harRequest     `json:"request,omitempty"`         //Required
-	Response        harResponse    `json:"response,omitempty"`        //Required
-	Cache           harCache       `json:"cache,omitempty"`           //Optional
-	Timings         harEntryTiming `json:"timings,omitempty"`         //Required
-	ServerIPAddress string         `json:"serverIPAddress,omitempty"` //Optional
-	Connection      string         `json:"connection,omitempty"`      //Optional
-	Comment         string         `json:"comment,omitempty"`         //Optional
+	Pageref         string         `json:"pageref,omitempty"`
+	StartedDateTime string         `json:"startedDateTime"`
+	Time            int64          `json:"time"`
+	Request         harRequest     `json:"request"`
+	Response        harResponse    `json:"response"`
+	Cache           harCache       `json:"cache,omitempty"`
+	Timings         harEntryTiming `json:"timings"`
+	ServerIPAddress string         `json:"serverIPAddress,omitempty"`
+	Connection      string         `json:"connection,omitempty"`
+	Comment         string         `json:"comment,omitempty"`
 }
 
 //harRequest is the object for the Request entry at the harEntry level.
 type harRequest struct {
-	Method      string      `json:"method,omitempty"`      //Required
-	URL         string      `json:"url,omitempty"`         //Required
-	HTTPVersion string      `json:"httpVersion,omitempty"` //Required
-	Cookies     []harCookie `json:"cookies,omitempty"`     //Required if present in the request.
-	Headers     []harNVP    `json:"headers,omitempty"`     //Required
-	QueryString []harNVP    `json:"queryString,omitempty"` //Required
-	PostData    harPOST     `json:"postData,omitempty"`    //Optional
-	HeaderSize  int         `json:"headerSize,omitempty"`  //Required; -1 if data unavailable
-	BodySize    int         `json:"bodySize,omitempty"`    //Required; -1 if data unavailable
-	Comment     string      `json:"comment,omitempty"`     //Optional
+	Method      string      `json:"method"`
+	URL         string      `json:"url"`
+	HTTPVersion string      `json:"httpVersion"`
+	Cookies     []harCookie `json:"cookies"`
+	Headers     []harNVP    `json:"headers"`
+	QueryString []harNVP    `json:"queryString"`
+	PostData    harPOST     `json:"postData,omitempty"`
+	HeaderSize  int         `json:"headerSize"`
+	BodySize    int         `json:"bodySize"`
+	Comment     string      `json:"comment,omitempty"`
 }
 
 //harResponse is the object for the Response entry at the harEntry level.
 type harResponse struct {
-	Status      int         `json:"status,omitempty"`      //Required
-	StatusText  string      `json:"statusText,omitempty"`  //Required
-	HTTPVersion string      `json:"httpVersion,omitempty"` //Required
-	Cookies     []harCookie `json:"cookies,omitempty"`     //Required if present in the request.
-	Headers     []harNVP    `json:"headers,omitempty"`     //Required
-	Content     harContent  `json:"content,omitempty"`     //Required
-	RedirectURL string      `json:"redirectURL,omitempty"` //Required if applicable
-	HeadersSize int         `json:"headersSize,omitempty"` //Required; -1 if data unavailable.
-	BodySize    int         `json:"bodySize,omitempty"`    //Required; -1 if data unavailable
-	Comment     string      `json:"comment,omitempty"`     //Optional
+	Status      int         `json:"status"`
+	StatusText  string      `json:"statusText"`
+	HTTPVersion string      `json:"httpVersion"`
+	Cookies     []harCookie `json:"cookies"`
+	Headers     []harNVP    `json:"headers"`
+	Content     harContent  `json:"content"`
+	RedirectURL string      `json:"redirectURL"`
+	HeadersSize int         `json:"headersSize"`
+	BodySize    int         `json:"bodySize"`
+	Comment     string      `json:"comment,omitempty"`
 }
 
 //harCookie is the object for the Cookies entry at the harRequest and harResponse levels.
-type harCookie struct { 
-	Name     string `json:"name"`               //Required
-	Value    string `json:"value"`              //Required
-	Path     string `json:"path,omitempty"`     //Optional
-	Domain   string `json:"domain,omitempty"`   //Optional
-	Expires  string `json:"expires,omitempty"`  //Optional. Cookie expiration time in ISO 8601 format
-	HTTPOnly bool   `json:"httpOnly,omitempty"` //Optional
-	Secure   bool   `json:"secure,omitempty"`   //Optional
-	Comment  string `json:"comment,omitempty"`  //Optional
+type harCookie struct {
+	Name     string `json:"name"`
+	Value    string `json:"value"`
+	Path     string `json:"path,omitempty"`
+	Domain   string `json:"domain,omitempty"`
+	Expires  string `json:"expires,omitempty"`
+	HTTPOnly bool   `json:"httpOnly,omitempty"`
+	Secure   bool   `json:"secure,omitempty"`
+	Comment  string `json:"comment,omitempty"`
 }
 
 //harPOST is the object for the PostData entry at the harRequest level.
 type harPOST struct {
-	MIMEType string   `json:"mimeType"`          //Required
-	Params   []harNVP `json:"params,omitempty"`  //Mutually exclusive with Text
-	Text     string   `json:"text,omitempty"`    //Mutually exclusive with Params
-	Comment  string   `json:"comment,omitempty"` //Optional
+	MIMEType string   `json:"mimeType"`
+	Params   []harNVP `json:"params,omitempty"` //Mutually exclusive with Text
+	Text     string   `json:"text,omitempty"`   //Mutually exclusive with Params
+	Comment  string   `json:"comment,omitempty"`
 }
 
 //harNVP is a name-value pair and is used at harRequest, harResponse, and harPOST levels.
 type harNVP struct {
-	Name    string `json:"name"`              //Required
-	Value   string `json:"value"`             //Required
-	Comment string `json:"comment,omitempty"` //Optional
+	Name    string `json:"name"`
+	Value   string `json:"value"`
+	Comment string `json:"comment,omitempty"`
 }
 
 //harContent is the object for the Content entry at the harResponse level.
 type harContent struct {
-	Size        int64  `json:"size"`                  //Required
-	Compression int    `json:"compression,omitempty"` //Optional
-	MimeType    string `json:"mimeType"`              //Required
-	Text        string `json:"text,omitempty"`        //Optional
-	Encoding    string `json:"encoding,omitempty"`    //Optional
-	Comment     string `json:"comment,omitempty"`     //Optional
+	Size        int64  `json:"size"`
+	Compression int    `json:"compression,omitempty"`
+	MimeType    string `json:"mimeType"`
+	Text        string `json:"text,omitempty"`
+	Encoding    string `json:"encoding,omitempty"`
+	Comment     string `json:"comment,omitempty"`
 }
 
 //harCache is the object for the Cache entry at the harEntry level.
 type harCache struct {
-	// This part of the HAR specification depends on browserish things, but we will intentionally
+	// This part of the HAR specification depends on browserish things, but we will
 	// include an empty entry to denote intentional omission.
 }
 
 //harEntryTiming is the object for the Timings entry at the harEntry level.
 type harEntryTiming struct {
-	Blocked int64  `json:"blocked,omitempty"` //Optional
-	DNS     int64  `json:"dns,omitempty"`     //Optional
-	Connect int64  `json:"connect,omitempty"` //Optional
-	Send    int64  `json:"send"`              //Required
-	Wait    int64  `json:"wait"`              //Required
-	Receive int64  `json:"receive"`           //Required
-	SSL     int64  `json:"ssl,omitempty"`     //Optional
-	Comment string `json:"comment,omitempty"` //Optional
+	Blocked int64  `json:"blocked,omitempty"`
+	DNS     int64  `json:"dns,omitempty"`
+	Connect int64  `json:"connect,omitempty"`
+	Send    int64  `json:"send"`
+	Wait    int64  `json:"wait"`
+	Receive int64  `json:"receive"`
+	SSL     int64  `json:"ssl,omitempty"`
+	Comment string `json:"comment,omitempty"`
 }
