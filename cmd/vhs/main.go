@@ -124,7 +124,7 @@ func root(cfg *session.Config, inputLine string, outputLines []string, parser *f
 
 		go func() {
 			err := http.ListenAndServe(cfg.PrometheusAddr, mux)
-			if fmt.Is(err, http.ErrServerClosed) {
+			if errors.Is(err, http.ErrServerClosed) {
 				ctx.Logger.Error().Err(err).Msg("failed to listen and serve promentheus endpoint")
 			}
 		}()
