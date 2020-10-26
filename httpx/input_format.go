@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gramLabs/vhs/flow"
-	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/middleware"
 	"github.com/gramLabs/vhs/session"
 )
@@ -25,7 +24,7 @@ type inputFormat struct {
 	out chan interface{}
 }
 
-func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, r ioutilx.ReadCloserID) error {
+func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, r flow.InputReader) error {
 	ctx.Logger = ctx.Logger.With().
 		Str(session.LoggerKeyComponent, "http_input_format").
 		Logger()
@@ -36,7 +35,7 @@ func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, r iouti
 	defer r.Close()
 
 	var (
-		id         = r.ID()
+		id         = "111" // TODO(andrewhare): Get this value with metadata.
 		exchangeID int64
 
 		reqR, reqW = io.Pipe()

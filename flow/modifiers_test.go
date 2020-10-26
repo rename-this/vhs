@@ -2,6 +2,7 @@ package flow
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
 	"testing"
@@ -16,14 +17,14 @@ type TestDoubleOutputModifier struct {
 }
 
 // Wrap wraps.
-func (m *TestDoubleOutputModifier) Wrap(w io.WriteCloser) (io.WriteCloser, error) {
+func (m *TestDoubleOutputModifier) Wrap(w OutputWriter) (OutputWriter, error) {
 	tdom := &testDoubleOutputModifier{w: w}
 	if m.optCloseErr == nil {
-		return ioutilx.NopWriteCloser(ioutilx.NopWriteCloser(tdom)), nil
+		return tdom, nil
 	}
 
 	return &errWriteCloser{
-		Writer: ioutilx.NopWriteCloser(tdom),
+		Writer: tdom,
 		err:    m.optCloseErr,
 	}, nil
 }
@@ -36,11 +37,15 @@ func (o *testDoubleOutputModifier) Write(p []byte) (int, error) {
 	return o.w.Write(append(p, p...))
 }
 
+func (o *testDoubleOutputModifier) Close() error {
+	return o.w.Close()
+}
+
 type TestErrOutputModifier struct {
 	err error
 }
 
-func (m *TestErrOutputModifier) Wrap(w io.WriteCloser) (io.WriteCloser, error) {
+func (m *TestErrOutputModifier) Wrap(w OutputWriter) (OutputWriter, error) {
 	return nil, m.err
 }
 
@@ -50,26 +55,26 @@ type TestDoubleInputModifier struct {
 }
 
 // Wrap wraps.
-func (m *TestDoubleInputModifier) Wrap(r ioutilx.ReadCloserID) (ioutilx.ReadCloserID, error) {
+func (m *TestDoubleInputModifier) Wrap(r InputReader) (InputReader, error) {
 	tdim := &testDoubleInputModifier{r: r}
 	if m.optCloseErr == nil {
-		return ioutilx.NopReadCloserID(ioutil.NopCloser(tdim)), nil
+		return ioutil.NopCloser(tdim), nil
 	}
-	return ioutilx.NopReadCloserID(&errReadCloser{
+	return &errReadCloser{
 		Reader: ioutil.NopCloser(tdim),
 		err:    m.optCloseErr,
-	}), nil
+	}, nil
 }
 
 type testDoubleInputModifier struct {
-	r ioutilx.ReadCloserID
+	r InputReader
 }
 
 type TestErrInputModifier struct {
 	err error
 }
 
-func (m *TestErrInputModifier) Wrap(w ioutilx.ReadCloserID) (ioutilx.ReadCloserID, error) {
+func (m *TestErrInputModifier) Wrap(_ InputReader) (InputReader, error) {
 	return nil, m.err
 }
 
@@ -130,14 +135,10 @@ func TestOutputs(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			var buf bytes.Buffer
-			w, closers, err := c.outputs.Wrap(ioutilx.NopWriteCloser(&buf))
+			w, err := c.outputs.Wrap(ioutilx.NopWriteCloser(&buf))
 			assert.NilError(t, err)
-			assert.Equal(t, len(c.outputs), len(closers))
 
 			_, err = w.Write([]byte(c.in))
-			assert.NilError(t, err)
-
-			err = closers.Close()
 			assert.NilError(t, err)
 
 			assert.Equal(t, c.out, buf.String())
@@ -178,18 +179,59 @@ func TestInputs(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			buf := ioutilx.NopReadCloserID(ioutil.NopCloser(bytes.NewBufferString(c.in)))
-			r, closers, err := c.inputs.Wrap(buf)
+			buf := ioutil.NopCloser(bytes.NewBufferString(c.in))
+			r, err := c.inputs.Wrap(buf)
 			assert.NilError(t, err)
-			assert.Equal(t, len(c.inputs), len(closers))
 
 			b, err := ioutil.ReadAll(r)
 			assert.NilError(t, err)
 
-			err = closers.Close()
+			assert.Equal(t, c.out, string(b))
+		})
+	}
+}
+
+func TestCloseSequentially(t *testing.T) {
+	cases := []struct {
+		desc        string
+		a           OutputModifier
+		b           OutputModifier
+		errContains string
+	}{
+		{
+			desc: "no error",
+			a:    &TestDoubleOutputModifier{},
+			b:    &TestDoubleOutputModifier{},
+		},
+		{
+			desc:        "error a",
+			a:           &TestDoubleOutputModifier{optCloseErr: errors.New("111")},
+			b:           &TestDoubleOutputModifier{},
+			errContains: "111",
+		},
+		{
+			desc:        "error b",
+			a:           &TestDoubleOutputModifier{},
+			b:           &TestDoubleOutputModifier{optCloseErr: errors.New("222")},
+			errContains: "222",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.desc, func(t *testing.T) {
+			var bufA bytes.Buffer
+			a, err := c.a.Wrap(ioutilx.NopWriteCloser(&bufA))
 			assert.NilError(t, err)
 
-			assert.Equal(t, c.out, string(b))
+			var bufB bytes.Buffer
+			b, err := c.b.Wrap(ioutilx.NopWriteCloser(&bufB))
+			assert.NilError(t, err)
+
+			err = CloseSequentially(a, b)
+			if c.errContains == "" {
+				assert.NilError(t, err)
+			} else {
+				assert.ErrorContains(t, err, c.errContains)
+			}
 		})
 	}
 }

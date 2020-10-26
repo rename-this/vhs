@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/middleware"
 	"github.com/gramLabs/vhs/session"
 )
@@ -22,8 +21,12 @@ type testFormat struct {
 	out chan interface{}
 }
 
-func (i *testFormat) Init(ctx session.Context, m middleware.Middleware, r ioutilx.ReadCloserID) error {
-	defer r.Close()
+func (i *testFormat) Init(ctx session.Context, m middleware.Middleware, r InputReader) error {
+	defer func() {
+		if err := r.Close(); err != nil {
+			ctx.Errors <- err
+		}
+	}()
 
 	go func() {
 		s := bufio.NewScanner(r)

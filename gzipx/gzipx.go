@@ -6,7 +6,6 @@ import (
 	"io"
 
 	"github.com/gramLabs/vhs/flow"
-	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/session"
 )
 
@@ -17,8 +16,20 @@ func NewOutputModifier(_ session.Context) (flow.OutputModifier, error) {
 
 type outputModifier struct{}
 
-func (*outputModifier) Wrap(w io.WriteCloser) (io.WriteCloser, error) {
-	return gzip.NewWriter(w), nil
+func (*outputModifier) Wrap(w flow.OutputWriter) (flow.OutputWriter, error) {
+	return &gzipWriter{
+		Writer: gzip.NewWriter(w),
+		parent: w,
+	}, nil
+}
+
+type gzipWriter struct {
+	*gzip.Writer
+	parent io.Closer
+}
+
+func (w *gzipWriter) Close() error {
+	return flow.CloseSequentially(w.Writer, w.parent)
 }
 
 // NewInputModifier creates a new gzip input modifier.
@@ -28,22 +39,22 @@ func NewInputModifier(_ session.Context) (flow.InputModifier, error) {
 
 type inputModifier struct{}
 
-func (*inputModifier) Wrap(r ioutilx.ReadCloserID) (ioutilx.ReadCloserID, error) {
+func (*inputModifier) Wrap(r flow.InputReader) (flow.InputReader, error) {
 	gr, err := gzip.NewReader(r)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gzip reader: %w", err)
 	}
-	return &gzipReaderID{
+	return &gzipReader{
 		Reader: gr,
-		id:     r.ID(),
+		parent: r,
 	}, nil
 }
 
-type gzipReaderID struct {
+type gzipReader struct {
 	*gzip.Reader
-	id string
+	parent io.Closer
 }
 
-func (g *gzipReaderID) ID() string {
-	return g.id
+func (r *gzipReader) Close() error {
+	return flow.CloseSequentially(r.Reader, r.parent)
 }

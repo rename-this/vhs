@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/middleware"
 	"github.com/gramLabs/vhs/session"
 	"gotest.tools/v3/assert"
@@ -17,22 +16,22 @@ func TestInput(t *testing.T) {
 	cases := []struct {
 		desc        string
 		m           middleware.Middleware
-		data        []ioutilx.ReadCloserID
+		data        []InputReader
 		mis         InputModifiers
 		out         []interface{}
 		errContains string
 	}{
 		{
 			desc: "no modifiers",
-			data: []ioutilx.ReadCloserID{
-				ioutilx.NopReadCloserID(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
+			data: []InputReader{
+				ioutil.NopCloser(strings.NewReader("1\n2\n3\n")),
 			},
 			out: []interface{}{1, 2, 3},
 		},
 		{
 			desc: "modifiers",
-			data: []ioutilx.ReadCloserID{
-				ioutilx.NopReadCloserID(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
+			data: []InputReader{
+				ioutil.NopCloser(strings.NewReader("1\n2\n3\n")),
 			},
 			mis: InputModifiers{
 				&TestDoubleInputModifier{},
@@ -41,8 +40,8 @@ func TestInput(t *testing.T) {
 		},
 		{
 			desc: "bad modifier",
-			data: []ioutilx.ReadCloserID{
-				ioutilx.NopReadCloserID(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
+			data: []InputReader{
+				ioutil.NopCloser(strings.NewReader("1\n2\n3\n")),
 			},
 			mis: InputModifiers{
 				&TestErrInputModifier{err: errors.New("111")},
@@ -51,8 +50,8 @@ func TestInput(t *testing.T) {
 		},
 		{
 			desc: "bad modifier closer",
-			data: []ioutilx.ReadCloserID{
-				ioutilx.NopReadCloserID(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
+			data: []InputReader{
+				ioutil.NopCloser(strings.NewReader("1\n2\n3\n")),
 			},
 			mis: InputModifiers{
 				&TestDoubleInputModifier{optCloseErr: errors.New("111")},
@@ -69,7 +68,7 @@ func TestInput(t *testing.T) {
 
 			var (
 				s = &testSource{
-					streams: make(chan ioutilx.ReadCloserID),
+					streams: make(chan InputReader),
 					data:    c.data,
 				}
 				f, _ = newTestInputFormat(ctx)
@@ -82,7 +81,7 @@ func TestInput(t *testing.T) {
 
 			ctx.Cancel()
 
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(500 * time.Millisecond)
 
 			if c.errContains == "" {
 				out := make([]interface{}, 0, len(c.out))

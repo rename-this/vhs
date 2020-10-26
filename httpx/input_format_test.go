@@ -11,7 +11,7 @@ import (
 
 	"gotest.tools/v3/assert"
 
-	"github.com/gramLabs/vhs/internal/ioutilx"
+	"github.com/gramLabs/vhs/flow"
 	"github.com/gramLabs/vhs/middleware"
 	"github.com/gramLabs/vhs/session"
 )
@@ -37,21 +37,19 @@ func (m *testMiddleware) Exec(_ session.Context, header []byte, n interface{}) (
 	return n, nil
 }
 
-func newTestReadCloserID(s string) ioutilx.ReadCloserID {
+func newTestReadCloserID(s string) flow.InputReader {
 	var (
 		sr = strings.NewReader(s)
 		br = bufio.NewReader(sr)
-
-		noc = ioutil.NopCloser(br)
 	)
-	return ioutilx.NopReadCloserID(noc)
+	return ioutil.NopCloser(br)
 }
 
 func TestInputFormatInit(t *testing.T) {
 	cases := []struct {
 		desc        string
 		m           middleware.Middleware
-		r           ioutilx.ReadCloserID
+		r           flow.InputReader
 		msgs        []Message
 		count       int
 		sessionID   string
@@ -59,7 +57,7 @@ func TestInputFormatInit(t *testing.T) {
 	}{
 		{
 			desc: "empty",
-			r:    ioutilx.NopReadCloserID(ioutil.NopCloser(strings.NewReader(""))),
+			r:    ioutil.NopCloser(strings.NewReader("")),
 		},
 		{
 			desc:  "no middleware",

@@ -61,7 +61,8 @@ func TestExec(t *testing.T) {
 			desc: "bad JSON",
 			m: &mware{
 				stdin:  ioutil.Discard,
-				stdout: ioutil.NopCloser(bytes.NewBufferString("{\"NumSpots\":"))},
+				stdout: ioutil.NopCloser(bytes.NewBufferString("{\"NumSpots\":")),
+			},
 			num:         1,
 			l:           &leopard{NumSpots: 111},
 			errContains: "failed to unmarshal",

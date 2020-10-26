@@ -32,8 +32,6 @@ func (f *Flow) Run(ctx, inputCtx, outputCtx session.Context, m middleware.Middle
 		outputCtx.Cancel()
 		ctx.Logger.Debug().Msg("shutting down")
 		time.Sleep(inputCtx.Config.ShutdownDuration)
-
-		f.Outputs.Close(outputCtx)
 	}()
 
 	complete := time.After(inputCtx.Config.FlowDuration)

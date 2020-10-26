@@ -37,21 +37,12 @@ func (i *Input) Init(ctx session.Context, m middleware.Middleware) {
 	for {
 		select {
 		case rs := <-i.Source.Streams():
-			r, closers, err := i.Modifiers.Wrap(rs)
+			r, err := i.Modifiers.Wrap(rs)
 			if err != nil {
 				ctx.Errors <- fmt.Errorf("failed to wrap source stream: %w", err)
 				continue
 			}
-
-			ctx.Logger.Debug().Int("count", len(closers)).Msg("modifiers wrapped")
-
-			go func() {
-				i.Format.Init(ctx, m, r)
-				ctx.Logger.Debug().Msg("closing modifiers")
-				if err := closers.Close(); err != nil {
-					ctx.Errors <- fmt.Errorf("failed to close input modifier: %w", err)
-				}
-			}()
+			go i.Format.Init(ctx, m, r)
 		case <-ctx.StdContext.Done():
 			ctx.Logger.Debug().Msg("context canceled")
 			return

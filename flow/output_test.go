@@ -90,10 +90,9 @@ func TestOutput(t *testing.T) {
 
 			time.Sleep(500 * time.Millisecond)
 
-			c.oo.Close(ctx)
 			ctx.Cancel()
 
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(500 * time.Millisecond)
 
 			if c.errContains == "" {
 				s := c.oo[0].Sink.(*testSink)

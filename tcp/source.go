@@ -8,22 +8,23 @@ import (
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/gramLabs/vhs/capture"
 	"github.com/gramLabs/vhs/flow"
-	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/session"
 )
 
 // NewSource creates a new TCP source.
 func NewSource(_ session.Context) (flow.Source, error) {
 	return &tcpSource{
-		streams: make(chan ioutilx.ReadCloserID),
+		streams: make(chan flow.InputReader),
 	}, nil
 }
 
 type tcpSource struct {
-	streams chan ioutilx.ReadCloserID
+	streams chan flow.InputReader
 }
 
-func (s *tcpSource) Streams() <-chan ioutilx.ReadCloserID { return s.streams }
+func (s *tcpSource) Streams() <-chan flow.InputReader {
+	return s.streams
+}
 
 func (s *tcpSource) Init(ctx session.Context) {
 	s.read(ctx, capture.NewCapture, capture.NewListener)

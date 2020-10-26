@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/session"
 	"gotest.tools/v3/assert"
 )
@@ -23,9 +22,9 @@ func TestFlow(t *testing.T) {
 
 	var (
 		s = &testSource{
-			streams: make(chan ioutilx.ReadCloserID),
-			data: []ioutilx.ReadCloserID{
-				ioutilx.NopReadCloserID(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
+			streams: make(chan InputReader),
+			data: []InputReader{
+				ioutil.NopCloser(strings.NewReader("1\n2\n3\n")),
 			},
 		}
 		ifmt, _ = newTestInputFormat(inputCtx)

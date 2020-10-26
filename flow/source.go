@@ -1,7 +1,6 @@
 package flow
 
 import (
-	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/session"
 )
 
@@ -9,5 +8,5 @@ import (
 // by an input pipe.
 type Source interface {
 	Init(session.Context)
-	Streams() <-chan ioutilx.ReadCloserID
+	Streams() <-chan InputReader
 }

@@ -6,11 +6,11 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
-	"github.com/gramLabs/vhs/internal/ioutilx"
+	"github.com/gramLabs/vhs/flow"
 	"github.com/gramLabs/vhs/session"
 )
 
-func newStreamFactory(ctx session.Context, out chan ioutilx.ReadCloserID) *streamFactory {
+func newStreamFactory(ctx session.Context, out chan<- flow.InputReader) *streamFactory {
 	ctx.Logger = ctx.Logger.With().
 		Str(session.LoggerKeyComponent, "tcp_stream_factory").
 		Logger()
@@ -24,7 +24,7 @@ func newStreamFactory(ctx session.Context, out chan ioutilx.ReadCloserID) *strea
 
 type streamFactory struct {
 	ctx session.Context
-	out chan ioutilx.ReadCloserID
+	out chan<- flow.InputReader
 
 	mu    sync.Mutex
 	conns map[string]*conn

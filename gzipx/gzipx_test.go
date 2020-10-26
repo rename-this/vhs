@@ -12,9 +12,11 @@ import (
 
 var (
 	decompressed = []byte("111")
-	compressed   = []byte{31, 139, 8, 0, 0, 0, 0,
+	compressed   = []byte{
+		31, 139, 8, 0, 0, 0, 0,
 		0, 0, 255, 50, 52, 52, 4, 4, 0, 0, 255,
-		255, 61, 81, 107, 77, 3, 0, 0, 0}
+		255, 61, 81, 107, 77, 3, 0, 0, 0,
+	}
 )
 
 func TestNewOutputModifier(t *testing.T) {
@@ -57,7 +59,7 @@ func TestNewInputModifier(t *testing.T) {
 			im, err := NewInputModifier(session.Context{})
 			assert.NilError(t, err)
 
-			buf := ioutilx.NopReadCloserID(ioutil.NopCloser(bytes.NewBuffer(c.in)))
+			buf := ioutil.NopCloser(bytes.NewBuffer(c.in))
 			r, err := im.Wrap(buf)
 			if c.errContains != "" {
 				assert.ErrorContains(t, err, c.errContains)
@@ -65,8 +67,6 @@ func TestNewInputModifier(t *testing.T) {
 			}
 
 			assert.NilError(t, err)
-
-			assert.Equal(t, "", r.ID())
 
 			b, err := ioutil.ReadAll(r)
 			assert.NilError(t, err)

@@ -5,7 +5,6 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/gramLabs/vhs/flow"
-	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/session"
 )
 
@@ -52,17 +51,19 @@ func NewSource(ctx session.Context) (flow.Source, error) {
 func newSource(ctx session.Context, newClient newClientFn) flow.Source {
 	ctx.Logger.Debug().Msg("creating gcs source")
 	return &gcsSource{
-		streams:   make(chan ioutilx.ReadCloserID),
+		streams:   make(chan flow.InputReader),
 		newClient: newClient,
 	}
 }
 
 type gcsSource struct {
-	streams   chan ioutilx.ReadCloserID
+	streams   chan flow.InputReader
 	newClient newClientFn
 }
 
-func (s *gcsSource) Streams() <-chan ioutilx.ReadCloserID { return s.streams }
+func (s *gcsSource) Streams() <-chan flow.InputReader {
+	return s.streams
+}
 
 func (s *gcsSource) Init(ctx session.Context) {
 	ctx.Logger = ctx.Logger.With().
