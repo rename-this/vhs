@@ -1,12 +1,10 @@
 package tcp
 
-import (
-	"github.com/google/uuid"
-)
+import "github.com/segmentio/ksuid"
 
 func newConn(up *stream) *conn {
 	return &conn{
-		id: uuid.New().String(),
+		id: ksuid.New().String(),
 		up: up,
 	}
 }

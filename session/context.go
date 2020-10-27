@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	"github.com/google/uuid"
 	"github.com/rs/zerolog"
+	"github.com/segmentio/ksuid"
 )
 
 const (
@@ -16,7 +16,7 @@ const (
 // NewContexts creates a new set of contexts.
 func NewContexts(cfg *Config, errs chan error) (Context, Context, Context) {
 	var (
-		sessionID = uuid.New().String()
+		sessionID = ksuid.New().String()
 
 		stdCtx1, cancel1 = context.WithCancel(context.Background())
 		stdCtx2, cancel2 = context.WithCancel(context.Background())
