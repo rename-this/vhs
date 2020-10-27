@@ -179,8 +179,7 @@ func TestNewSource(t *testing.T) {
 			}
 
 			r := <-s.Streams()
-			// TODO(andrewhare): Re-enable once we have metadata
-			// assert.Equal(t, objectName, r.ID())
+			assert.Equal(t, objectName, r.Meta().SourceID)
 
 			data, err := ioutil.ReadAll(r)
 			assert.NilError(t, err)
