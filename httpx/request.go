@@ -17,7 +17,7 @@ var _ Message = &Request{}
 // Request represents an HTTP request.
 type Request struct {
 	ConnectionID     string         `json:"connection_id,omitempty"`
-	ExchangeID       int64          `json:"exchange_id,omitempty"`
+	ExchangeID       string         `json:"exchange_id,omitempty"`
 	Created          time.Time      `json:"created,omitempty"`
 	Method           string         `json:"method,omitempty"`
 	URL              *url.URL       `json:"url,omitempty"`
@@ -43,7 +43,7 @@ type Request struct {
 func (r *Request) GetConnectionID() string { return r.ConnectionID }
 
 // GetExchangeID gets an exchange ID.
-func (r *Request) GetExchangeID() int64 { return r.ExchangeID }
+func (r *Request) GetExchangeID() string { return r.ExchangeID }
 
 // SetCreated sets the created timestamp
 func (r *Request) SetCreated(created time.Time) { r.Created = created }
@@ -52,7 +52,7 @@ func (r *Request) SetCreated(created time.Time) { r.Created = created }
 func (r *Request) SetSessionID(id string) { r.SessionID = id }
 
 // NewRequest creates a new Request.
-func NewRequest(b *bufio.Reader, connectionID string, exchangeID int64) (*Request, error) {
+func NewRequest(b *bufio.Reader, connectionID string, exchangeID string) (*Request, error) {
 	req, err := http.ReadRequest(b)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read request: %w", err)

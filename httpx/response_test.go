@@ -16,7 +16,7 @@ func TestNewResponset(t *testing.T) {
 		b           *bufio.Reader
 		r           *Response
 		cID         string
-		eID         int64
+		eID         string
 		errContains string
 	}{
 		{
@@ -32,11 +32,11 @@ func TestNewResponset(t *testing.T) {
 		{
 			desc: "success",
 			cID:  "111",
-			eID:  111,
+			eID:  "111",
 			b:    bufio.NewReader(strings.NewReader("HTTP/1.1 204 No Content\r\n\r\n")),
 			r: &Response{
 				ConnectionID:  "111",
-				ExchangeID:    111,
+				ExchangeID:    "111",
 				Status:        "204 No Content",
 				StatusCode:    http.StatusNoContent,
 				Proto:         "HTTP/1.1",
@@ -51,11 +51,11 @@ func TestNewResponset(t *testing.T) {
 		{
 			desc: "success with a cookie",
 			cID:  "111",
-			eID:  111,
+			eID:  "111",
 			b:    bufio.NewReader(strings.NewReader("HTTP/1.1 204 No Content\r\nLocation: /111.html\r\nSet-Cookie: grault=foo\r\n\r\n")),
 			r: &Response{
 				ConnectionID: "111",
-				ExchangeID:   111,
+				ExchangeID:   "111",
 				Status:       "204 No Content",
 				StatusCode:   http.StatusNoContent,
 				Proto:        "HTTP/1.1",

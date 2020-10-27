@@ -9,7 +9,7 @@ import (
 
 // InputFormat is an interface for formatting input
 type InputFormat interface {
-	Init(session.Context, middleware.Middleware, InputReader) error
+	Init(session.Context, middleware.Middleware, <-chan InputReader)
 	Out() <-chan interface{}
 }
 

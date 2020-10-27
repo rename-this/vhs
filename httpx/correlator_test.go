@@ -13,9 +13,7 @@ import (
 )
 
 func TestCorrelator(t *testing.T) {
-	var (
-		timeout = 10 * time.Millisecond
-	)
+	timeout := 10 * time.Millisecond
 
 	m := NewCorrelator(timeout)
 
@@ -38,11 +36,11 @@ func TestCorrelator(t *testing.T) {
 	m.Start(ctx)
 
 	// A paired request/response
-	m.Messages <- &Request{ConnectionID: "1", ExchangeID: 0}
-	m.Messages <- &Response{ConnectionID: "1", ExchangeID: 0}
+	m.Messages <- &Request{ConnectionID: "1", ExchangeID: "0"}
+	m.Messages <- &Response{ConnectionID: "1", ExchangeID: "0"}
 
 	// Timed-out request
-	m.Messages <- &Request{ConnectionID: "2", ExchangeID: 0}
+	m.Messages <- &Request{ConnectionID: "2", ExchangeID: "0"}
 	time.Sleep(timeout + 100*time.Millisecond)
 
 	ctx.Cancel()
@@ -54,7 +52,7 @@ func TestCorrelator(t *testing.T) {
 
 func TestStressCorrelator(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping test in short mode.") //Can be skipped if too time consuming.
+		t.Skip("Skipping test in short mode.") // Can be skipped if too time consuming.
 	}
 
 	var (
@@ -90,22 +88,21 @@ func TestStressCorrelator(t *testing.T) {
 					timeout := rand.Intn(2)
 
 					if timeout == 0 {
-						c.Messages <- &Request{ConnectionID: connID, ExchangeID: 0}
-						c.Messages <- &Response{ConnectionID: connID, ExchangeID: 0}
+						c.Messages <- &Request{ConnectionID: connID, ExchangeID: "0"}
+						c.Messages <- &Response{ConnectionID: connID, ExchangeID: "0"}
 
 						ExSentMutex.Lock()
 						numExchangesSent++
 						ExSentMutex.Unlock()
 
 					} else {
-						c.Messages <- &Request{ConnectionID: connID, ExchangeID: 0}
+						c.Messages <- &Request{ConnectionID: connID, ExchangeID: "0"}
 
 						TimeoutSentMutex.Lock()
 						numTimeoutsSent++
 						TimeoutSentMutex.Unlock()
 					}
 				}
-
 			}
 		}()
 	}

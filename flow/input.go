@@ -32,6 +32,12 @@ func (i *Input) Init(ctx session.Context, m middleware.Middleware) {
 
 	ctx.Logger.Debug().Msg("init")
 
+	// This is an interim channel that allows
+	// the streams to be wrapped before passed
+	// to the format.
+	streams := make(chan InputReader)
+
+	go i.Format.Init(ctx, m, streams)
 	go i.Source.Init(ctx)
 
 	for {
@@ -42,7 +48,7 @@ func (i *Input) Init(ctx session.Context, m middleware.Middleware) {
 				ctx.Errors <- fmt.Errorf("failed to wrap source stream: %w", err)
 				continue
 			}
-			go i.Format.Init(ctx, m, r)
+			streams <- r
 		case <-ctx.StdContext.Done():
 			ctx.Logger.Debug().Msg("context canceled")
 			return

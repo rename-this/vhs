@@ -97,13 +97,15 @@ func (s *gcsSource) Init(ctx session.Context) {
 
 	s.streams <- &gcsStream{
 		Reader: r,
-		id:     ctx.Config.GCSObjectName,
+		meta:   flow.NewMeta(ctx.Config.GCSObjectName, nil),
 	}
 }
 
 type gcsStream struct {
 	*storage.Reader
-	id string
+	meta *flow.Meta
 }
 
-func (s *gcsStream) ID() string { return s.id }
+func (s *gcsStream) Meta() *flow.Meta {
+	return s.meta
+}

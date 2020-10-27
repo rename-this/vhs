@@ -24,7 +24,7 @@ func TestFlow(t *testing.T) {
 		s = &testSource{
 			streams: make(chan InputReader),
 			data: []InputReader{
-				ioutil.NopCloser(strings.NewReader("1\n2\n3\n")),
+				EmptyMeta(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
 			},
 		}
 		ifmt, _ = newTestInputFormat(inputCtx)

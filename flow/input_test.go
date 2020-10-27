@@ -24,14 +24,14 @@ func TestInput(t *testing.T) {
 		{
 			desc: "no modifiers",
 			data: []InputReader{
-				ioutil.NopCloser(strings.NewReader("1\n2\n3\n")),
+				EmptyMeta(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
 			},
 			out: []interface{}{1, 2, 3},
 		},
 		{
 			desc: "modifiers",
 			data: []InputReader{
-				ioutil.NopCloser(strings.NewReader("1\n2\n3\n")),
+				EmptyMeta(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
 			},
 			mis: InputModifiers{
 				&TestDoubleInputModifier{},
@@ -41,7 +41,7 @@ func TestInput(t *testing.T) {
 		{
 			desc: "bad modifier",
 			data: []InputReader{
-				ioutil.NopCloser(strings.NewReader("1\n2\n3\n")),
+				EmptyMeta(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
 			},
 			mis: InputModifiers{
 				&TestErrInputModifier{err: errors.New("111")},
@@ -51,7 +51,7 @@ func TestInput(t *testing.T) {
 		{
 			desc: "bad modifier closer",
 			data: []InputReader{
-				ioutil.NopCloser(strings.NewReader("1\n2\n3\n")),
+				EmptyMeta(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
 			},
 			mis: InputModifiers{
 				&TestDoubleInputModifier{optCloseErr: errors.New("111")},

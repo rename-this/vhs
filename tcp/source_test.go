@@ -150,8 +150,7 @@ func TestRead(t *testing.T) {
 			r := <-s.Streams()
 			defer r.Close()
 
-			// TODO(andrewhare): Reenabled once we have metadata.
-			// assert.Assert(t, r.ID() != "")
+			assert.Assert(t, r.Meta().SourceID != "")
 
 			b, err := ioutil.ReadAll(r)
 			assert.NilError(t, err)

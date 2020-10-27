@@ -38,7 +38,7 @@ func TestHAR(t *testing.T) {
 			messages: []Message{
 				&Request{
 					ConnectionID: "111",
-					ExchangeID:   0,
+					ExchangeID:   "0",
 					Body:         "0",
 					Header: http.Header{
 						"a": []string{"a"},
@@ -47,7 +47,7 @@ func TestHAR(t *testing.T) {
 				},
 				&Response{
 					ConnectionID: "111",
-					ExchangeID:   0,
+					ExchangeID:   "0",
 					StatusCode:   http.StatusOK,
 				},
 			},
@@ -88,10 +88,10 @@ func TestHAR(t *testing.T) {
 		{
 			desc: "kitchen sink",
 			messages: []Message{
-				//GET with a cookie
+				// GET with a cookie
 				&Request{
 					ConnectionID: "111",
-					ExchangeID:   0,
+					ExchangeID:   "0",
 					Method:       "GET",
 					URL:          newURL("/111.html"),
 					Proto:        "HTTP/1.1",
@@ -99,10 +99,11 @@ func TestHAR(t *testing.T) {
 					ProtoMinor:   1,
 					Header:       http.Header{"Cookie": {"quux=corge"}},
 					MimeType:     "text/plain; charset=utf-8",
-					Cookies: []*http.Cookie{{
-						Name:  "quux",
-						Value: "corge",
-					},
+					Cookies: []*http.Cookie{
+						{
+							Name:  "quux",
+							Value: "corge",
+						},
 					},
 					Body:          "",
 					ContentLength: 1,
@@ -110,13 +111,13 @@ func TestHAR(t *testing.T) {
 				},
 				&Response{
 					ConnectionID: "111",
-					ExchangeID:   0,
+					ExchangeID:   "0",
 					StatusCode:   http.StatusOK,
 				},
-				//POST url-encoded
+				// POST url-encoded
 				&Request{
 					ConnectionID: "112",
-					ExchangeID:   1,
+					ExchangeID:   "1",
 					Method:       "POST",
 					URL:          newURL("/111.html"),
 					Proto:        "HTTP/1.1",
@@ -136,13 +137,13 @@ func TestHAR(t *testing.T) {
 				},
 				&Response{
 					ConnectionID: "112",
-					ExchangeID:   1,
+					ExchangeID:   "1",
 					StatusCode:   http.StatusOK,
 				},
-				//POST json (not url-encoded)
+				// POST json (not url-encoded)
 				&Request{
 					ConnectionID: "113",
-					ExchangeID:   1,
+					ExchangeID:   "1",
 					Method:       "POST",
 					URL:          newURL("/111.html"),
 					Proto:        "HTTP/1.1",
@@ -159,7 +160,7 @@ func TestHAR(t *testing.T) {
 				},
 				&Response{
 					ConnectionID: "113",
-					ExchangeID:   1,
+					ExchangeID:   "1",
 					StatusCode:   http.StatusOK,
 				},
 			},
@@ -171,7 +172,7 @@ func TestHAR(t *testing.T) {
 						Version: "0.0.1",
 					},
 					Entries: []harEntry{
-						{ //GET with a cookie
+						{ // GET with a cookie
 							StartedDateTime: "0001-01-01T00:00:00Z",
 							Time:            0,
 							Request: harRequest{
@@ -195,7 +196,7 @@ func TestHAR(t *testing.T) {
 							ServerIPAddress: "",
 							Connection:      "111",
 						},
-						{ //POST url-encoded
+						{ // POST url-encoded
 							StartedDateTime: "0001-01-01T00:00:00Z",
 							Time:            0,
 							Request: harRequest{
@@ -226,7 +227,7 @@ func TestHAR(t *testing.T) {
 							ServerIPAddress: "",
 							Connection:      "112",
 						},
-						{ //POST JSON (not url-encoded)
+						{ // POST JSON (not url-encoded)
 							StartedDateTime: "0001-01-01T00:00:00Z",
 							Time:            0,
 							Request: harRequest{

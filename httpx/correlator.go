@@ -89,9 +89,8 @@ func (c *Correlator) Start(ctx session.Context) {
 			}
 		}
 	}()
-
 }
 
 func cacheKey(msg Message) string {
-	return fmt.Sprintf("%s/%d", msg.GetConnectionID(), msg.GetExchangeID())
+	return fmt.Sprintf("%s/%s", msg.GetConnectionID(), msg.GetExchangeID())
 }

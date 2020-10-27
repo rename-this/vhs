@@ -58,12 +58,12 @@ type TestDoubleInputModifier struct {
 func (m *TestDoubleInputModifier) Wrap(r InputReader) (InputReader, error) {
 	tdim := &testDoubleInputModifier{r: r}
 	if m.optCloseErr == nil {
-		return ioutil.NopCloser(tdim), nil
+		return EmptyMeta(ioutil.NopCloser(tdim)), nil
 	}
-	return &errReadCloser{
+	return EmptyMeta(&errReadCloser{
 		Reader: ioutil.NopCloser(tdim),
 		err:    m.optCloseErr,
-	}, nil
+	}), nil
 }
 
 type testDoubleInputModifier struct {
@@ -179,7 +179,7 @@ func TestInputs(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			buf := ioutil.NopCloser(bytes.NewBufferString(c.in))
+			buf := EmptyMeta(ioutil.NopCloser(bytes.NewBufferString(c.in)))
 			r, err := c.inputs.Wrap(buf)
 			assert.NilError(t, err)
 

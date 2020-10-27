@@ -21,27 +21,29 @@ type testFormat struct {
 	out chan interface{}
 }
 
-func (i *testFormat) Init(ctx session.Context, m middleware.Middleware, r InputReader) error {
-	defer func() {
-		if err := r.Close(); err != nil {
-			ctx.Errors <- err
-		}
-	}()
+func (i *testFormat) Init(ctx session.Context, m middleware.Middleware, s <-chan InputReader) {
+	for r := range s {
+		go func() {
+			defer func() {
+				if err := r.Close(); err != nil {
+					ctx.Errors <- err
+				}
+			}()
 
-	go func() {
-		s := bufio.NewScanner(r)
-		for s.Scan() {
-			ii, err := strconv.Atoi(strings.TrimSpace(s.Text()))
-			if err != nil {
-				ctx.Errors <- err
-			}
-			i.out <- ii
-		}
-	}()
+			go func() {
+				s := bufio.NewScanner(r)
+				for s.Scan() {
+					ii, err := strconv.Atoi(strings.TrimSpace(s.Text()))
+					if err != nil {
+						ctx.Errors <- err
+					}
+					i.out <- ii
+				}
+			}()
 
-	<-ctx.StdContext.Done()
-
-	return nil
+			<-ctx.StdContext.Done()
+		}()
+	}
 }
 
 func (i *testFormat) Out() <-chan interface{} { return i.out }

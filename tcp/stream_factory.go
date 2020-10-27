@@ -10,6 +10,22 @@ import (
 	"github.com/gramLabs/vhs/session"
 )
 
+// Direction is an enum indicating the direction
+// of a TCP stream.
+type Direction int
+
+const (
+	// DirectionUp is the up-stream of a TCP connection.
+	DirectionUp Direction = iota
+	// DirectionDown is the down-stream of a TCP connection.
+	DirectionDown
+)
+
+const (
+	// MetaDirection is a key for a flow.Meta to retrieve a direction.
+	MetaDirection = "tcp.direction"
+)
+
 func newStreamFactory(ctx session.Context, out chan<- flow.InputReader) *streamFactory {
 	ctx.Logger = ctx.Logger.With().
 		Str(session.LoggerKeyComponent, "tcp_stream_factory").
@@ -31,9 +47,10 @@ type streamFactory struct {
 }
 
 type reader struct {
-	ctx session.Context
-	rs  tcpreader.ReaderStream
-	s   *stream
+	ctx  session.Context
+	rs   tcpreader.ReaderStream
+	s    *stream
+	meta *flow.Meta
 }
 
 func (r *reader) Reassembled(reassembly []tcpassembly.Reassembly) {
@@ -59,8 +76,8 @@ func (r *reader) Close() error {
 	return r.rs.Close()
 }
 
-func (r *reader) ID() string {
-	return r.s.conn.id
+func (r *reader) Meta() *flow.Meta {
+	return r.meta
 }
 
 type stream struct {
@@ -85,12 +102,15 @@ func (f *streamFactory) New(net, transport gopacket.Flow) tcpassembly.Stream {
 		transport: transport,
 	}
 
-	f.trackStream(ctx, s)
+	d := f.trackStream(ctx, s)
 
 	r := &reader{
 		ctx: ctx,
 		rs:  tcpreader.NewReaderStream(),
 		s:   s,
+		meta: flow.NewMeta(s.conn.id, map[string]interface{}{
+			MetaDirection: d,
+		}),
 	}
 
 	f.out <- r
@@ -116,7 +136,7 @@ func (f *streamFactory) prune() {
 	}
 }
 
-func (f *streamFactory) trackStream(ctx session.Context, s *stream) {
+func (f *streamFactory) trackStream(ctx session.Context, s *stream) Direction {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -125,6 +145,7 @@ func (f *streamFactory) trackStream(ctx session.Context, s *stream) {
 	var (
 		id = &streamID{net: s.net, transport: s.transport}
 		c  = f.conns[id.String()]
+		d  = DirectionUp
 	)
 
 	if c == nil {
@@ -134,7 +155,10 @@ func (f *streamFactory) trackStream(ctx session.Context, s *stream) {
 	} else {
 		c.down = s
 		ctx.Logger.Debug().Str("conn_id", c.id).Msg("setting downstream connection")
+		d = DirectionDown
 	}
 
 	s.conn = c
+
+	return d
 }

@@ -52,7 +52,12 @@ func (*inputModifier) Wrap(r flow.InputReader) (flow.InputReader, error) {
 
 type gzipReader struct {
 	*gzip.Reader
-	parent io.Closer
+	parent flow.InputReader
+	meta   *flow.Meta
+}
+
+func (r *gzipReader) Meta() *flow.Meta {
+	return r.parent.Meta()
 }
 
 func (r *gzipReader) Close() error {

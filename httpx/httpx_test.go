@@ -14,11 +14,11 @@ func makeComparable(m Message) Message {
 	switch r := m.(type) {
 	case *Request:
 		r.ConnectionID = ""
-		r.ExchangeID = 0
+		r.ExchangeID = ""
 		r.Created = time.Time{}
 	case *Response:
 		r.ConnectionID = ""
-		r.ExchangeID = 0
+		r.ExchangeID = ""
 		r.Created = time.Time{}
 	}
 	return m

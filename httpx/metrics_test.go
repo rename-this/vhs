@@ -25,13 +25,13 @@ func TestMetrics(t *testing.T) {
 			messages: []Message{
 				&Request{
 					ConnectionID: "111",
-					ExchangeID:   0,
+					ExchangeID:   "0",
 					Created:      refTime,
 					Method:       "POST",
 				},
 				&Response{
 					ConnectionID: "111",
-					ExchangeID:   0,
+					ExchangeID:   "0",
 					Created:      refTime.Add(500 * time.Millisecond),
 					StatusCode:   200,
 				},
@@ -44,7 +44,7 @@ func TestMetrics(t *testing.T) {
 			messages: []Message{
 				&Request{
 					ConnectionID: "222",
-					ExchangeID:   1,
+					ExchangeID:   "1",
 					Created:      refTime.Add(750 * time.Millisecond),
 					Method:       "GET",
 					Response:     nil,
@@ -58,19 +58,19 @@ func TestMetrics(t *testing.T) {
 			messages: []Message{
 				&Request{
 					ConnectionID: "111",
-					ExchangeID:   0,
+					ExchangeID:   "0",
 					Created:      refTime,
 					Method:       "POST",
 				},
 				&Response{
 					ConnectionID: "111",
-					ExchangeID:   0,
+					ExchangeID:   "0",
 					Created:      refTime.Add(500 * time.Millisecond),
 					StatusCode:   200,
 				},
 				&Request{
 					ConnectionID: "222",
-					ExchangeID:   1,
+					ExchangeID:   "1",
 					Created:      refTime.Add(750 * time.Millisecond),
 					Method:       "GET",
 					Response:     nil,
@@ -94,7 +94,7 @@ func TestMetrics(t *testing.T) {
 				time.Sleep(10 * time.Millisecond)
 			}
 
-			//Sleep long enough to let a prune cycle run in the correlator.
+			// Sleep long enough to let a prune cycle run in the correlator.
 			time.Sleep(300 * time.Millisecond)
 
 			ctx.Cancel()

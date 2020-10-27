@@ -5,12 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sync"
 	"time"
 
 	"github.com/gramLabs/vhs/flow"
 	"github.com/gramLabs/vhs/middleware"
 	"github.com/gramLabs/vhs/session"
+	"github.com/gramLabs/vhs/tcp"
+	"github.com/segmentio/ksuid"
+)
+
+const (
+	exchangeIDBufferSize = 512
 )
 
 // NewInputFormat creates an HTTP input formatter.
@@ -24,85 +29,76 @@ type inputFormat struct {
 	out chan interface{}
 }
 
-func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, r flow.InputReader) error {
+func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, streams <-chan flow.InputReader) {
 	ctx.Logger = ctx.Logger.With().
 		Str(session.LoggerKeyComponent, "http_input_format").
 		Logger()
 
 	ctx.Logger.Debug().Msg("init")
 
-	defer func() { ctx.Logger.Debug().Msg("closing") }()
-	defer r.Close()
+	// As requests come in, an exchange ID will be generated
+	// by the request parsing goroutine. The response goroutine
+	// will read off this channel. Use the size to adjust backpressure
+	// on reading requests, and we should consdier making this
+	// a configuratble value.
+	exchangeIDs := make(chan string, exchangeIDBufferSize)
 
-	var (
-		id         = "111" // TODO(andrewhare): Get this value with metadata.
-		exchangeID int64
+	for rdr := range streams {
+		go func(r flow.InputReader) {
+			defer r.Close()
 
-		reqR, reqW = io.Pipe()
-		resR, resW = io.Pipe()
-		mw         = io.MultiWriter(reqW, resW)
-
-		reqBuf = bufio.NewReader(reqR)
-		resBuf = bufio.NewReader(resR)
-
-		wg   sync.WaitGroup
-		done = make(chan struct{})
-	)
-
-	go func() {
-		for {
-			var (
-				req    *Request
-				res    *Response
-				reqErr error
-				resErr error
-			)
-
-			wg.Add(2)
-
-			go func() {
-				req, reqErr = NewRequest(reqBuf, id, exchangeID)
-				if req != nil {
-					ctx.Logger.Debug().Msg("request received")
-					i.handle(ctx, m, TypeRequest, req)
-				}
-				wg.Done()
-			}()
-
-			go func() {
-				res, resErr = NewResponse(resBuf, id, exchangeID)
-				if res != nil {
-					ctx.Logger.Debug().Msg("response received")
-					i.handle(ctx, m, TypeResponse, res)
-				}
-				wg.Done()
-			}()
-
-			wg.Wait()
-
-			if isEOF(reqErr, resErr) {
-				ctx.Logger.Debug().Msg("stream EOF")
-				done <- struct{}{}
+			direction, ok := r.Meta().Get(tcp.MetaDirection)
+			if !ok {
+				ctx.Errors <- fmt.Errorf("failed to find direction for %s", r.Meta().SourceID)
 				return
 			}
 
-			exchangeID++
-		}
-	}()
+			var (
+				buf      = bufio.NewReader(r)
+				sourceID = r.Meta().SourceID
+			)
 
-	go func() {
-		defer reqW.Close()
-		defer resW.Close()
-		io.Copy(mw, r)
-	}()
+			switch direction {
+			case tcp.DirectionUp:
+				go func() {
+					for {
+						eID := ksuid.New().String()
+						exchangeIDs <- eID
 
-	for {
-		select {
-		case <-ctx.StdContext.Done():
-			return nil
-		case <-done:
-			return nil
-		}
+						req, err := NewRequest(buf, sourceID, eID)
+						if isEOF(err) {
+							return
+						}
+						if err != nil {
+							ctx.Errors <- fmt.Errorf("failed to parse request: %w", err)
+							continue
+						}
+						i.handle(ctx, m, TypeRequest, req)
+					}
+				}()
+			case tcp.DirectionDown:
+				go func() {
+					for {
+						eID := <-exchangeIDs
+
+						res, err := NewResponse(buf, sourceID, eID)
+						if isEOF(err) {
+							return
+						}
+						if err != nil {
+							ctx.Errors <- fmt.Errorf("failed to parse response: %w", err)
+							continue
+						}
+						i.handle(ctx, m, TypeResponse, res)
+					}
+				}()
+			default:
+				ctx.Errors <- fmt.Errorf("invalid TCP direction: %s", direction)
+				return
+			}
+
+			<-ctx.StdContext.Done()
+		}(rdr)
 	}
 }
 

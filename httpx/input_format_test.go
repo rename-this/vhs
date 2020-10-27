@@ -14,6 +14,7 @@ import (
 	"github.com/gramLabs/vhs/flow"
 	"github.com/gramLabs/vhs/middleware"
 	"github.com/gramLabs/vhs/session"
+	"github.com/gramLabs/vhs/tcp"
 )
 
 type testMiddleware struct {
@@ -37,19 +38,23 @@ func (m *testMiddleware) Exec(_ session.Context, header []byte, n interface{}) (
 	return n, nil
 }
 
-func newTestReadCloserID(s string) flow.InputReader {
+func newTestInputReader(direction tcp.Direction, s string) flow.InputReader {
 	var (
 		sr = strings.NewReader(s)
 		br = bufio.NewReader(sr)
+		c  = ioutil.NopCloser(br)
 	)
-	return ioutil.NopCloser(br)
+	r := flow.EmptyMeta(c)
+	r.Meta().Set(tcp.MetaDirection, direction)
+	return r
 }
 
 func TestInputFormatInit(t *testing.T) {
 	cases := []struct {
 		desc        string
 		m           middleware.Middleware
-		r           flow.InputReader
+		up          flow.InputReader
+		down        flow.InputReader
 		msgs        []Message
 		count       int
 		sessionID   string
@@ -57,11 +62,13 @@ func TestInputFormatInit(t *testing.T) {
 	}{
 		{
 			desc: "empty",
-			r:    ioutil.NopCloser(strings.NewReader("")),
+			up:   flow.EmptyMeta(ioutil.NopCloser(strings.NewReader(""))),
+			down: flow.EmptyMeta(ioutil.NopCloser(strings.NewReader(""))),
 		},
 		{
 			desc:  "no middleware",
-			r:     newTestReadCloserID("GET /111.html HTTP/1.1\r\nheader:foo\r\n\r\nHTTP/1.1 204 No Content\r\n\r\n"),
+			up:    newTestInputReader(tcp.DirectionUp, "GET /111.html HTTP/1.1\r\nheader:foo\r\n\r\n"),
+			down:  newTestInputReader(tcp.DirectionDown, "HTTP/1.1 204 No Content\r\n\r\n"),
 			count: 2,
 			msgs: []Message{
 				&Request{
@@ -88,7 +95,8 @@ func TestInputFormatInit(t *testing.T) {
 		},
 		{
 			desc:  "middleware",
-			r:     newTestReadCloserID("GET /111.html HTTP/1.1\r\nheader:foo\r\n\r\nHTTP/1.1 204 No Content\r\n\r\n"),
+			up:    newTestInputReader(tcp.DirectionUp, "GET /111.html HTTP/1.1\r\nheader:foo\r\n\r\n"),
+			down:  newTestInputReader(tcp.DirectionDown, "HTTP/1.1 204 No Content\r\n\r\n"),
 			count: 2,
 			m:     &testMiddleware{},
 			msgs: []Message{
@@ -116,7 +124,8 @@ func TestInputFormatInit(t *testing.T) {
 		},
 		{
 			desc:  "middleware error",
-			r:     newTestReadCloserID("GET /111.html HTTP/1.1\r\nheader:foo\r\n\r\n"),
+			up:    newTestInputReader(tcp.DirectionUp, "GET /111.html HTTP/1.1\r\nheader:foo\r\n\r\n"),
+			down:  newTestInputReader(tcp.DirectionDown, "GET /111.html HTTP/1.1\r\nheader:foo\r\n\r\n"),
 			count: 0,
 			m: &testMiddleware{
 				expectedErr: errors.New("111"),
@@ -132,7 +141,13 @@ func TestInputFormatInit(t *testing.T) {
 			inputFormat, err := NewInputFormat(ctx)
 			assert.NilError(t, err)
 
-			go inputFormat.Init(ctx, c.m, c.r)
+			streams := make(chan flow.InputReader)
+
+			go inputFormat.Init(ctx, c.m, streams)
+
+			streams <- c.up
+			time.Sleep(50 * time.Millisecond)
+			streams <- c.down
 
 			var (
 				msgs []Message

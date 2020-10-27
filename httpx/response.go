@@ -14,7 +14,7 @@ var _ Message = &Response{}
 // Response represents an HTTP response.
 type Response struct {
 	ConnectionID     string         `json:"connection_id,omitempty"`
-	ExchangeID       int64          `json:"exchange_id"`
+	ExchangeID       string         `json:"exchange_id"`
 	Created          time.Time      `json:"created,omitempty"`
 	Status           string         `json:"status,omitempty"`
 	StatusCode       int            `json:"status_code,omitempty"`
@@ -37,7 +37,7 @@ type Response struct {
 func (r *Response) GetConnectionID() string { return r.ConnectionID }
 
 // GetExchangeID gets an exchange ID.
-func (r *Response) GetExchangeID() int64 { return r.ExchangeID }
+func (r *Response) GetExchangeID() string { return r.ExchangeID }
 
 // SetCreated sets the created timestamp
 func (r *Response) SetCreated(created time.Time) { r.Created = created }
@@ -46,7 +46,7 @@ func (r *Response) SetCreated(created time.Time) { r.Created = created }
 func (r *Response) SetSessionID(id string) { r.SessionID = id }
 
 // NewResponse creates a new Response.
-func NewResponse(b *bufio.Reader, connectionID string, exchangeID int64) (*Response, error) {
+func NewResponse(b *bufio.Reader, connectionID, exchangeID string) (*Response, error) {
 	res, err := http.ReadResponse(b, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)

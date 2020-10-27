@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/gramLabs/vhs/flow"
 	"github.com/gramLabs/vhs/internal/ioutilx"
 	"github.com/gramLabs/vhs/session"
 	"gotest.tools/v3/assert"
@@ -59,7 +60,7 @@ func TestNewInputModifier(t *testing.T) {
 			im, err := NewInputModifier(session.Context{})
 			assert.NilError(t, err)
 
-			buf := ioutil.NopCloser(bytes.NewBuffer(c.in))
+			buf := flow.EmptyMeta(ioutil.NopCloser(bytes.NewBuffer(c.in)))
 			r, err := im.Wrap(buf)
 			if c.errContains != "" {
 				assert.ErrorContains(t, err, c.errContains)
