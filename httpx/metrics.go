@@ -20,10 +20,11 @@ var _ flow.OutputFormat = &Metrics{}
 // Note that this format does not modify data passing through it, it merely extracts metrics.
 // Also note that this is a "dead end" format: its output io.Reader is never updated and remains empty.
 type Metrics struct {
-	c        *Correlator
-	latency  *prometheus.GaugeVec
-	timeouts *prometheus.CounterVec
-	in       chan interface{}
+	c  *Correlator
+	in chan interface{}
+
+	count    *prometheus.CounterVec
+	duration *prometheus.SummaryVec
 }
 
 // NewMetricsOutput creates a new *output.Pipe for calculating HTTP metrics
@@ -34,19 +35,29 @@ func NewMetricsOutput() *flow.Output {
 // NewMetrics creates a new Metrics format.
 func NewMetrics() *Metrics {
 	return &Metrics{
-		latency: promauto.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "vhs",
-			Subsystem: "http",
-			Name:      "latency_seconds",
-			Help:      "Latency of http exchanges captured by VHS.",
-		}, []string{"method", "code"}),
-		timeouts: promauto.NewCounterVec(prometheus.CounterOpts{
-			Namespace: "vhs",
-			Subsystem: "http",
-			Name:      "timeouts_total",
-			Help:      "Total count of timed-out http exchanges captured by VHS.",
-		}, []string{"method"}),
 		in: make(chan interface{}),
+
+		count: promauto.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "vhs",
+			Subsystem: "http",
+			Name:      "requests_total",
+			Help:      "Total count of http requests captured by VHS.",
+		}, []string{"method", "code", "path"}),
+		duration: promauto.NewSummaryVec(prometheus.SummaryOpts{
+			Namespace: "vhs",
+			Subsystem: "http",
+			Name:      "duration_seconds",
+			Help:      "Duration of http exchanges seen by VHS.",
+			Objectives: map[float64]float64{
+				0.5:    0.05,
+				0.75:   0.01,
+				0.9:    0.005,
+				0.95:   0.005,
+				0.99:   0.001,
+				0.999:  0.0001,
+				0.9999: 0.00001,
+			},
+		}, []string{"method", "code", "path"}),
 	}
 }
 
@@ -94,15 +105,26 @@ func (m *Metrics) Init(ctx session.Context, _ io.Writer) {
 
 // Calculates the desired metrics. Currently calculates latency between request and response and number of timeouts.
 func (m *Metrics) calcMetrics(ctx session.Context, req *Request) {
-	if req.Response != nil {
-		m.latency.With(prometheus.Labels{
+	if req.Response == nil {
+		m.count.With(prometheus.Labels{
 			"method": req.Method,
-			"code":   fmt.Sprintf("%d", req.Response.StatusCode),
-		}).Set(req.Response.Created.Sub(req.Created).Seconds())
-	} else {
-		m.timeouts.With(prometheus.Labels{
-			"method": req.Method,
+			"code":   "",
+			"path":   req.URL.Path,
 		}).Inc()
+		return
 	}
+
+	m.count.With(prometheus.Labels{
+		"method": req.Method,
+		"code":   fmt.Sprintf("%d", req.Response.StatusCode),
+		"path": req.URL.Path,
+	}).Inc()
+
+	m.duration.With(prometheus.Labels{
+		"method": req.Method,
+		"code": fmt.Sprintf("%d", req.Response.StatusCode),
+		"path": req.URL.Path,
+	}).Observe(req.Response.Created.Sub(req.Created).Seconds())
+
 	ctx.Logger.Debug().Msg("calculated")
 }
