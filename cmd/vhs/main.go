@@ -3,8 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -35,9 +35,7 @@ const (
 )
 
 func main() {
-	if err := newRootCmd().Execute(); err != nil {
-		log.Fatal(err)
-	}
+	newRootCmd().Execute()
 }
 
 func newRootCmd() *cobra.Command {
@@ -75,7 +73,7 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&cfg.ProfileHTTPAddr, "profile-http-address", "", "Expose profile data on this address.")
 
 	cmd.Run = func(cmd *cobra.Command, args []string) {
-		err := root(cfg, inputLine, outputLines, defaultParser())
+		err := root(cfg, inputLine, outputLines, defaultParser(), os.Stderr)
 		if err != nil {
 			fmt.Printf("failed to initialize vhs: %v", err)
 		}
@@ -84,10 +82,10 @@ func newRootCmd() *cobra.Command {
 	return cmd
 }
 
-func root(cfg *session.Config, inputLine string, outputLines []string, parser *flow.Parser) error {
+func root(cfg *session.Config, inputLine string, outputLines []string, parser *flow.Parser, logWriter io.Writer) error {
 	var (
 		errs                     = make(chan error, errBufSize)
-		ctx, inputCtx, outputCtx = session.NewContexts(cfg, errs)
+		ctx, inputCtx, outputCtx = session.NewContextsForWriter(cfg, errs, logWriter)
 	)
 
 	go func() {

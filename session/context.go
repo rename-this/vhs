@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"io"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -15,6 +16,12 @@ const (
 
 // NewContexts creates a new set of contexts.
 func NewContexts(cfg *Config, errs chan error) (Context, Context, Context) {
+	return NewContextsForWriter(cfg, errs, os.Stderr)
+}
+
+// NewContextsForWriter creates a new set of contexts
+// with logs written to a specific writer.
+func NewContextsForWriter(cfg *Config, errs chan error, w io.Writer) (Context, Context, Context) {
 	var (
 		sessionID = ksuid.New().String()
 
@@ -25,7 +32,7 @@ func NewContexts(cfg *Config, errs chan error) (Context, Context, Context) {
 
 	var (
 		logWriter = zerolog.ConsoleWriter{
-			Out: os.Stderr,
+			Out: w,
 		}
 		logger = zerolog.New(logWriter).With().
 			Str("session_id", sessionID).

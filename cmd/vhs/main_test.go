@@ -28,13 +28,14 @@ func TestNewRootCmd(t *testing.T) {
 
 func TestRoot(t *testing.T) {
 	cases := []struct {
-		desc        string
-		init        func(context.Context) *session.Config
-		cfg         *session.Config
-		inputLine   string
-		outputLines []string
-		validate    func(*session.Config, *bytes.Buffer)
-		errContains string
+		desc                  string
+		init                  func(context.Context) *session.Config
+		cfg                   *session.Config
+		inputLine             string
+		outputLines           []string
+		validate              func(*session.Config, *bytes.Buffer)
+		flowErrContains       string
+		initializeErrContains string
 	}{
 		{
 			desc: "http with middleware",
@@ -68,6 +69,9 @@ func TestRoot(t *testing.T) {
 					CaptureResponse:    true,
 					TCPTimeout:         5 * time.Minute,
 					HTTPTimeout:        30 * time.Second,
+					ProfileHTTPAddr:    ":81112",
+					ProfilePathCPU:     "/tmp/vhs_cpu_test.prof",
+					ProfilePathMemory:  "/tmp/vhs_mem_test.prof",
 				}
 			},
 			inputLine: "tcp|http",
@@ -153,7 +157,7 @@ func TestRoot(t *testing.T) {
 					Middleware: "../../testdata/no_such_file",
 				}
 			},
-			errContains: "no such file or directory",
+			initializeErrContains: "no such file or directory",
 		},
 		{
 			desc: "middleware crash immediately",
@@ -163,8 +167,8 @@ func TestRoot(t *testing.T) {
 					Middleware:   "../../testdata/crash_immediately.bash",
 				}
 			},
-			inputLine:   "tcp|http",
-			errContains: "middleware crashed: exit status 1",
+			inputLine:       "tcp|http",
+			flowErrContains: "middleware crashed: exit status 1",
 		},
 		{
 			desc: "middleware crash eventually",
@@ -174,16 +178,16 @@ func TestRoot(t *testing.T) {
 					Middleware:   "../../testdata/crash_eventually.bash",
 				}
 			},
-			inputLine:   "tcp|http",
-			errContains: "middleware crashed: exit status 2",
+			inputLine:       "tcp|http",
+			flowErrContains: "middleware crashed: exit status 2",
 		},
 		{
 			desc: "bad input line",
 			init: func(ctx context.Context) *session.Config {
 				return &session.Config{}
 			},
-			inputLine:   "---",
-			errContains: "invalid source: ---",
+			inputLine:             "---",
+			initializeErrContains: "invalid source: ---",
 		},
 	}
 	for _, c := range cases {
@@ -201,12 +205,19 @@ func TestRoot(t *testing.T) {
 				return ioutilx.NopWriteCloser(&buf), nil
 			}
 
-			err := root(cfg, c.inputLine, c.outputLines, parser)
-			if c.errContains == "" {
-				assert.NilError(t, err)
+			var logBuf bytes.Buffer
+			err := root(cfg, c.inputLine, c.outputLines, parser, &logBuf)
+			if c.initializeErrContains != "" {
+				assert.ErrorContains(t, err, c.initializeErrContains)
+				return
+			}
+
+			assert.NilError(t, err)
+
+			if c.flowErrContains == "" {
 				c.validate(cfg, &buf)
 			} else {
-				assert.ErrorContains(t, err, c.errContains)
+				assert.Assert(t, strings.Contains(logBuf.String(), c.flowErrContains))
 			}
 		})
 	}
