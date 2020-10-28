@@ -10,15 +10,15 @@ type InputReader interface {
 	io.ReadCloser
 }
 
-// InputModifier wraps an io.InputModifier
+// InputModifier wraps an InputReader.
 type InputModifier interface {
 	Wrap(InputReader) (InputReader, error)
 }
 
-// InputModifiers is a slice of ReadCloser.
+// InputModifiers is a slice of InputModifier.
 type InputModifiers []InputModifier
 
-// Wrap wraps an io.ReadCloser in all Inputs.
+// Wrap wraps an InputReader in all modifiers.
 func (is InputModifiers) Wrap(r InputReader) (InputReader, error) {
 	var err error
 	for i := len(is) - 1; i >= 0; i-- {
@@ -35,15 +35,15 @@ type OutputWriter interface {
 	io.WriteCloser
 }
 
-// OutputModifier wraps an io.OutputModifier
+// OutputModifier wraps an OtputWriter.
 type OutputModifier interface {
 	Wrap(OutputWriter) (OutputWriter, error)
 }
 
-// OutputModifiers is a slice of WriteCloser.
+// OutputModifiers is a slice of OutputModifier.
 type OutputModifiers []OutputModifier
 
-// Wrap wraps an io.ReadCloser in all Inputs.
+// Wrap wraps an OutputWrtier in all modifiers.
 func (os OutputModifiers) Wrap(w OutputWriter) (OutputWriter, error) {
 	var err error
 	for i := len(os) - 1; i >= 0; i-- {
@@ -55,7 +55,7 @@ func (os OutputModifiers) Wrap(w OutputWriter) (OutputWriter, error) {
 	return w, err
 }
 
-// Close sequentially closes a and if there is no
+// CloseSequentially closes a and if there is no
 // error, closes b.
 func CloseSequentially(a, b io.Closer) error {
 	if err := a.Close(); err != nil {
