@@ -20,10 +20,10 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-func TestNewRootCmd(t *testing.T) {
+func TestMainFunc(t *testing.T) {
 	// TODO(andrewhare): Is there a good way to validate flags?
 	// At this point just ensure that the function doesn't crash.
-	_ = newRootCmd()
+	main()
 }
 
 func TestRoot(t *testing.T) {
