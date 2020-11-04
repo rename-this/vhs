@@ -5,9 +5,7 @@ import (
 	"time"
 
 	"github.com/gramLabs/vhs/session"
-	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/prometheus/client_golang/prometheus/testutil"
 	"gotest.tools/v3/assert"
 )
 
@@ -17,8 +15,9 @@ func TestMetrics(t *testing.T) {
 	cases := []struct {
 		desc     string
 		messages []Message
-		latency  float64
-		timeouts float64
+
+		counters  map[metricsLabels]int64
+		durations map[metricsLabels][]float64
 	}{
 		{
 			desc: "latency only",
@@ -28,6 +27,7 @@ func TestMetrics(t *testing.T) {
 					ExchangeID:   "0",
 					Created:      refTime,
 					Method:       "POST",
+					URL:          newURL("/test"),
 				},
 				&Response{
 					ConnectionID: "111",
@@ -36,8 +36,22 @@ func TestMetrics(t *testing.T) {
 					StatusCode:   200,
 				},
 			},
-			latency:  0.5,
-			timeouts: 0,
+			// duration:  0.5,
+			durations: map[metricsLabels][]float64{
+				metricsLabels{
+					method: "POST",
+					code:   "200",
+					path:   "/test",
+				}: {0.5},
+			},
+			// count: 1
+			counters: map[metricsLabels]int64{
+				metricsLabels{
+					method: "POST",
+					code:   "200",
+					path:   "/test",
+				}: 1,
+			},
 		},
 		{
 			desc: "timeout only",
@@ -48,10 +62,19 @@ func TestMetrics(t *testing.T) {
 					Created:      refTime.Add(750 * time.Millisecond),
 					Method:       "GET",
 					Response:     nil,
+					URL:          newURL("/test"),
 				},
 			},
-			latency:  0,
-			timeouts: 1,
+			// duration: none
+			durations: map[metricsLabels][]float64{},
+			// count: one timeout
+			counters: map[metricsLabels]int64{
+				metricsLabels{
+					method: "GET",
+					code:   "",
+					path:   "/test",
+				}: 1,
+			},
 		},
 		{
 			desc: "combined",
@@ -61,6 +84,7 @@ func TestMetrics(t *testing.T) {
 					ExchangeID:   "0",
 					Created:      refTime,
 					Method:       "POST",
+					URL:          newURL("/test1"),
 				},
 				&Response{
 					ConnectionID: "111",
@@ -74,10 +98,30 @@ func TestMetrics(t *testing.T) {
 					Created:      refTime.Add(750 * time.Millisecond),
 					Method:       "GET",
 					Response:     nil,
+					URL:          newURL("/test2"),
 				},
 			},
-			latency:  0.5,
-			timeouts: 1,
+			// duration: one measurement, 0.5s
+			durations: map[metricsLabels][]float64{
+				metricsLabels{
+					method: "POST",
+					code:   "200",
+					path:   "/test1",
+				}: {0.5},
+			},
+			// count: 1 timeout, 1 code 200
+			counters: map[metricsLabels]int64{
+				metricsLabels{
+					method: "POST",
+					code:   "200",
+					path:   "/test1",
+				}: 1,
+				metricsLabels{
+					method: "GET",
+					code:   "",
+					path:   "/test2",
+				}: 1,
+			},
 		},
 	}
 	for _, c := range cases {
@@ -86,11 +130,15 @@ func TestMetrics(t *testing.T) {
 				HTTPTimeout: 50 * time.Millisecond, // Short correlator time so we can actually get some timeouts.
 			}, nil)
 
-			met := NewMetrics()
-			go met.Init(ctx, nil)
+			backend := newTestMetricsBackend()
+			metrics := &Metrics{
+				in:  make(chan interface{}),
+				met: backend,
+			}
+			go metrics.Init(ctx, nil)
 
 			for _, m := range c.messages {
-				met.In() <- m
+				metrics.In() <- m
 				time.Sleep(10 * time.Millisecond)
 			}
 
@@ -99,20 +147,36 @@ func TestMetrics(t *testing.T) {
 
 			ctx.Cancel()
 
-			latencyMetric := met.latency.With(prometheus.Labels{
-				"method": "POST",
-				"code":   "200",
-			})
+			assert.DeepEqual(t, c.durations, backend.durations)
+			assert.DeepEqual(t, c.counters, backend.counters)
 
-			timeoutMetric := met.timeouts.With(prometheus.Labels{
-				"method": "GET",
-			})
-
-			assert.Equal(t, c.latency, testutil.ToFloat64(latencyMetric))
-			assert.Equal(t, c.timeouts, testutil.ToFloat64(timeoutMetric))
-
-			prometheus.Unregister(met.latency)
-			prometheus.Unregister(met.timeouts)
 		})
 	}
+}
+
+// testMetricsBackend is a metricsBackend for testing
+type testMetricsBackend struct {
+	counters  map[metricsLabels]int64
+	durations map[metricsLabels][]float64
+}
+
+// Make sure testMetricsBackend implements metricsBackend
+var _ metricsBackend = &testMetricsBackend{}
+
+// newTestMetricsBackend creates a new test metrics backend.
+func newTestMetricsBackend() *testMetricsBackend {
+	return &testMetricsBackend{
+		counters:  make(map[metricsLabels]int64),
+		durations: make(map[metricsLabels][]float64),
+	}
+}
+
+// IncrementCounter increments the http exchange counter with the specified labels.
+func (t *testMetricsBackend) IncrementCounter(l metricsLabels) {
+	t.counters[l]++
+}
+
+// AddDuration adds the measured http exchange duration with the specified labels.
+func (t *testMetricsBackend) AddDuration(l metricsLabels, f float64) {
+	t.durations[l] = append(t.durations[l], f)
 }

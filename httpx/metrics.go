@@ -23,8 +23,7 @@ type Metrics struct {
 	c  *Correlator
 	in chan interface{}
 
-	count    *prometheus.CounterVec
-	duration *prometheus.SummaryVec
+	met metricsBackend
 }
 
 // NewMetricsOutput creates a new *output.Pipe for calculating HTTP metrics
@@ -37,27 +36,30 @@ func NewMetrics() *Metrics {
 	return &Metrics{
 		in: make(chan interface{}),
 
-		count: promauto.NewCounterVec(prometheus.CounterOpts{
-			Namespace: "vhs",
-			Subsystem: "http",
-			Name:      "requests_total",
-			Help:      "Total count of http requests captured by VHS.",
-		}, []string{"method", "code", "path"}),
-		duration: promauto.NewSummaryVec(prometheus.SummaryOpts{
-			Namespace: "vhs",
-			Subsystem: "http",
-			Name:      "duration_seconds",
-			Help:      "Duration of http exchanges seen by VHS.",
-			Objectives: map[float64]float64{
-				0.5:    0.05,
-				0.75:   0.01,
-				0.9:    0.005,
-				0.95:   0.005,
-				0.99:   0.001,
-				0.999:  0.0001,
-				0.9999: 0.00001,
-			},
-		}, []string{"method", "code", "path"}),
+		met: &promBackend{
+			Count: promauto.NewCounterVec(prometheus.CounterOpts{
+				Namespace: "vhs",
+				Subsystem: "http",
+				Name:      "requests_total",
+				Help:      "Total count of http requests captured by VHS.",
+			}, []string{"method", "code", "path"}),
+
+			Duration: promauto.NewSummaryVec(prometheus.SummaryOpts{
+				Namespace: "vhs",
+				Subsystem: "http",
+				Name:      "duration_seconds",
+				Help:      "Duration of http exchanges seen by VHS.",
+				Objectives: map[float64]float64{
+					0.5:    0.05,
+					0.75:   0.01,
+					0.9:    0.005,
+					0.95:   0.005,
+					0.99:   0.001,
+					0.999:  0.0001,
+					0.9999: 0.00001,
+				},
+			}, []string{"method", "code", "path"}),
+		},
 	}
 }
 
@@ -90,7 +92,7 @@ func (m *Metrics) Init(ctx session.Context, _ io.Writer) {
 				}
 			}
 		case r := <-c.Exchanges:
-			m.calcMetrics(ctx, r)
+			calcMetrics(ctx, r, m.met)
 			if ctx.Config.DebugHTTPMessages {
 				ctx.Logger.Debug().Interface("r", r).Msg("received request from correlator")
 			} else {
@@ -104,27 +106,67 @@ func (m *Metrics) Init(ctx session.Context, _ io.Writer) {
 }
 
 // Calculates the desired metrics. Currently calculates latency between request and response and number of timeouts.
-func (m *Metrics) calcMetrics(ctx session.Context, req *Request) {
+func calcMetrics(ctx session.Context, req *Request, met metricsBackend) {
 	if req.Response == nil {
-		m.count.With(prometheus.Labels{
-			"method": req.Method,
-			"code":   "",
-			"path":   req.URL.Path,
-		}).Inc()
+		met.IncrementCounter(metricsLabels{
+			method: req.Method,
+			code:   "",
+			path:   req.URL.Path,
+		})
 		return
 	}
 
-	m.count.With(prometheus.Labels{
-		"method": req.Method,
-		"code":   fmt.Sprintf("%d", req.Response.StatusCode),
-		"path": req.URL.Path,
-	}).Inc()
+	met.IncrementCounter(metricsLabels{
+		method: req.Method,
+		code:   fmt.Sprintf("%d", req.Response.StatusCode),
+		path:   req.URL.Path,
+	})
 
-	m.duration.With(prometheus.Labels{
-		"method": req.Method,
-		"code": fmt.Sprintf("%d", req.Response.StatusCode),
-		"path": req.URL.Path,
-	}).Observe(req.Response.Created.Sub(req.Created).Seconds())
+	met.AddDuration(metricsLabels{
+		method: req.Method,
+		code:   fmt.Sprintf("%d", req.Response.StatusCode),
+		path:   req.URL.Path,
+	}, req.Response.Created.Sub(req.Created).Seconds())
 
 	ctx.Logger.Debug().Msg("calculated")
+}
+
+// metricsBackend abstracts the basic metric update calls. Mostly for easier testing.
+type metricsBackend interface {
+	IncrementCounter(metricsLabels)
+	AddDuration(metricsLabels, float64)
+}
+
+// metricsLabels is the set of labels we're currently using
+type metricsLabels struct {
+	method string
+	code   string
+	path   string
+}
+
+// promBackend wraps a few details of the interface to Prometheus client code.
+type promBackend struct {
+	Count    *prometheus.CounterVec
+	Duration *prometheus.SummaryVec
+}
+
+// Make sure promBackend implements metricsBackend
+var _ metricsBackend = &promBackend{}
+
+// IncrementCounter increments the prometheus HTTP message counter associated with the specified labels.
+func (p *promBackend) IncrementCounter(labels metricsLabels) {
+	p.Count.With(prometheus.Labels{
+		"method": labels.method,
+		"code":   labels.code,
+		"path":   labels.path,
+	}).Inc()
+}
+
+// AddDuration adds the measured HTTP duration to the prometheus summary with the specified labels.
+func (p *promBackend) AddDuration(labels metricsLabels, duration float64) {
+	p.Duration.With(prometheus.Labels{
+		"method": labels.method,
+		"code":   labels.code,
+		"path":   labels.path,
+	}).Observe(duration)
 }
