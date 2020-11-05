@@ -1,8 +1,9 @@
 FROM golang:1.15.2-alpine3.12
 
 RUN apk add --no-cache --virtual .build-deps \
-	g++ \
-	libpcap-dev
+    ca-certificates \
+    g++ \
+    libpcap-dev
 
 WORKDIR /src
 
@@ -22,5 +23,6 @@ RUN GODEBUG=netdns=go go build \
 FROM scratch
 
 COPY --from=0 /src/vhs /
+COPY --from=0 /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 ENTRYPOINT ["/vhs"]
