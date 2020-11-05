@@ -158,7 +158,9 @@ func root(cfg *session.Config, inputLine string, outputLines []string, parser *f
 		ctx.Cancel()
 	}()
 
-	f.Run(ctx, inputCtx, outputCtx, m)
+	go f.Run(ctx, inputCtx, outputCtx, m)
+
+	<-ctx.StdContext.Done()
 
 	if cfg.ProfilePathMemory != "" {
 		f, err := os.Create(cfg.ProfilePathMemory)
