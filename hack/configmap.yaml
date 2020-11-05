@@ -16,6 +16,11 @@ data:
         {% end %}
     containers:
       - name: vhs
+        {% if ne (len (index .Annotations "vhs.carbon-relay.com/secret")) 0 %}
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /root/.config/gcloud/service-account.json
+        {% end %}
         imagePullPolicy: IfNotPresent
         volumeMounts:
           # Since we don't know which cloud provider is being used specifically,
