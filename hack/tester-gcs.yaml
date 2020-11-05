@@ -2,29 +2,33 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: funsies
-  name: funsies
+    app: funsies-gcs
+  name: funsies-gcs
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: funsies
+      app: funsies-gcs
   strategy: {}
   template:
     metadata:
       annotations:
         vhs.carbon-relay.com/inject: "true"
+        vhs.carbon-relay.com/secret: gcs-creds
         vhs.carbon-relay.com/args: >-
           [
             "--input", "tcp|http",
-            "--output", "json|stdout",
+            "--output", "json|gzip|gcs",
             "--capture-response",
             "--address", "0.0.0.0:80",
             "--prometheus-address", "0.0.0.0:9090",
-            "--flow-duration", "3600s",
+            "--flow-duration", "30s",
+            "--gcs-bucket-name", "vhsdemo",
+            "--gcs-object-name", "funsies",
+            "--debug"
           ]
       labels:
-        app: funsies
+        app: funsies-gcs
     spec:
       containers:
       - image: nginx:latest
