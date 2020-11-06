@@ -1,8 +1,12 @@
 package httpx
 
 import (
+	"math/rand"
+	"sync"
 	"testing"
 	"time"
+
+	"github.com/segmentio/ksuid"
 
 	"github.com/gramLabs/vhs/session"
 
@@ -152,6 +156,114 @@ func TestMetrics(t *testing.T) {
 
 		})
 	}
+}
+
+func TestStressMetrics(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping test in short mode.") // Can be skipped if too time consuming.
+	}
+
+	var (
+		httptimeout = 500 * time.Millisecond
+		testTimeout = 10 * time.Second
+		numSenders  = 4
+
+		numExchangesSent int64 = 0
+		numTimeoutsSent  int64 = 0
+		ExSentMutex      sync.Mutex
+		TimeoutSentMutex sync.Mutex
+	)
+
+	errs := make(chan error)
+	genctx, metricsctx, _ := session.NewContexts(&session.Config{
+		Debug:             false,
+		DebugHTTPMessages: false,
+		HTTPTimeout:       50 * time.Millisecond, // Short correlator time so we can actually get some timeouts.
+	}, errs)
+
+	backend := newTestMetricsBackend()
+	metrics := &Metrics{
+		in:  make(chan interface{}),
+		met: backend,
+	}
+	go metrics.Init(metricsctx, nil)
+
+	for i := 0; i < numSenders; i++ {
+		go func() {
+			for {
+				select {
+				case <-genctx.StdContext.Done():
+					return
+				default:
+					connID := ksuid.New().String()
+					eID := ksuid.New().String()
+					timeout := rand.Intn(2)
+
+					if timeout == 0 {
+						metrics.In() <- &Request{
+							ConnectionID: connID,
+							ExchangeID:   eID,
+							Created:      refTime,
+							Method:       "GET",
+							URL:          newURL("/test"),
+						}
+						metrics.In() <- &Response{
+							ConnectionID: connID,
+							ExchangeID:   eID,
+							Created:      refTime.Add(10 * time.Millisecond),
+							StatusCode:   200,
+						}
+
+						ExSentMutex.Lock()
+						numExchangesSent++
+						ExSentMutex.Unlock()
+
+					} else {
+						metrics.In() <- &Request{
+							ConnectionID: connID,
+							ExchangeID:   eID,
+							Created:      refTime,
+							Method:       "GET",
+							URL:          newURL("/test"),
+						}
+
+						TimeoutSentMutex.Lock()
+						numTimeoutsSent++
+						TimeoutSentMutex.Unlock()
+					}
+				}
+			}
+		}()
+	}
+
+	time.Sleep(testTimeout)
+	genctx.Cancel()
+	time.Sleep(6 * httptimeout)
+	metricsctx.Cancel()
+	time.Sleep(100 * time.Millisecond)
+
+	ExSentMutex.Lock()
+	defer ExSentMutex.Unlock()
+	TimeoutSentMutex.Lock()
+	defer TimeoutSentMutex.Unlock()
+
+	refCount := map[metricsLabels]int64{
+		// Complete exchanges
+		metricsLabels{
+			method: "GET",
+			code:   "200",
+			path:   "/test",
+		}: numExchangesSent,
+		// Timeouts
+		metricsLabels{
+			method: "GET",
+			code:   "",
+			path:   "/test",
+		}: numTimeoutsSent,
+	}
+
+	assert.DeepEqual(t, backend.counters, refCount)
+
 }
 
 // testMetricsBackend is a metricsBackend for testing

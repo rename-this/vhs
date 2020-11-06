@@ -79,18 +79,28 @@ func (m *Metrics) Init(ctx session.Context, _ io.Writer) {
 
 	ctx.Logger.Debug().Msg("correlator started")
 
+	go func() {
+		for {
+			select {
+			case n := <-m.in:
+				switch msg := n.(type) {
+				case Message:
+					c.Messages <- msg
+					if ctx.Config.DebugHTTPMessages {
+						ctx.Logger.Debug().Interface("m", msg).Msg("received message")
+					} else {
+						ctx.Logger.Debug().Msg("received message")
+					}
+				}
+			case <-ctx.StdContext.Done():
+				ctx.Logger.Debug().Msg("context canceled")
+				return
+			}
+		}
+	}()
+
 	for {
 		select {
-		case n := <-m.in:
-			switch msg := n.(type) {
-			case Message:
-				c.Messages <- msg
-				if ctx.Config.DebugHTTPMessages {
-					ctx.Logger.Debug().Interface("m", msg).Msg("received message")
-				} else {
-					ctx.Logger.Debug().Msg("received message")
-				}
-			}
 		case r := <-c.Exchanges:
 			calcMetrics(ctx, r, m.met)
 			if ctx.Config.DebugHTTPMessages {
@@ -103,6 +113,7 @@ func (m *Metrics) Init(ctx session.Context, _ io.Writer) {
 			return
 		}
 	}
+
 }
 
 // Calculates the desired metrics. Currently calculates latency between request and response and number of timeouts.
