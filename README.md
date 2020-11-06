@@ -56,8 +56,8 @@ Note the location of this file, mine is `$HOME/.config/gcloud/application_defaul
 
 Running `make dev` will assume this location and mount the dir from that file in the docker container, keep this in mind when you boot it up.
 
-When running `vhs`, you pass the project ID and bucket name like this:
+When running `vhs`, you pass the bucket name like this:
 
 ```
-$ go build ./cmd/vhs && ./vhs record --capture-response --address 0.0.0.0:1111 --gcs-project-id carbon-relay-dev --gcs-bucket-name vhs-test-andrewhare
+$ go build ./cmd/vhs && ./vhs --input "tcp|http" --output "jsonbuf|gzip|gcs" --capture-response --address 0.0.0.0:1111 --gcs-bucket-name vhs-test-andrewhare
 ```
