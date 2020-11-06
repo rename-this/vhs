@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/gramLabs/vhs/envelope"
 )
 
 // Ensure Response implements the Message interface.
@@ -32,6 +34,9 @@ type Response struct {
 	SessionID        string         `json:"session_id,omitempty"`
 	Location         string         `json:"location,omitempty"`
 }
+
+// Kind gets an envelope kind for a Response.
+func (r *Response) Kind() envelope.Kind { return "httpx.response" }
 
 // GetConnectionID gets a connection ID.
 func (r *Response) GetConnectionID() string { return r.ConnectionID }

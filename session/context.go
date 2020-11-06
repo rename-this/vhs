@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/gramLabs/vhs/envelope"
 	"github.com/rs/zerolog"
 	"github.com/segmentio/ksuid"
 )
@@ -28,6 +29,8 @@ func NewContextsForWriter(cfg *Config, errs chan error, w io.Writer) (Context, C
 		stdCtx1, cancel1 = context.WithCancel(context.Background())
 		stdCtx2, cancel2 = context.WithCancel(context.Background())
 		stdCtx3, cancel3 = context.WithCancel(context.Background())
+
+		registry = envelope.NewRegistry()
 	)
 
 	var (
@@ -51,6 +54,7 @@ func NewContextsForWriter(cfg *Config, errs chan error, w io.Writer) (Context, C
 			Cancel:     cancel1,
 			Errors:     errs,
 			Logger:     logger,
+			Registry:   registry,
 		},
 		Context{
 			Config:     cfg,
@@ -59,6 +63,7 @@ func NewContextsForWriter(cfg *Config, errs chan error, w io.Writer) (Context, C
 			Cancel:     cancel2,
 			Errors:     errs,
 			Logger:     logger,
+			Registry:   registry,
 		},
 		Context{
 			Config:     cfg,
@@ -67,6 +72,7 @@ func NewContextsForWriter(cfg *Config, errs chan error, w io.Writer) (Context, C
 			Cancel:     cancel3,
 			Errors:     errs,
 			Logger:     logger,
+			Registry:   registry,
 		}
 }
 
@@ -78,4 +84,5 @@ type Context struct {
 	Cancel     context.CancelFunc
 	Errors     chan error
 	Logger     zerolog.Logger
+	Registry   *envelope.Registry
 }

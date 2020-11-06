@@ -2,6 +2,9 @@ package httpx
 
 import (
 	"time"
+
+	"github.com/gramLabs/vhs/envelope"
+	"github.com/gramLabs/vhs/session"
 )
 
 // MessageType is the type of an HTTP message.
@@ -20,4 +23,9 @@ type Message interface {
 	GetExchangeID() string
 	SetCreated(time.Time)
 	SetSessionID(string)
+}
+
+func registerEnvelopes(ctx session.Context) {
+	ctx.Registry.Register(func() envelope.Kindify { return &Request{} })
+	ctx.Registry.Register(func() envelope.Kindify { return &Response{} })
 }

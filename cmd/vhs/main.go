@@ -217,6 +217,7 @@ func defaultParser() *flow.Parser {
 
 		InputFormats: map[string]flow.InputFormatCtor{
 			"http": httpx.NewInputFormat,
+			"json": jsonx.NewInputFormat,
 		},
 
 		OutputFormats: map[string]flow.OutputFormatCtor{

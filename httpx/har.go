@@ -20,7 +20,8 @@ type HAR struct {
 }
 
 // NewHAR creates a mew HAR format.
-func NewHAR(_ session.Context) (flow.OutputFormat, error) {
+func NewHAR(ctx session.Context) (flow.OutputFormat, error) {
+	registerEnvelopes(ctx)
 	return &HAR{
 		in: make(chan interface{}),
 	}, nil
@@ -82,7 +83,6 @@ func (h *HAR) Init(ctx session.Context, w io.Writer) {
 }
 
 func (h *HAR) addRequest(ctx session.Context, hh *har, req *Request) {
-
 	request := harRequest{
 		Method:      req.Method,
 		URL:         req.URL.String(),
@@ -229,12 +229,12 @@ func mapToHarNVP(m map[string][]string) []harNVP {
 
 // HAR FORMAT DEFINITION STRUCTS
 
-//har is the root of a HTTP Archive (HAR) file.
+// har is the root of a HTTP Archive (HAR) file.
 type har struct {
 	Log harLog `json:"log"`
 }
 
-//harLog is the topmost object in a HAR file.
+// harLog is the topmost object in a HAR file.
 type harLog struct {
 	Version string     `json:"version"`
 	Creator harCreator `json:"creator"`
@@ -242,14 +242,14 @@ type harLog struct {
 	Comment string     `json:"comment,omitempty"`
 }
 
-//harCreator is the object used for Creator and Browser entries at the harLog level.
+// harCreator is the object used for Creator and Browser entries at the harLog level.
 type harCreator struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
 	Comment string `json:"comment,omitempty"`
 }
 
-//harEntry is the object for the Entries entry at the harLog level.
+// harEntry is the object for the Entries entry at the harLog level.
 type harEntry struct {
 	Pageref         string         `json:"pageref,omitempty"`
 	StartedDateTime string         `json:"startedDateTime"`
@@ -263,7 +263,7 @@ type harEntry struct {
 	Comment         string         `json:"comment,omitempty"`
 }
 
-//harRequest is the object for the Request entry at the harEntry level.
+// harRequest is the object for the Request entry at the harEntry level.
 type harRequest struct {
 	Method      string      `json:"method"`
 	URL         string      `json:"url"`
@@ -277,7 +277,7 @@ type harRequest struct {
 	Comment     string      `json:"comment,omitempty"`
 }
 
-//harResponse is the object for the Response entry at the harEntry level.
+// harResponse is the object for the Response entry at the harEntry level.
 type harResponse struct {
 	Status      int         `json:"status"`
 	StatusText  string      `json:"statusText"`
@@ -291,7 +291,7 @@ type harResponse struct {
 	Comment     string      `json:"comment,omitempty"`
 }
 
-//harCookie is the object for the Cookies entry at the harRequest and harResponse levels.
+// harCookie is the object for the Cookies entry at the harRequest and harResponse levels.
 type harCookie struct {
 	Name     string `json:"name"`
 	Value    string `json:"value"`
@@ -303,22 +303,22 @@ type harCookie struct {
 	Comment  string `json:"comment,omitempty"`
 }
 
-//harPOST is the object for the PostData entry at the harRequest level.
+// harPOST is the object for the PostData entry at the harRequest level.
 type harPOST struct {
 	MIMEType string   `json:"mimeType"`
-	Params   []harNVP `json:"params,omitempty"` //Mutually exclusive with Text
-	Text     string   `json:"text,omitempty"`   //Mutually exclusive with Params
+	Params   []harNVP `json:"params,omitempty"` // Mutually exclusive with Text
+	Text     string   `json:"text,omitempty"`   // Mutually exclusive with Params
 	Comment  string   `json:"comment,omitempty"`
 }
 
-//harNVP is a name-value pair and is used at harRequest, harResponse, and harPOST levels.
+// harNVP is a name-value pair and is used at harRequest, harResponse, and harPOST levels.
 type harNVP struct {
 	Name    string `json:"name"`
 	Value   string `json:"value"`
 	Comment string `json:"comment,omitempty"`
 }
 
-//harContent is the object for the Content entry at the harResponse level.
+// harContent is the object for the Content entry at the harResponse level.
 type harContent struct {
 	Size        int64  `json:"size"`
 	Compression int    `json:"compression,omitempty"`
@@ -328,13 +328,13 @@ type harContent struct {
 	Comment     string `json:"comment,omitempty"`
 }
 
-//harCache is the object for the Cache entry at the harEntry level.
+// harCache is the object for the Cache entry at the harEntry level.
 type harCache struct {
 	// This part of the HAR specification depends on browserish things, but we will
 	// include an empty entry to denote intentional omission.
 }
 
-//harEntryTiming is the object for the Timings entry at the harEntry level.
+// harEntryTiming is the object for the Timings entry at the harEntry level.
 type harEntryTiming struct {
 	Blocked int64  `json:"blocked,omitempty"`
 	DNS     int64  `json:"dns,omitempty"`

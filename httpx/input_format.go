@@ -19,7 +19,8 @@ const (
 )
 
 // NewInputFormat creates an HTTP input formatter.
-func NewInputFormat(_ session.Context) (flow.InputFormat, error) {
+func NewInputFormat(ctx session.Context) (flow.InputFormat, error) {
+	registerEnvelopes(ctx)
 	return &inputFormat{
 		out: make(chan interface{}),
 	}, nil
@@ -45,7 +46,11 @@ func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, streams
 
 	for rdr := range streams {
 		go func(r flow.InputReader) {
-			defer r.Close()
+			defer func() {
+				if err := r.Close(); err != nil {
+					ctx.Errors <- fmt.Errorf("failed to close httpx input format: %w", err)
+				}
+			}()
 
 			direction, ok := r.Meta().Get(tcp.MetaDirection)
 			if !ok {
