@@ -35,6 +35,9 @@ patchesStrategicMerge:
           - --gcs-object-name
           - funsies
           - --debug
+          env:
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            value: /root/.config/gcloud/service-account.json
           imagePullPolicy: IfNotPresent
           volumeMounts:
           # GCP
