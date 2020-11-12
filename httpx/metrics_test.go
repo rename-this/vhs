@@ -2,6 +2,8 @@ package httpx
 
 import (
 	"math/rand"
+	"net/http"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -30,29 +32,29 @@ func TestMetrics(t *testing.T) {
 					ConnectionID: "111",
 					ExchangeID:   "0",
 					Created:      refTime,
-					Method:       "POST",
+					Method:       http.MethodPost,
 					URL:          newURL("/test"),
 				},
 				&Response{
 					ConnectionID: "111",
 					ExchangeID:   "0",
 					Created:      refTime.Add(500 * time.Millisecond),
-					StatusCode:   200,
+					StatusCode:   http.StatusOK,
 				},
 			},
 			// duration:  0.5,
 			durations: map[metricsLabels][]float64{
 				metricsLabels{
-					method: "POST",
-					code:   "200",
+					method: http.MethodPost,
+					code:   strconv.Itoa(http.StatusOK),
 					path:   "/test",
 				}: {0.5},
 			},
 			// count: 1
 			counters: map[metricsLabels]int64{
 				metricsLabels{
-					method: "POST",
-					code:   "200",
+					method: http.MethodPost,
+					code:   strconv.Itoa(http.StatusOK),
 					path:   "/test",
 				}: 1,
 			},
@@ -64,7 +66,7 @@ func TestMetrics(t *testing.T) {
 					ConnectionID: "222",
 					ExchangeID:   "1",
 					Created:      refTime.Add(750 * time.Millisecond),
-					Method:       "GET",
+					Method:       http.MethodGet,
 					Response:     nil,
 					URL:          newURL("/test"),
 				},
@@ -74,7 +76,7 @@ func TestMetrics(t *testing.T) {
 			// count: one timeout
 			counters: map[metricsLabels]int64{
 				metricsLabels{
-					method: "GET",
+					method: http.MethodGet,
 					code:   "",
 					path:   "/test",
 				}: 1,
@@ -87,20 +89,20 @@ func TestMetrics(t *testing.T) {
 					ConnectionID: "111",
 					ExchangeID:   "0",
 					Created:      refTime,
-					Method:       "POST",
+					Method:       http.MethodPost,
 					URL:          newURL("/test1"),
 				},
 				&Response{
 					ConnectionID: "111",
 					ExchangeID:   "0",
 					Created:      refTime.Add(500 * time.Millisecond),
-					StatusCode:   200,
+					StatusCode:   http.StatusOK,
 				},
 				&Request{
 					ConnectionID: "222",
 					ExchangeID:   "1",
 					Created:      refTime.Add(750 * time.Millisecond),
-					Method:       "GET",
+					Method:       http.MethodGet,
 					Response:     nil,
 					URL:          newURL("/test2"),
 				},
@@ -108,20 +110,20 @@ func TestMetrics(t *testing.T) {
 			// duration: one measurement, 0.5s
 			durations: map[metricsLabels][]float64{
 				metricsLabels{
-					method: "POST",
-					code:   "200",
+					method: http.MethodPost,
+					code:   strconv.Itoa(http.StatusOK),
 					path:   "/test1",
 				}: {0.5},
 			},
 			// count: 1 timeout, 1 code 200
 			counters: map[metricsLabels]int64{
 				metricsLabels{
-					method: "POST",
-					code:   "200",
+					method: http.MethodPost,
+					code:   strconv.Itoa(http.StatusOK),
 					path:   "/test1",
 				}: 1,
 				metricsLabels{
-					method: "GET",
+					method: http.MethodGet,
 					code:   "",
 					path:   "/test2",
 				}: 1,
@@ -204,14 +206,14 @@ func TestStressMetrics(t *testing.T) {
 							ConnectionID: connID,
 							ExchangeID:   eID,
 							Created:      refTime,
-							Method:       "GET",
+							Method:       http.MethodGet,
 							URL:          newURL("/test"),
 						}
 						metrics.In() <- &Response{
 							ConnectionID: connID,
 							ExchangeID:   eID,
 							Created:      refTime.Add(10 * time.Millisecond),
-							StatusCode:   200,
+							StatusCode:   http.StatusOK,
 						}
 
 						ExSentMutex.Lock()
@@ -223,7 +225,7 @@ func TestStressMetrics(t *testing.T) {
 							ConnectionID: connID,
 							ExchangeID:   eID,
 							Created:      refTime,
-							Method:       "GET",
+							Method:       http.MethodGet,
 							URL:          newURL("/test"),
 						}
 
@@ -250,13 +252,13 @@ func TestStressMetrics(t *testing.T) {
 	refCount := map[metricsLabels]int64{
 		// Complete exchanges
 		metricsLabels{
-			method: "GET",
-			code:   "200",
+			method: http.MethodGet,
+			code:   strconv.Itoa(http.StatusOK),
 			path:   "/test",
 		}: numExchangesSent,
 		// Timeouts
 		metricsLabels{
-			method: "GET",
+			method: http.MethodGet,
 			code:   "",
 			path:   "/test",
 		}: numTimeoutsSent,
