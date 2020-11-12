@@ -29,7 +29,7 @@ func New(n Kindify) Envelope {
 	}
 }
 
-// Ctor is a constructor that creates Namers.
+// Ctor is a constructor that creates a Kindify.
 type Ctor func() Kindify
 
 // NewRegistry creates a new Registry.
@@ -76,13 +76,13 @@ func (r *Registry) DecodeJSON(dec *json.Decoder) (interface{}, error) {
 	return n, nil
 }
 
-func (r *Registry) get(name Kind) (interface{}, error) {
+func (r *Registry) get(kind Kind) (interface{}, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	ctor, ok := r.ctors[name]
+	ctor, ok := r.ctors[kind]
 	if !ok {
-		return nil, fmt.Errorf("kind not found in envelope registry: %s", name)
+		return nil, fmt.Errorf("kind not found in envelope registry: %s", kind)
 	}
 	return ctor(), nil
 }
