@@ -14,15 +14,23 @@ patchesStrategicMerge:
     template:
       spec:
         containers:
+        - name: voting-service
+          resources:
+            limits:
+              memory: 1500Mi
+              cpu: 1000m
+            requests:
+              memory: 200Mi
+              cpu: 100m
         - name: vhs
           image: us.gcr.io/carbon-relay-dev/vhs:latest
           command:
-          - vhs
+          - /vhs
           args:
           - --input
           - tcp|http
           - --output
-          - jsonbuf|gzip|gcs
+          - json|gzip|gcs
           - --capture-response
           - --address
           - 0.0.0.0:80
@@ -32,8 +40,6 @@ patchesStrategicMerge:
           - 30s
           - --gcs-bucket-name
           - vhsdemo
-          - --gcs-object-name
-          - funsies
           - --debug
           env:
           - name: GOOGLE_APPLICATION_CREDENTIALS
@@ -47,3 +53,89 @@ patchesStrategicMerge:
         - name: cloud-credentials
           secret:
             secretName: gcs-creds
+- |-
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: db
+  spec:
+    template:
+      spec:
+        containers:
+        - name: db
+          resources:
+            limits:
+              memory: 1500Mi
+              cpu: 1000m
+            requests:
+              memory: 200Mi
+              cpu: 100m
+- |-
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: redis
+  spec:
+    template:
+      spec:
+        containers:
+        - name: redis
+          resources:
+            limits:
+              memory: 1500Mi
+              cpu: 1000m
+            requests:
+              memory: 200Mi
+              cpu: 100m
+- |-
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: result-service
+  spec:
+    template:
+      spec:
+        containers:
+        - name: result-service
+          resources:
+            limits:
+              memory: 1500Mi
+              cpu: 1000m
+            requests:
+              memory: 200Mi
+              cpu: 100m
+- |-
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: worker
+  spec:
+    template:
+      spec:
+        containers:
+        - name: worker
+          resources:
+            limits:
+              memory: 1500Mi
+              cpu: 1000m
+            requests:
+              memory: 200Mi
+              cpu: 100m
+- |-
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: result-exporter
+  spec:
+    template:
+      spec:
+        containers:
+        - name: result-exporter
+          resources:
+            limits:
+              memory: 1500Mi
+              cpu: 1000m
+            requests:
+              memory: 200Mi
+              cpu: 100m
+
