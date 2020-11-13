@@ -95,9 +95,12 @@ func (h *HAR) addRequest(ctx session.Context, hh *har, req *Request) {
 		BodySize:    len(req.Body),
 	}
 
-	var response harResponse
-	if req.Response != nil {
+	var (
+		response  harResponse
+		roundtrip int64
+	)
 
+	if req.Response != nil {
 		content := harContent{
 			Size:     req.Response.ContentLength,
 			MimeType: req.Response.Header.Get("Content-Type"),
@@ -115,11 +118,13 @@ func (h *HAR) addRequest(ctx session.Context, hh *har, req *Request) {
 			HeadersSize: -1,
 			BodySize:    len(req.Response.Body),
 		}
+
+		roundtrip = req.Response.Created.Sub(req.Created).Milliseconds()
 	}
 
 	entry := harEntry{
 		StartedDateTime: req.Created.Format(time.RFC3339),
-		Time:            req.Response.Created.Sub(req.Created).Milliseconds(),
+		Time:            roundtrip,
 		Request:         request,
 		Response:        response,
 		Cache:           harCache{},

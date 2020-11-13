@@ -26,12 +26,14 @@ func (f *Flow) Run(ctx, inputCtx, outputCtx session.Context, m middleware.Middle
 
 	defer func() {
 		inputCtx.Cancel()
-		ctx.Logger.Debug().Msg("draining inputs")
+		ctx.Logger.Debug().Dur("dur", inputCtx.Config.InputDrainDuration).Msg("draining inputs")
 		time.Sleep(inputCtx.Config.InputDrainDuration)
 
 		outputCtx.Cancel()
-		ctx.Logger.Debug().Msg("shutting down")
+		ctx.Logger.Debug().Dur("dur", inputCtx.Config.ShutdownDuration).Msg("shutting down")
 		time.Sleep(inputCtx.Config.ShutdownDuration)
+
+		ctx.Logger.Debug().Msg("shutdown complete")
 	}()
 
 	complete := time.After(inputCtx.Config.FlowDuration)
