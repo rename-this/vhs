@@ -1,9 +1,13 @@
 package jsonx
 
 import (
+	"io/ioutil"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/rename-this/vhs/envelope"
+	"github.com/rename-this/vhs/flow"
 	"github.com/rename-this/vhs/internal/safebuffer"
 	"github.com/rename-this/vhs/session"
 	"gotest.tools/v3/assert"
@@ -123,6 +127,57 @@ func TestBufferedOutputFormat(t *testing.T) {
 			}
 
 			assert.Equal(t, c.out, string(c.buf.Bytes()))
+		})
+	}
+}
+
+type goose struct {
+	Name string
+}
+
+func (*goose) Kind() envelope.Kind { return "goose" }
+
+func TestInputFormatInit(t *testing.T) {
+	cases := []struct {
+		desc string
+		data string
+		out  []*goose
+	}{
+		{
+			desc: "",
+			data: `
+{"kind":"goose","data":{"Name":"Canada"}}
+{"kind":"goose","data":{"Name":"Christmas Dinner"}}
+{"kind":"goose","data":{"Name":"Grey"}}
+`,
+			out: []*goose{
+				{Name: "Canada"},
+				{Name: "Christmas Dinner"},
+				{Name: "Grey"},
+			},
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.desc, func(t *testing.T) {
+			var (
+				errs      = make(chan error, 1)
+				ctx, _, _ = session.NewContexts(&session.Config{Debug: true}, errs)
+			)
+
+			ctx.Registry.Register(func() envelope.Kindify { return &goose{} })
+
+			inputFormat, err := NewInputFormat(ctx)
+			assert.NilError(t, err)
+
+			streams := make(chan flow.InputReader)
+
+			go inputFormat.Init(ctx, nil, streams)
+
+			streams <- flow.EmptyMeta(ioutil.NopCloser(strings.NewReader(c.data)))
+
+			for i := 0; i < len(c.out); i++ {
+				assert.DeepEqual(t, c.out[i], <-inputFormat.Out())
+			}
 		})
 	}
 }
