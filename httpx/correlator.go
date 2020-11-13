@@ -23,7 +23,7 @@ type Correlator struct {
 func NewCorrelator(timeout time.Duration) *Correlator {
 	return &Correlator{
 		Messages:  make(chan Message),
-		Exchanges: make(chan *Request, 10),
+		Exchanges: make(chan *Request),
 
 		cache: prunemap.New(timeout, timeout*5),
 	}

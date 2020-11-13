@@ -53,32 +53,45 @@ func (h *HAR) Init(ctx session.Context, w io.Writer) {
 		},
 	}
 
-	for {
-		select {
-		case n := <-h.in:
-			switch m := n.(type) {
-			case Message:
-				c.Messages <- m
-				if ctx.Config.DebugHTTPMessages {
-					ctx.Logger.Debug().Interface("m", m).Msg("received message")
-				} else {
-					ctx.Logger.Debug().Msg("received message")
+	go func() {
+		for {
+			select {
+			case n := <-h.in:
+				switch m := n.(type) {
+				case Message:
+					c.Messages <- m
+					if ctx.Config.DebugHTTPMessages {
+						ctx.Logger.Debug().Interface("m", m).Msg("received message")
+					} else {
+						ctx.Logger.Debug().Msg("received message")
+					}
 				}
+			case <-ctx.StdContext.Done():
+				return
 			}
-		case r := <-c.Exchanges:
-			h.addRequest(ctx, hh, r)
-			if ctx.Config.DebugHTTPMessages {
-				ctx.Logger.Debug().Interface("r", r).Msg("received request from correlator")
-			} else {
-				ctx.Logger.Debug().Msg("received request from correlator")
-			}
-		case <-ctx.StdContext.Done():
-			if err := json.NewEncoder(w).Encode(hh); err != nil {
-				ctx.Errors <- fmt.Errorf("failed to encode to JSON: %w", err)
-			}
-			ctx.Logger.Debug().Msg("context canceled")
-			return
 		}
+	}()
+
+	go func() {
+		for {
+			select {
+			case r := <-c.Exchanges:
+				h.addRequest(ctx, hh, r)
+				if ctx.Config.DebugHTTPMessages {
+					ctx.Logger.Debug().Interface("r", r).Msg("received request from correlator")
+				} else {
+					ctx.Logger.Debug().Msg("received request from correlator")
+				}
+			case <-ctx.StdContext.Done():
+				return
+			}
+		}
+	}()
+
+	<-ctx.StdContext.Done()
+
+	if err := json.NewEncoder(w).Encode(hh); err != nil {
+		ctx.Errors <- fmt.Errorf("failed to encode to JSON: %w", err)
 	}
 }
 
