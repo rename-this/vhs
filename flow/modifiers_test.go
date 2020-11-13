@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/gramLabs/vhs/internal/ioutilx"
+	"github.com/rename-this/vhs/internal/ioutilx"
 	"gotest.tools/v3/assert"
 )
 

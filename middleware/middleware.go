@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"sync"
 
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/session"
 	"github.com/rs/zerolog"
 )
 

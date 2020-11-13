@@ -3,8 +3,8 @@ package flow
 import (
 	"io"
 
-	"github.com/gramLabs/vhs/middleware"
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/middleware"
+	"github.com/rename-this/vhs/session"
 )
 
 // InputFormat is an interface for formatting input

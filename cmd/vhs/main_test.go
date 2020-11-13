@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gramLabs/vhs/flow"
-	"github.com/gramLabs/vhs/httpx"
-	"github.com/gramLabs/vhs/internal/ioutilx"
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/flow"
+	"github.com/rename-this/vhs/httpx"
+	"github.com/rename-this/vhs/internal/ioutilx"
+	"github.com/rename-this/vhs/session"
 	"gotest.tools/v3/assert"
 )
 

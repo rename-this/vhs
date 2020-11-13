@@ -1,4 +1,4 @@
-module github.com/gramLabs/vhs
+module github.com/rename-this/vhs
 
 go 1.14
 

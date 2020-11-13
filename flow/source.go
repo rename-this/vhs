@@ -1,7 +1,7 @@
 package flow
 
 import (
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/session"
 )
 
 // Source is a data source that can be consumed

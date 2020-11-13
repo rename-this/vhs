@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/session"
 )
 
 type testSink struct {

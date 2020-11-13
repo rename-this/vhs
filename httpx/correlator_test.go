@@ -9,7 +9,7 @@ import (
 
 	"gotest.tools/v3/assert"
 
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/session"
 )
 
 func TestCorrelator(t *testing.T) {

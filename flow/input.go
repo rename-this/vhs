@@ -3,8 +3,8 @@ package flow
 import (
 	"fmt"
 
-	"github.com/gramLabs/vhs/middleware"
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/middleware"
+	"github.com/rename-this/vhs/session"
 )
 
 // Input joins a source and a format with

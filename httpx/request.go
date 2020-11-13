@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/gramLabs/vhs/envelope"
+	"github.com/rename-this/vhs/envelope"
 )
 
 // Ensure Request implements the Message interface.

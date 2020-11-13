@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/session"
 	"gotest.tools/v3/assert"
 )
 

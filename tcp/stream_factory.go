@@ -6,8 +6,8 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
-	"github.com/gramLabs/vhs/flow"
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/flow"
+	"github.com/rename-this/vhs/session"
 )
 
 // Direction is an enum indicating the direction

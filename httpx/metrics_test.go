@@ -10,7 +10,7 @@ import (
 
 	"github.com/segmentio/ksuid"
 
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/session"
 
 	"gotest.tools/v3/assert"
 )

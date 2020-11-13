@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
-	"github.com/gramLabs/vhs/capture"
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/capture"
+	"github.com/rename-this/vhs/session"
 	"gotest.tools/v3/assert"
 )
 

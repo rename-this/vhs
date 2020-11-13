@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/storage"
-	"github.com/gramLabs/vhs/flow"
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/flow"
+	"github.com/rename-this/vhs/session"
 )
 
 type newClientFn func(session.Context) (*storage.Client, error)

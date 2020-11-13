@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gramLabs/vhs/middleware"
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/middleware"
+	"github.com/rename-this/vhs/session"
 )
 
 func newTestInputFormat(_ session.Context) (InputFormat, error) {

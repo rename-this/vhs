@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/gramLabs/vhs/flow"
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/flow"
+	"github.com/rename-this/vhs/session"
 )
 
 // NewOutputModifier creates a new gzip output modifier.

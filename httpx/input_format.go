@@ -7,10 +7,10 @@ import (
 	"io"
 	"time"
 
-	"github.com/gramLabs/vhs/flow"
-	"github.com/gramLabs/vhs/middleware"
-	"github.com/gramLabs/vhs/session"
-	"github.com/gramLabs/vhs/tcp"
+	"github.com/rename-this/vhs/flow"
+	"github.com/rename-this/vhs/middleware"
+	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/tcp"
 	"github.com/segmentio/ksuid"
 )
 

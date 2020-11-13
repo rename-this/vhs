@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/session"
 
 	// See https://pkg.go.dev/github.com/google/gopacket?tab=doc#hdr-A_Final_Note
 	_ "github.com/google/gopacket/layers"

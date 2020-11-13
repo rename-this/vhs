@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gramLabs/vhs/envelope"
+	"github.com/rename-this/vhs/envelope"
 )
 
 // Ensure Response implements the Message interface.

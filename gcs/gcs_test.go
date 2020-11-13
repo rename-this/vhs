@@ -9,7 +9,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/fsouza/fake-gcs-server/fakestorage"
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/session"
 	"gotest.tools/v3/assert"
 )
 

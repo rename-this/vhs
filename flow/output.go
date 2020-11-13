@@ -3,7 +3,7 @@ package flow
 import (
 	"fmt"
 
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/session"
 )
 
 // Output joins a format and sink with

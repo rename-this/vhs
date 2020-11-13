@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/session"
 )
 
 const (

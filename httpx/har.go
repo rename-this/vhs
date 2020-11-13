@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gramLabs/vhs/flow"
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/flow"
+	"github.com/rename-this/vhs/session"
 )
 
 // HAR is an HTTP Archive.

@@ -6,9 +6,9 @@ import (
 
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/tcpassembly"
-	"github.com/gramLabs/vhs/capture"
-	"github.com/gramLabs/vhs/flow"
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/capture"
+	"github.com/rename-this/vhs/flow"
+	"github.com/rename-this/vhs/session"
 )
 
 // NewSource creates a new TCP source.

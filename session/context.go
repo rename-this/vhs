@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/gramLabs/vhs/envelope"
+	"github.com/rename-this/vhs/envelope"
 	"github.com/rs/zerolog"
 	"github.com/segmentio/ksuid"
 )

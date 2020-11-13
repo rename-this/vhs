@@ -3,8 +3,8 @@ package httpx
 import (
 	"time"
 
-	"github.com/gramLabs/vhs/envelope"
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/envelope"
+	"github.com/rename-this/vhs/session"
 )
 
 // MessageType is the type of an HTTP message.

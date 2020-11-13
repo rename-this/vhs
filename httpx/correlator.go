@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gramLabs/vhs/internal/prunemap"
-	"github.com/gramLabs/vhs/session"
+	"github.com/rename-this/vhs/internal/prunemap"
+	"github.com/rename-this/vhs/session"
 )
 
 // Correlator aggregates HTTP requests and responses and
