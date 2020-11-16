@@ -221,9 +221,8 @@ func defaultParser() *flow.Parser {
 		},
 
 		OutputFormats: map[string]flow.OutputFormatCtor{
-			"har":     httpx.NewHAR,
-			"json":    jsonx.NewOutputFormat,
-			"jsonbuf": jsonx.NewBufferedOutputFormat,
+			"har":  httpx.NewHAR,
+			"json": jsonx.NewOutputFormat,
 		},
 
 		Sinks: map[string]flow.SinkCtor{

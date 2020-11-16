@@ -59,5 +59,5 @@ Running `make dev` will assume this location and mount the dir from that file in
 When running `vhs`, you pass the bucket name like this:
 
 ```
-$ go build ./cmd/vhs && ./vhs --input "tcp|http" --output "jsonbuf|gzip|gcs" --capture-response --address 0.0.0.0:1111 --gcs-bucket-name vhs-test-andrewhare
+$ go build ./cmd/vhs && ./vhs --input "tcp|http" --output "json|gzip|gcs" --capture-response --address 0.0.0.0:1111 --gcs-bucket-name vhs-test-andrewhare
 ```
