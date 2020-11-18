@@ -387,42 +387,6 @@ func TestExtractPostData(t *testing.T) {
 	}
 }
 
-// func TestLookupServerIP(t *testing.T) {
-// 	testCases := []struct {
-// 		desc  string
-// 		req   *Request
-// 		refIP string
-// 	}{
-// 		{
-// 			desc: "default",
-// 			req: &Request{
-// 				Host: "example.com",
-// 			},
-// 			refIP: "93.184.216.34",
-// 		},
-// 		{
-// 			desc: "with port",
-// 			req: &Request{
-// 				Host: "example.com:80",
-// 			},
-// 			refIP: "93.184.216.34",
-// 		},
-// 		{
-// 			desc: "does not resolve",
-// 			req: &Request{
-// 				Host: "example.invalid.",
-// 			},
-// 			refIP: "",
-// 		},
-// 	}
-// 	for _, c := range testCases {
-// 		t.Run(c.desc, func(t *testing.T) {
-// 			IPstr := lookupServerIP(c.req)
-//
-// 			assert.Equal(t, IPstr, c.refIP)
-// 		})
-// 	}
-// }
 
 func TestMapToHarNVP(t *testing.T) {
 	cases := []struct {
