@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"time"
 
@@ -146,7 +145,7 @@ func (h *HAR) addRequest(ctx session.Context, hh *har, req *Request) {
 			Wait:    1,
 			Receive: 1,
 		},
-		ServerIPAddress: lookupServerIP(req),
+		ServerIPAddress: req.ServerAddr,
 		Connection:      req.GetConnectionID(),
 	}
 
@@ -210,26 +209,6 @@ func extractPostData(req *Request) harPOST {
 	}
 
 	return post
-}
-
-// lookupServerIP will look up the server IP address of an httpx Request based on the Host field. Port notations
-// are handled properly. If the host resolves to multiple IPs, only the first is returned. An error in any portion
-// of the lookup results in the empty string being returned.
-func lookupServerIP(req *Request) string {
-	var adds []net.IP
-
-	host, _, err := net.SplitHostPort(req.Host)
-	if err == nil {
-		adds, err = net.LookupIP(host)
-	} else {
-		adds, err = net.LookupIP(req.Host)
-	}
-
-	if err != nil {
-		return ""
-	}
-
-	return adds[0].String()
 }
 
 // mapToHarNVP ranges over a map[string][]string and returns a slice of harNVP.

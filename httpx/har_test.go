@@ -43,7 +43,8 @@ func TestHAR(t *testing.T) {
 					Header: http.Header{
 						"a": []string{"a"},
 					},
-					URL: newURL("http://example.org"),
+					URL:        newURL("http://example.org"),
+					ServerAddr: "10.10.10.1",
 				},
 				&Response{
 					ConnectionID: "111",
@@ -78,7 +79,7 @@ func TestHAR(t *testing.T) {
 								Wait:    1,
 								Receive: 1,
 							},
-							ServerIPAddress: "",
+							ServerIPAddress: "10.10.10.1",
 							Connection:      "111",
 						},
 					},
@@ -108,6 +109,7 @@ func TestHAR(t *testing.T) {
 					Body:          "",
 					ContentLength: 1,
 					RequestURI:    "/111.html",
+					ServerAddr:    "10.10.10.1",
 				},
 				&Response{
 					ConnectionID: "111",
@@ -134,6 +136,7 @@ func TestHAR(t *testing.T) {
 					Body:          "",
 					ContentLength: 15,
 					RequestURI:    "/111.html",
+					ServerAddr:    "10.10.10.2",
 				},
 				&Response{
 					ConnectionID: "112",
@@ -157,6 +160,7 @@ func TestHAR(t *testing.T) {
 					Body:          "{\"baz\":\"qux\",\"foo\":\"bar\"}",
 					ContentLength: 25,
 					RequestURI:    "/111.html",
+					ServerAddr:    "10.10.10.3",
 				},
 				&Response{
 					ConnectionID: "113",
@@ -193,7 +197,7 @@ func TestHAR(t *testing.T) {
 								Wait:    1,
 								Receive: 1,
 							},
-							ServerIPAddress: "",
+							ServerIPAddress: "10.10.10.1",
 							Connection:      "111",
 						},
 						{ // POST url-encoded
@@ -224,7 +228,7 @@ func TestHAR(t *testing.T) {
 								Wait:    1,
 								Receive: 1,
 							},
-							ServerIPAddress: "",
+							ServerIPAddress: "10.10.10.2",
 							Connection:      "112",
 						},
 						{ // POST JSON (not url-encoded)
@@ -254,7 +258,7 @@ func TestHAR(t *testing.T) {
 								Wait:    1,
 								Receive: 1,
 							},
-							ServerIPAddress: "",
+							ServerIPAddress: "10.10.10.3",
 							Connection:      "113",
 						},
 					},
@@ -383,42 +387,42 @@ func TestExtractPostData(t *testing.T) {
 	}
 }
 
-func TestLookupServerIP(t *testing.T) {
-	testCases := []struct {
-		desc  string
-		req   *Request
-		refIP string
-	}{
-		{
-			desc: "default",
-			req: &Request{
-				Host: "example.com",
-			},
-			refIP: "93.184.216.34",
-		},
-		{
-			desc: "with port",
-			req: &Request{
-				Host: "example.com:80",
-			},
-			refIP: "93.184.216.34",
-		},
-		{
-			desc: "does not resolve",
-			req: &Request{
-				Host: "example.invalid.",
-			},
-			refIP: "",
-		},
-	}
-	for _, c := range testCases {
-		t.Run(c.desc, func(t *testing.T) {
-			IPstr := lookupServerIP(c.req)
-
-			assert.Equal(t, IPstr, c.refIP)
-		})
-	}
-}
+// func TestLookupServerIP(t *testing.T) {
+// 	testCases := []struct {
+// 		desc  string
+// 		req   *Request
+// 		refIP string
+// 	}{
+// 		{
+// 			desc: "default",
+// 			req: &Request{
+// 				Host: "example.com",
+// 			},
+// 			refIP: "93.184.216.34",
+// 		},
+// 		{
+// 			desc: "with port",
+// 			req: &Request{
+// 				Host: "example.com:80",
+// 			},
+// 			refIP: "93.184.216.34",
+// 		},
+// 		{
+// 			desc: "does not resolve",
+// 			req: &Request{
+// 				Host: "example.invalid.",
+// 			},
+// 			refIP: "",
+// 		},
+// 	}
+// 	for _, c := range testCases {
+// 		t.Run(c.desc, func(t *testing.T) {
+// 			IPstr := lookupServerIP(c.req)
+//
+// 			assert.Equal(t, IPstr, c.refIP)
+// 		})
+// 	}
+// }
 
 func TestMapToHarNVP(t *testing.T) {
 	cases := []struct {
