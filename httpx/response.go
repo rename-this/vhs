@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/rename-this/vhs/envelope"
+	"github.com/rename-this/vhs/flow"
+	"github.com/rename-this/vhs/tcp"
 )
 
 // Ensure Response implements the Message interface.
@@ -33,6 +35,10 @@ type Response struct {
 	Trailer          http.Header    `json:"trailer,omitempty"`
 	SessionID        string         `json:"session_id,omitempty"`
 	Location         string         `json:"location,omitempty"`
+	ClientAddr       string         `json:"client_addr,omitempty"`
+	ClientPort       string         `json:"client_port,omitempty"`
+	ServerAddr       string         `json:"server_addr,omitempty"`
+	ServerPort       string         `json:"server_port,omitempty"`
 }
 
 // Kind gets an envelope kind for a Response.
@@ -51,7 +57,7 @@ func (r *Response) SetCreated(created time.Time) { r.Created = created }
 func (r *Response) SetSessionID(id string) { r.SessionID = id }
 
 // NewResponse creates a new Response.
-func NewResponse(b *bufio.Reader, connectionID, exchangeID string) (*Response, error) {
+func NewResponse(b *bufio.Reader, connectionID, exchangeID string, m *flow.Meta) (*Response, error) {
 	res, err := http.ReadResponse(b, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)
@@ -68,6 +74,20 @@ func NewResponse(b *bufio.Reader, connectionID, exchangeID string) (*Response, e
 	locurl, err := res.Location()
 	if err == nil {
 		loc = locurl.String()
+	}
+
+	var (
+		clientAddr string
+		clientPort string
+		serverAddr string
+		serverPort string
+	)
+
+	if m != nil {
+		clientAddr, _ = m.GetString(tcp.MetaDstAddr)
+		clientPort, _ = m.GetString(tcp.MetaDstPort)
+		serverAddr, _ = m.GetString(tcp.MetaSrcAddr)
+		serverPort, _ = m.GetString(tcp.MetaSrcPort)
 	}
 
 	return &Response{
@@ -87,5 +107,9 @@ func NewResponse(b *bufio.Reader, connectionID, exchangeID string) (*Response, e
 		Uncompressed:     res.Uncompressed,
 		Trailer:          res.Trailer,
 		Location:         loc,
+		ClientAddr:       clientAddr,
+		ClientPort:       clientPort,
+		ServerAddr:       serverAddr,
+		ServerPort:       serverPort,
 	}, nil
 }

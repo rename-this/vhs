@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/rename-this/vhs/envelope"
+	"github.com/rename-this/vhs/flow"
+	"github.com/rename-this/vhs/tcp"
 )
 
 // Ensure Request implements the Message interface.
@@ -39,6 +41,10 @@ type Request struct {
 	RequestURI       string         `json:"request_uri,omitempty"`
 	Response         *Response      `json:"response,omitempty"`
 	SessionID        string         `json:"session_id,omitempty"`
+	ClientAddr       string         `json:"client_addr,omitempty"`
+	ClientPort       string         `json:"client_port,omitempty"`
+	ServerAddr       string         `json:"server_addr,omitempty"`
+	ServerPort       string         `json:"server_port,omitempty"`
 }
 
 // Kind gets an envelope kind for a Request.
@@ -57,7 +63,7 @@ func (r *Request) SetCreated(created time.Time) { r.Created = created }
 func (r *Request) SetSessionID(id string) { r.SessionID = id }
 
 // NewRequest creates a new Request.
-func NewRequest(b *bufio.Reader, connectionID string, exchangeID string) (*Request, error) {
+func NewRequest(b *bufio.Reader, connectionID string, exchangeID string, m *flow.Meta) (*Request, error) {
 	req, err := http.ReadRequest(b)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read request: %w", err)
@@ -87,6 +93,29 @@ func NewRequest(b *bufio.Reader, connectionID string, exchangeID string) (*Reque
 		return nil, fmt.Errorf("failed to read request body: %w", err)
 	}
 
+	var (
+		clientAddr string
+		clientPort string
+		serverAddr string
+		serverPort string
+		remoteAddr string
+	)
+
+	if m != nil {
+		var okaddr, okport bool
+		clientAddr, okaddr = m.GetString(tcp.MetaSrcAddr)
+		clientPort, okport = m.GetString(tcp.MetaSrcPort)
+
+		if okaddr && okport {
+			remoteAddr = fmt.Sprintf("%s:%s", clientAddr, clientPort)
+		} else {
+			remoteAddr = req.RemoteAddr
+		}
+
+		serverAddr, _ = m.GetString(tcp.MetaDstAddr)
+		serverPort, _ = m.GetString(tcp.MetaDstPort)
+	}
+
 	return &Request{
 		ConnectionID:     connectionID,
 		ExchangeID:       exchangeID,
@@ -104,7 +133,11 @@ func NewRequest(b *bufio.Reader, connectionID string, exchangeID string) (*Reque
 		TransferEncoding: req.TransferEncoding,
 		Host:             req.Host,
 		Trailer:          req.Trailer,
-		RemoteAddr:       req.RemoteAddr,
+		RemoteAddr:       remoteAddr,
 		RequestURI:       req.RequestURI,
+		ClientAddr:       clientAddr,
+		ClientPort:       clientPort,
+		ServerAddr:       serverAddr,
+		ServerPort:       serverPort,
 	}, nil
 }
