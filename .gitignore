@@ -15,6 +15,9 @@
 # vendor/
 .DS_Store
 
+# ide
+.idea
+
 *.prof
 
 /vhs

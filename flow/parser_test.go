@@ -77,7 +77,7 @@ func TestParse(t *testing.T) {
 	}
 	for _, c := range cases {
 		parser := newTestParser()
-		ctx, _, _ := session.NewContexts(&session.Config{}, nil)
+		ctx, _, _ := session.NewContexts(&session.VhsConfig{}, nil)
 		t.Run(c.desc, func(t *testing.T) {
 			i, err := parser.Parse(ctx, c.inputLine, c.outputLines)
 			if c.errContains == "" {
@@ -189,7 +189,7 @@ func TestParseOutput(t *testing.T) {
 	}
 	for _, c := range cases {
 		parser := newTestParser()
-		ctx, _, _ := session.NewContexts(&session.Config{}, nil)
+		ctx, _, _ := session.NewContexts(&session.VhsConfig{}, nil)
 		t.Run(c.desc, func(t *testing.T) {
 			i, err := parser.parseOutput(ctx, c.line)
 			if c.errContains == "" {

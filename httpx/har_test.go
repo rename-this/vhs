@@ -264,9 +264,9 @@ func TestHAR(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			ctx, _, _ := session.NewContexts(&session.Config{
+			ctx, _, _ := session.NewContexts(&session.VhsConfig{Config: session.Config{
 				HTTPTimeout: 30 * time.Second,
-			}, nil)
+			}}, nil)
 
 			h, err := NewHAR(ctx)
 			assert.NilError(t, err)

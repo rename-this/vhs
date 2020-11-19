@@ -7,15 +7,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rename-this/vhs/session"
 	"gotest.tools/v3/assert"
+
+	"github.com/rename-this/vhs/session"
 )
 
 func TestFlow(t *testing.T) {
-	cfg := &session.Config{
-		FlowDuration:       500 * time.Millisecond,
-		InputDrainDuration: 500 * time.Millisecond,
-		ShutdownDuration:   500 * time.Millisecond,
+	cfg := &session.VhsConfig{
+		FlowConfig: session.FlowConfig{
+			FlowDuration:       500 * time.Millisecond,
+			InputDrainDuration: 500 * time.Millisecond,
+			ShutdownDuration:   500 * time.Millisecond,
+		},
 	}
 	errs := make(chan error, 1)
 	ctx, inputCtx, outputCtx := session.NewContexts(cfg, errs)

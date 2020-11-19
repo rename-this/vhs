@@ -10,8 +10,8 @@ import (
 )
 
 func TestOutput(t *testing.T) {
-	ctx, _, _ := session.NewContexts(&session.Config{}, nil)
-	ctxBuffered, _, _ := session.NewContexts(&session.Config{BufferOutput: true}, nil)
+	ctx, _, _ := session.NewContexts(&session.VhsConfig{}, nil)
+	ctxBuffered, _, _ := session.NewContexts(&session.VhsConfig{Config: session.Config{BufferOutput: true}}, nil)
 
 	cases := []struct {
 		desc        string

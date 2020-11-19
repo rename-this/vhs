@@ -16,13 +16,13 @@ const (
 )
 
 // NewContexts creates a new set of contexts.
-func NewContexts(cfg *Config, errs chan error) (Context, Context, Context) {
+func NewContexts(cfg *VhsConfig, errs chan error) (Context, Context, Context) {
 	return NewContextsForWriter(cfg, errs, os.Stderr)
 }
 
 // NewContextsForWriter creates a new set of contexts
 // with logs written to a specific writer.
-func NewContextsForWriter(cfg *Config, errs chan error, w io.Writer) (Context, Context, Context) {
+func NewContextsForWriter(cfg *VhsConfig, errs chan error, w io.Writer) (Context, Context, Context) {
 	var (
 		sessionID = ksuid.New().String()
 
@@ -78,7 +78,7 @@ func NewContextsForWriter(cfg *Config, errs chan error, w io.Writer) (Context, C
 
 // Context is a context for a session.
 type Context struct {
-	Config     *Config
+	Config     *VhsConfig
 	SessionID  string
 	StdContext context.Context
 	Cancel     context.CancelFunc

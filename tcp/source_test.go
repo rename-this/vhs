@@ -83,13 +83,13 @@ func (l *testListener) Listen(ctx session.Context)      {}
 func (l *testListener) Close()                          {}
 
 func TestRead(t *testing.T) {
-	cfg := &session.Config{
+	cfg := &session.VhsConfig{Config: session.Config{
 		TCPTimeout:   50 * time.Millisecond,
 		DebugPackets: true,
-	}
+	}}
 	cases := []struct {
 		desc     string
-		cfg      *session.Config
+		cfg      *session.VhsConfig
 		listener capture.Listener
 		data     []string
 		out      []string

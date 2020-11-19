@@ -2,12 +2,14 @@ package session
 
 import "time"
 
-// Config is a VHS config.
-type Config struct {
-	FlowDuration       time.Duration
-	InputDrainDuration time.Duration
-	ShutdownDuration   time.Duration
+// VhsConfig is a vhs config.
+type VhsConfig struct {
+	Config
+	FlowConfig
+}
 
+// Config is a general config.
+type Config struct {
 	Addr            string
 	CaptureResponse bool
 	Middleware      string
@@ -28,4 +30,11 @@ type Config struct {
 	ProfilePathCPU    string
 	ProfilePathMemory string
 	ProfileHTTPAddr   string
+}
+
+// FlowConfig is a Flow config.
+type FlowConfig struct {
+	FlowDuration       time.Duration
+	InputDrainDuration time.Duration
+	ShutdownDuration   time.Duration
 }

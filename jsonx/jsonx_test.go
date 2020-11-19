@@ -161,7 +161,9 @@ func TestInputFormatInit(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			var (
 				errs      = make(chan error, 1)
-				ctx, _, _ = session.NewContexts(&session.Config{Debug: true}, errs)
+				ctx, _, _ = session.NewContexts(&session.VhsConfig{Config: session.Config{
+					Debug: true,
+				}}, errs)
 			)
 
 			ctx.Registry.Register(func() envelope.Kindify { return &goose{} })

@@ -55,8 +55,10 @@ func TestNewSink(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			err := func() error {
-				ctx, _, _ := session.NewContexts(&session.Config{
-					GCSBucketName: c.bucketName,
+				ctx, _, _ := session.NewContexts(&session.VhsConfig{
+					Config: session.Config{
+						GCSBucketName: c.bucketName,
+					},
 				}, nil)
 				ctx.SessionID = c.sessionID
 				defer ctx.Cancel()
@@ -162,9 +164,11 @@ func TestNewSource(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			errs := make(chan error, 10)
-			ctx, _, _ := session.NewContexts(&session.Config{
-				GCSBucketName: c.bucketName,
-				GCSObjectName: c.objectName,
+			ctx, _, _ := session.NewContexts(&session.VhsConfig{
+				Config: session.Config{
+					GCSBucketName: c.bucketName,
+					GCSObjectName: c.objectName,
+				},
 			}, errs)
 
 			s := newSource(ctx, c.newClientFn)
@@ -190,7 +194,7 @@ func TestNewSource(t *testing.T) {
 }
 
 func TestNewSinkFail(t *testing.T) {
-	ctx, _, _ := session.NewContexts(&session.Config{}, nil)
+	ctx, _, _ := session.NewContexts(&session.VhsConfig{}, nil)
 	_, err := NewSink(ctx)
 	assert.Assert(t, err != nil)
 }

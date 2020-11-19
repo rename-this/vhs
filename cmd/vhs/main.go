@@ -44,7 +44,7 @@ func newRootCmd() *cobra.Command {
 			Short: "A tool for capturing and recording network traffic.",
 		}
 
-		cfg         = &session.Config{}
+		cfg         = &session.VhsConfig{}
 		inputLine   string
 		outputLines []string
 	)
@@ -82,7 +82,7 @@ func newRootCmd() *cobra.Command {
 	return cmd
 }
 
-func root(cfg *session.Config, inputLine string, outputLines []string, parser *flow.Parser, logWriter io.Writer) error {
+func root(cfg *session.VhsConfig, inputLine string, outputLines []string, parser *flow.Parser, logWriter io.Writer) error {
 	var (
 		errs                     = make(chan error, errBufSize)
 		ctx, inputCtx, outputCtx = session.NewContextsForWriter(cfg, errs, logWriter)
