@@ -166,21 +166,24 @@ func TestStressMetrics(t *testing.T) {
 	}
 
 	var (
-		httptimeout = 500 * time.Millisecond
 		testTimeout = 10 * time.Second
-		numSenders  = 4
+		httpTimeout = 50 * time.Millisecond
+
+		numSenders           = 4
+		numMessagesPerSender = 250
 
 		numExchangesSent int64 = 0
 		numTimeoutsSent  int64 = 0
-		ExSentMutex      sync.Mutex
-		TimeoutSentMutex sync.Mutex
+
+		timeoutCountCh = make(chan struct{})
+		messageCountCh = make(chan struct{})
+		errs           = make(chan error)
 	)
 
-	errs := make(chan error)
 	genctx, metricsctx, _ := session.NewContexts(&session.Config{
 		Debug:             false,
 		DebugHTTPMessages: false,
-		HTTPTimeout:       50 * time.Millisecond, // Short correlator time so we can actually get some timeouts.
+		HTTPTimeout:       httpTimeout, // Short correlator time so we can actually get some timeouts.
 	}, errs)
 
 	backend := newTestMetricsBackend()
@@ -188,66 +191,66 @@ func TestStressMetrics(t *testing.T) {
 		in:  make(chan interface{}),
 		met: backend,
 	}
+
 	go metrics.Init(metricsctx, nil)
 
 	for i := 0; i < numSenders; i++ {
+
 		go func() {
-			for {
-				select {
-				case <-genctx.StdContext.Done():
-					return
-				default:
-					connID := ksuid.New().String()
-					eID := ksuid.New().String()
-					timeout := rand.Intn(2)
+			for msgCount := 0; msgCount < numMessagesPerSender; msgCount++ {
+				connID := ksuid.New().String()
+				eID := ksuid.New().String()
+				timeout := rand.Intn(2)
 
-					if timeout == 0 {
-						metrics.In() <- &Request{
-							ConnectionID: connID,
-							ExchangeID:   eID,
-							Created:      refTime,
-							Method:       http.MethodGet,
-							URL:          newURL("/test"),
-						}
-						metrics.In() <- &Response{
-							ConnectionID: connID,
-							ExchangeID:   eID,
-							Created:      refTime.Add(10 * time.Millisecond),
-							StatusCode:   http.StatusOK,
-						}
-
-						ExSentMutex.Lock()
-						numExchangesSent++
-						ExSentMutex.Unlock()
-
-					} else {
-						metrics.In() <- &Request{
-							ConnectionID: connID,
-							ExchangeID:   eID,
-							Created:      refTime,
-							Method:       http.MethodGet,
-							URL:          newURL("/test"),
-						}
-
-						TimeoutSentMutex.Lock()
-						numTimeoutsSent++
-						TimeoutSentMutex.Unlock()
-					}
+				// Send Request
+				metrics.In() <- &Request{
+					ConnectionID: connID,
+					ExchangeID:   eID,
+					Created:      refTime,
+					Method:       http.MethodGet,
+					URL:          newURL("/test"),
 				}
+
+				if timeout == 1 {
+					timeoutCountCh <- struct{}{}
+					continue
+				}
+
+				// Send Response
+				metrics.In() <- &Response{
+					ConnectionID: connID,
+					ExchangeID:   eID,
+					Created:      refTime.Add(10 * time.Millisecond),
+					StatusCode:   http.StatusOK,
+				}
+
+				messageCountCh <- struct{}{}
 			}
 		}()
+
 	}
 
-	time.Sleep(testTimeout)
-	genctx.Cancel()
-	time.Sleep(6 * httptimeout)
-	metricsctx.Cancel()
-	time.Sleep(100 * time.Millisecond)
+	for {
+		select {
+		case <-messageCountCh:
+			numExchangesSent++
+		case <-timeoutCountCh:
+			numTimeoutsSent++
+		case err := <-errs:
+			assert.NilError(t, err)
+		case <-time.After(testTimeout):
+			break
+		}
 
-	ExSentMutex.Lock()
-	defer ExSentMutex.Unlock()
-	TimeoutSentMutex.Lock()
-	defer TimeoutSentMutex.Unlock()
+		if numExchangesSent+numTimeoutsSent == int64(numSenders*numMessagesPerSender) {
+			break
+		}
+	}
+
+	genctx.Cancel()
+	// This should be max httpTimeout, but need a little buffer to handle progression through the correlator
+	// In testing locally 250ms seems to be adequate
+	time.Sleep(5 * httpTimeout)
 
 	refCount := map[metricsLabels]int64{
 		// Complete exchanges
@@ -264,12 +267,14 @@ func TestStressMetrics(t *testing.T) {
 		}: numTimeoutsSent,
 	}
 
+	backend.Lock()
 	assert.DeepEqual(t, backend.counters, refCount)
-
+	backend.Unlock()
 }
 
 // testMetricsBackend is a metricsBackend for testing
 type testMetricsBackend struct {
+	sync.Mutex
 	counters  map[metricsLabels]int64
 	durations map[metricsLabels][]float64
 }
@@ -287,10 +292,14 @@ func newTestMetricsBackend() *testMetricsBackend {
 
 // IncrementCounter increments the http exchange counter with the specified labels.
 func (t *testMetricsBackend) IncrementCounter(l metricsLabels) {
+	t.Lock()
 	t.counters[l]++
+	t.Unlock()
 }
 
 // AddDuration adds the measured http exchange duration with the specified labels.
 func (t *testMetricsBackend) AddDuration(l metricsLabels, f float64) {
+	t.Lock()
 	t.durations[l] = append(t.durations[l], f)
+	t.Unlock()
 }
