@@ -13,3 +13,5 @@
 !cmd
 !gcs
 !envelope
+!testdata
+!Makefile
