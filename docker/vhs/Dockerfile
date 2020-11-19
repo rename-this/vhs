@@ -24,7 +24,7 @@ RUN GODEBUG=netdns=go \
 
 ########################################################
 
-FROM scratch
+FROM scratch as application
 
 COPY --from=builder /src/vhs /
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/

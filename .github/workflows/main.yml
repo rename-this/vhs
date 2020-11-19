@@ -6,11 +6,12 @@ on:
     - main
 
 jobs:
-  buildx:
-    runs-on: ubuntu-latest
+  build:
     env:
       IMAGE: "ghcr.io/${{ github.repository }}"
       PLATFORMS: "linux/arm64,linux/amd64,linux/arm/v7"
+    name: build
+    runs-on: ubuntu-latest
     steps:
     -
       name: Checkout
@@ -19,7 +20,7 @@ jobs:
       name: Set up QEMU
       uses: docker/setup-qemu-action@v1
       with:
-        platforms: ${PLATFORMS}
+        platforms: ${{ env.PLATFORMS }}
     -
       name: Set up Docker Buildx
       id: buildx
@@ -34,29 +35,31 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-buildx-
     -
-      name: Docker Buildx (build)
+      name: Build
       run: |
         docker buildx build \
           --cache-from "type=local,src=/tmp/.buildx-cache" \
           --cache-to "type=local,dest=/tmp/.buildx-cache" \
           --platform ${PLATFORMS} \
+          --target application \
           --output "type=image,push=false" \
           --tag ${IMAGE}:${{ github.sha }} \
           --file ./docker/vhs/Dockerfile ./
     -
-      name: Login to DockerHub
+      name: Login to ghcr.io
       uses: docker/login-action@v1
       with:
         registry: ghcr.io
-        username: ${{ github.repository_owner }}
+        username: vcr-bot
         password: ${{ secrets.GHCR_TOKEN }}
     -
-      name: Docker Buildx (push)
+      name: Push
       run: |
         # push image:sha
         docker buildx build \
           --cache-from "type=local,src=/tmp/.buildx-cache" \
           --platform ${PLATFORMS} \
+          --target application \
           --output "type=image,push=true" \
           --tag ${IMAGE}:${{ github.sha }} \
           --file ./docker/vhs/Dockerfile ./
@@ -65,6 +68,7 @@ jobs:
         docker buildx build \
           --cache-from "type=local,src=/tmp/.buildx-cache" \
           --platform ${PLATFORMS} \
+          --target application \
           --output "type=image,push=true" \
           --tag ${IMAGE}:edge \
           --file ./docker/vhs/Dockerfile ./
