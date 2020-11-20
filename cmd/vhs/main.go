@@ -53,18 +53,18 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().DurationVar(&flowCfg.FlowDuration, "flow-duration", 10*time.Second, "The length of the running command.")
 	cmd.PersistentFlags().DurationVar(&flowCfg.InputDrainDuration, "input-drain-duration", 2*time.Second, "A grace period to allow for a inputs to drain.")
 	cmd.PersistentFlags().DurationVar(&flowCfg.ShutdownDuration, "shutdown-duration", 2*time.Second, "A grace period to allow for a clean shutdown.")
-	cmd.PersistentFlags().StringVar(&cfg.Addr, "address", capture.DefaultAddr, "Address VHS will use to capture traffic.")
-	cmd.PersistentFlags().BoolVar(&cfg.CaptureResponse, "capture-response", false, "Capture the responses.")
-	cmd.PersistentFlags().StringVar(&cfg.Middleware, "middleware", "", "A path to an executable that VHS will use as middleware.")
-	cmd.PersistentFlags().DurationVar(&cfg.TCPTimeout, "tcp-timeout", 5*time.Minute, "A length of time after which unused TCP connections are closed.")
-	cmd.PersistentFlags().DurationVar(&cfg.HTTPTimeout, "http-timeout", 30*time.Second, "A length of time after which an HTTP request is considered to have timed out.")
+	cmd.PersistentFlags().StringVar(&flowCfg.Addr, "address", capture.DefaultAddr, "Address VHS will use to capture traffic.")
+	cmd.PersistentFlags().BoolVar(&flowCfg.CaptureResponse, "capture-response", false, "Capture the responses.")
+	cmd.PersistentFlags().StringVar(&flowCfg.Middleware, "middleware", "", "A path to an executable that VHS will use as middleware.")
+	cmd.PersistentFlags().DurationVar(&flowCfg.TCPTimeout, "tcp-timeout", 5*time.Minute, "A length of time after which unused TCP connections are closed.")
+	cmd.PersistentFlags().DurationVar(&flowCfg.HTTPTimeout, "http-timeout", 30*time.Second, "A length of time after which an HTTP request is considered to have timed out.")
 	cmd.PersistentFlags().StringVar(&cfg.PrometheusAddr, "prometheus-address", "", "Address for Prometheus metrics HTTP endpoint.")
-	cmd.PersistentFlags().StringVar(&cfg.GCSBucketName, "gcs-bucket-name", "", "Bucket name for Google Cloud Storage")
-	cmd.PersistentFlags().StringVar(&cfg.GCSObjectName, "gcs-object-name", "", "Object name for Google Cloud Storage")
+	cmd.PersistentFlags().StringVar(&flowCfg.GCSBucketName, "gcs-bucket-name", "", "Bucket name for Google Cloud Storage")
+	cmd.PersistentFlags().StringVar(&flowCfg.GCSObjectName, "gcs-object-name", "", "Object name for Google Cloud Storage")
 	cmd.PersistentFlags().StringVar(&inputLine, "input", "", "Input description.")
 	cmd.PersistentFlags().StringSliceVar(&outputLines, "output", nil, "Output description.")
 
-	cmd.PersistentFlags().BoolVar(&cfg.BufferOutput, "buffer-output", false, "Buffer output until the end of the flow.")
+	cmd.PersistentFlags().BoolVar(&flowCfg.BufferOutput, "buffer-output", false, "Buffer output until the end of the flow.")
 	cmd.PersistentFlags().BoolVar(&cfg.Debug, "debug", false, "Emit debug logging.")
 	cmd.PersistentFlags().BoolVar(&cfg.DebugPackets, "debug-packets", false, "Emit all packets as debug logs.")
 	cmd.PersistentFlags().BoolVar(&cfg.DebugHTTPMessages, "debug-http-messages", false, "Emit all parsed HTTP messages as debug logs.")
@@ -182,12 +182,12 @@ func root(cfg *session.Config, flowCfg *session.FlowConfig, inputLine string, ou
 }
 
 func startMiddleware(ctx session.Context) (middleware.Middleware, error) {
-	if ctx.Config.Middleware == "" {
+	if ctx.FlowConfig.Middleware == "" {
 		ctx.Logger.Debug().Msg("no middleware configured")
 		return nil, nil
 	}
 
-	m, err := middleware.New(ctx, ctx.Config.Middleware)
+	m, err := middleware.New(ctx, ctx.FlowConfig.Middleware)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create middleware: %w", err)
 	}
