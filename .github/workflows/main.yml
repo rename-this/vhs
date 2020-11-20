@@ -1,0 +1,74 @@
+name: main
+
+on:
+  push:
+    branches:
+    - main
+
+jobs:
+  build:
+    env:
+      IMAGE: "ghcr.io/${{ github.repository }}"
+      PLATFORMS: "linux/arm64,linux/amd64,linux/arm/v7"
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+    -
+      name: Checkout
+      uses: actions/checkout@v2
+    -
+      name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: ${{ env.PLATFORMS }}
+    -
+      name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+    -
+      name: Cache Docker layers
+      uses: actions/cache@v2
+      id: cache
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+    -
+      name: Build
+      run: |
+        docker buildx build \
+          --cache-from "type=local,src=/tmp/.buildx-cache" \
+          --cache-to "type=local,dest=/tmp/.buildx-cache" \
+          --platform ${PLATFORMS} \
+          --target application \
+          --output "type=image,push=false" \
+          --tag ${IMAGE}:${{ github.sha }} \
+          --file ./docker/vhs/Dockerfile ./
+    -
+      name: Login to ghcr.io
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: vcr-bot
+        password: ${{ secrets.GHCR_TOKEN }}
+    -
+      name: Push
+      run: |
+        # push image:sha
+        docker buildx build \
+          --cache-from "type=local,src=/tmp/.buildx-cache" \
+          --platform ${PLATFORMS} \
+          --target application \
+          --output "type=image,push=true" \
+          --tag ${IMAGE}:${{ github.sha }} \
+          --file ./docker/vhs/Dockerfile ./
+
+        # push image:edge ( moving tag )
+        docker buildx build \
+          --cache-from "type=local,src=/tmp/.buildx-cache" \
+          --platform ${PLATFORMS} \
+          --target application \
+          --output "type=image,push=true" \
+          --tag ${IMAGE}:edge \
+          --file ./docker/vhs/Dockerfile ./

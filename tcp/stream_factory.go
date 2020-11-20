@@ -6,6 +6,7 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
+
 	"github.com/rename-this/vhs/flow"
 	"github.com/rename-this/vhs/session"
 )
@@ -24,6 +25,10 @@ const (
 const (
 	// MetaDirection is a key for a flow.Meta to retrieve a direction.
 	MetaDirection = "tcp.direction"
+	MetaSrcAddr   = "ip.srcaddr"
+	MetaDstAddr   = "ip.dstaddr"
+	MetaSrcPort   = "tcp.srcport"
+	MetaDstPort   = "tcp.dstport"
 )
 
 func newStreamFactory(ctx session.Context, out chan<- flow.InputReader) *streamFactory {
@@ -110,6 +115,10 @@ func (f *streamFactory) New(net, transport gopacket.Flow) tcpassembly.Stream {
 		s:   s,
 		meta: flow.NewMeta(s.conn.id, map[string]interface{}{
 			MetaDirection: d,
+			MetaSrcAddr:   net.Src().String(),
+			MetaSrcPort:   transport.Src().String(),
+			MetaDstAddr:   net.Dst().String(),
+			MetaDstPort:   transport.Dst().String(),
 		}),
 	}
 

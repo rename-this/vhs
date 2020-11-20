@@ -70,7 +70,7 @@ func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, streams
 						eID := ksuid.New().String()
 						exchangeIDs <- eID
 
-						req, err := NewRequest(buf, sourceID, eID)
+						req, err := NewRequest(buf, sourceID, eID, r.Meta())
 						if isEOF(err) {
 							return
 						}
@@ -86,7 +86,7 @@ func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, streams
 					for {
 						eID := <-exchangeIDs
 
-						res, err := NewResponse(buf, sourceID, eID)
+						res, err := NewResponse(buf, sourceID, eID, r.Meta())
 						if isEOF(err) {
 							return
 						}
