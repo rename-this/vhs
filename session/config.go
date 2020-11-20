@@ -9,7 +9,6 @@ type Config struct {
 	GCSBucketName string
 	GCSObjectName string
 
-	BufferOutput bool
 
 	Debug             bool
 	DebugPackets      bool
@@ -32,4 +31,5 @@ type FlowConfig struct {
 	TCPTimeout      time.Duration
 	HTTPTimeout     time.Duration
 
+	BufferOutput bool
 }

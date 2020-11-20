@@ -11,7 +11,7 @@ import (
 
 func TestOutput(t *testing.T) {
 	ctx, _, _ := session.NewContexts(&session.Config{}, &session.FlowConfig{}, nil)
-	ctxBuffered, _, _ := session.NewContexts(&session.Config{BufferOutput: true}, &session.FlowConfig{}, nil)
+	ctxBuffered, _, _ := session.NewContexts(&session.Config{}, &session.FlowConfig{BufferOutput: true}, nil)
 
 	cases := []struct {
 		desc        string
