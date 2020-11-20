@@ -16,13 +16,13 @@ const (
 )
 
 // NewContexts creates a new set of contexts.
-func NewContexts(cfg *VhsConfig, errs chan error) (Context, Context, Context) {
-	return NewContextsForWriter(cfg, errs, os.Stderr)
+func NewContexts(cfg *Config, flowCfg *FlowConfig, errs chan error) (Context, Context, Context) {
+	return NewContextsForWriter(cfg, flowCfg, errs, os.Stderr)
 }
 
 // NewContextsForWriter creates a new set of contexts
 // with logs written to a specific writer.
-func NewContextsForWriter(cfg *VhsConfig, errs chan error, w io.Writer) (Context, Context, Context) {
+func NewContextsForWriter(cfg *Config, flowCfg *FlowConfig, errs chan error, w io.Writer) (Context, Context, Context) {
 	var (
 		sessionID = ksuid.New().String()
 
@@ -49,6 +49,7 @@ func NewContextsForWriter(cfg *VhsConfig, errs chan error, w io.Writer) (Context
 
 	return Context{
 			Config:     cfg,
+			FlowConfig: flowCfg,
 			SessionID:  sessionID,
 			StdContext: stdCtx1,
 			Cancel:     cancel1,
@@ -58,6 +59,7 @@ func NewContextsForWriter(cfg *VhsConfig, errs chan error, w io.Writer) (Context
 		},
 		Context{
 			Config:     cfg,
+			FlowConfig: flowCfg,
 			SessionID:  sessionID,
 			StdContext: stdCtx2,
 			Cancel:     cancel2,
@@ -67,6 +69,7 @@ func NewContextsForWriter(cfg *VhsConfig, errs chan error, w io.Writer) (Context
 		},
 		Context{
 			Config:     cfg,
+			FlowConfig: flowCfg,
 			SessionID:  sessionID,
 			StdContext: stdCtx3,
 			Cancel:     cancel3,
@@ -78,7 +81,8 @@ func NewContextsForWriter(cfg *VhsConfig, errs chan error, w io.Writer) (Context
 
 // Context is a context for a session.
 type Context struct {
-	Config     *VhsConfig
+	Config     *Config
+	FlowConfig *FlowConfig
 	SessionID  string
 	StdContext context.Context
 	Cancel     context.CancelFunc

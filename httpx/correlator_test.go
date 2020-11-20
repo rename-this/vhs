@@ -31,7 +31,7 @@ func TestCorrelator(t *testing.T) {
 	}()
 
 	errs := make(chan error)
-	ctx, _, _ := session.NewContexts(&session.VhsConfig{Config: session.Config{DebugHTTPMessages: true}}, errs)
+	ctx, _, _ := session.NewContexts(&session.Config{DebugHTTPMessages: true}, &session.FlowConfig{}, errs)
 
 	m.Start(ctx)
 
@@ -72,7 +72,7 @@ func TestStressCorrelator(t *testing.T) {
 	)
 
 	errs := make(chan error)
-	genctx, recvctx, corctx := session.NewContexts(&session.VhsConfig{Config: session.Config{DebugHTTPMessages: true}}, errs)
+	genctx, recvctx, corctx := session.NewContexts(&session.Config{DebugHTTPMessages: true}, &session.FlowConfig{}, errs)
 
 	c := NewCorrelator(httptimeout)
 	c.Start(corctx)

@@ -48,7 +48,7 @@ func TestOutputFormat(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			var (
 				errs      = make(chan error, 1)
-				ctx, _, _ = session.NewContexts(nil, errs)
+				ctx, _, _ = session.NewContexts(nil, nil, errs)
 				f, _      = NewOutputFormat(ctx)
 			)
 
@@ -104,7 +104,7 @@ func TestBufferedOutputFormat(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			var (
 				errs      = make(chan error, 1)
-				ctx, _, _ = session.NewContexts(nil, errs)
+				ctx, _, _ = session.NewContexts(nil, nil, errs)
 				f, _      = NewBufferedOutputFormat(ctx)
 			)
 
@@ -161,9 +161,9 @@ func TestInputFormatInit(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			var (
 				errs      = make(chan error, 1)
-				ctx, _, _ = session.NewContexts(&session.VhsConfig{Config: session.Config{
+				ctx, _, _ = session.NewContexts(&session.Config{
 					Debug: true,
-				}}, errs)
+				}, &session.FlowConfig{}, errs)
 			)
 
 			ctx.Registry.Register(func() envelope.Kindify { return &goose{} })

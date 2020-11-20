@@ -132,9 +132,9 @@ func TestMetrics(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			ctx, _, _ := session.NewContexts(&session.VhsConfig{Config: session.Config{
+			ctx, _, _ := session.NewContexts(&session.Config{
 				HTTPTimeout: 50 * time.Millisecond, // Short correlator time so we can actually get some timeouts.
-			}}, nil)
+			}, &session.FlowConfig{}, nil)
 
 			backend := newTestMetricsBackend()
 			metrics := &Metrics{
@@ -177,11 +177,11 @@ func TestStressMetrics(t *testing.T) {
 	)
 
 	errs := make(chan error)
-	genctx, metricsctx, _ := session.NewContexts(&session.VhsConfig{Config: session.Config{
+	genctx, metricsctx, _ := session.NewContexts(&session.Config{
 		Debug:             false,
 		DebugHTTPMessages: false,
 		HTTPTimeout:       50 * time.Millisecond, // Short correlator time so we can actually get some timeouts.
-	}}, errs)
+	}, &session.FlowConfig{}, errs)
 
 	backend := newTestMetricsBackend()
 	metrics := &Metrics{

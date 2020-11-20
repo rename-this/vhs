@@ -44,14 +44,15 @@ func newRootCmd() *cobra.Command {
 			Short: "A tool for capturing and recording network traffic.",
 		}
 
-		cfg         = &session.VhsConfig{}
+		cfg         = &session.Config{}
+		flowCfg     = &session.FlowConfig{}
 		inputLine   string
 		outputLines []string
 	)
 
-	cmd.PersistentFlags().DurationVar(&cfg.FlowDuration, "flow-duration", 10*time.Second, "The length of the running command.")
-	cmd.PersistentFlags().DurationVar(&cfg.InputDrainDuration, "input-drain-duration", 2*time.Second, "A grace period to allow for a inputs to drain.")
-	cmd.PersistentFlags().DurationVar(&cfg.ShutdownDuration, "shutdown-duration", 2*time.Second, "A grace period to allow for a clean shutdown.")
+	cmd.PersistentFlags().DurationVar(&flowCfg.FlowDuration, "flow-duration", 10*time.Second, "The length of the running command.")
+	cmd.PersistentFlags().DurationVar(&flowCfg.InputDrainDuration, "input-drain-duration", 2*time.Second, "A grace period to allow for a inputs to drain.")
+	cmd.PersistentFlags().DurationVar(&flowCfg.ShutdownDuration, "shutdown-duration", 2*time.Second, "A grace period to allow for a clean shutdown.")
 	cmd.PersistentFlags().StringVar(&cfg.Addr, "address", capture.DefaultAddr, "Address VHS will use to capture traffic.")
 	cmd.PersistentFlags().BoolVar(&cfg.CaptureResponse, "capture-response", false, "Capture the responses.")
 	cmd.PersistentFlags().StringVar(&cfg.Middleware, "middleware", "", "A path to an executable that VHS will use as middleware.")
@@ -73,7 +74,7 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&cfg.ProfileHTTPAddr, "profile-http-address", "", "Expose profile data on this address.")
 
 	cmd.Run = func(cmd *cobra.Command, args []string) {
-		err := root(cfg, inputLine, outputLines, defaultParser(), os.Stderr)
+		err := root(cfg, flowCfg, inputLine, outputLines, defaultParser(), os.Stderr)
 		if err != nil {
 			fmt.Printf("failed to initialize vhs: %v", err)
 		}
@@ -82,10 +83,10 @@ func newRootCmd() *cobra.Command {
 	return cmd
 }
 
-func root(cfg *session.VhsConfig, inputLine string, outputLines []string, parser *flow.Parser, logWriter io.Writer) error {
+func root(cfg *session.Config, flowCfg *session.FlowConfig, inputLine string, outputLines []string, parser *flow.Parser, logWriter io.Writer) error {
 	var (
 		errs                     = make(chan error, errBufSize)
-		ctx, inputCtx, outputCtx = session.NewContextsForWriter(cfg, errs, logWriter)
+		ctx, inputCtx, outputCtx = session.NewContextsForWriter(cfg, flowCfg, errs, logWriter)
 	)
 
 	go func() {
@@ -154,7 +155,7 @@ func root(cfg *session.VhsConfig, inputLine string, outputLines []string, parser
 	go func() {
 		<-c
 		ctx.Logger.Debug().Msgf("shutdown initiated, exiting in %s",
-			ctx.Config.InputDrainDuration+ctx.Config.ShutdownDuration)
+			ctx.FlowConfig.InputDrainDuration+ctx.FlowConfig.ShutdownDuration)
 		ctx.Cancel()
 	}()
 
