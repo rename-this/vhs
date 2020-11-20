@@ -42,7 +42,7 @@ func (s *tcpSource) read(ctx session.Context, newCapture newCaptureFn, newListen
 
 	ctx.Logger.Debug().Msg("read")
 
-	cap, err := newCapture(ctx.Config.Addr, ctx.Config.CaptureResponse)
+	cap, err := newCapture(ctx.FlowConfig.Addr, ctx.FlowConfig.CaptureResponse)
 	if err != nil {
 		ctx.Errors <- fmt.Errorf("failed to initialize capture: %w", err)
 		return
@@ -60,7 +60,7 @@ func (s *tcpSource) read(ctx session.Context, newCapture newCaptureFn, newListen
 		factory   = newStreamFactory(ctx, s.streams)
 		pool      = tcpassembly.NewStreamPool(factory)
 		assembler = tcpassembly.NewAssembler(pool)
-		ticker    = time.Tick(ctx.Config.TCPTimeout)
+		ticker    = time.Tick(ctx.FlowConfig.TCPTimeout)
 		packets   = listener.Packets()
 	)
 
@@ -92,7 +92,7 @@ func (s *tcpSource) read(ctx session.Context, newCapture newCaptureFn, newListen
 
 		case <-ticker:
 			ctx.Logger.Debug().Msg("flushing old streams")
-			assembler.FlushOlderThan(time.Now().Add(-ctx.Config.TCPTimeout))
+			assembler.FlushOlderThan(time.Now().Add(-ctx.FlowConfig.TCPTimeout))
 
 			factory.prune()
 

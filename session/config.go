@@ -4,12 +4,6 @@ import "time"
 
 // Config is a general config.
 type Config struct {
-	Addr            string
-	CaptureResponse bool
-	Middleware      string
-	TCPTimeout      time.Duration
-	HTTPTimeout     time.Duration
-
 	PrometheusAddr string
 
 	GCSBucketName string
@@ -31,4 +25,11 @@ type FlowConfig struct {
 	FlowDuration       time.Duration
 	InputDrainDuration time.Duration
 	ShutdownDuration   time.Duration
+
+	Addr            string
+	CaptureResponse bool
+	Middleware      string
+	TCPTimeout      time.Duration
+	HTTPTimeout     time.Duration
+
 }
