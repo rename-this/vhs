@@ -6,9 +6,6 @@ import "time"
 type Config struct {
 	PrometheusAddr string
 
-	GCSBucketName string
-	GCSObjectName string
-
 
 	Debug             bool
 	DebugPackets      bool
@@ -32,4 +29,8 @@ type FlowConfig struct {
 	HTTPTimeout     time.Duration
 
 	BufferOutput bool
+
+	GCSBucketName string
+	GCSObjectName string
+
 }
