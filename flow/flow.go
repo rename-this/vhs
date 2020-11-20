@@ -26,17 +26,17 @@ func (f *Flow) Run(ctx, inputCtx, outputCtx session.Context, m middleware.Middle
 
 	defer func() {
 		inputCtx.Cancel()
-		ctx.Logger.Debug().Dur("dur", inputCtx.Config.InputDrainDuration).Msg("draining inputs")
-		time.Sleep(inputCtx.Config.InputDrainDuration)
+		ctx.Logger.Debug().Dur("dur", inputCtx.FlowConfig.InputDrainDuration).Msg("draining inputs")
+		time.Sleep(inputCtx.FlowConfig.InputDrainDuration)
 
 		outputCtx.Cancel()
-		ctx.Logger.Debug().Dur("dur", inputCtx.Config.ShutdownDuration).Msg("shutting down")
-		time.Sleep(inputCtx.Config.ShutdownDuration)
+		ctx.Logger.Debug().Dur("dur", inputCtx.FlowConfig.ShutdownDuration).Msg("shutting down")
+		time.Sleep(inputCtx.FlowConfig.ShutdownDuration)
 
 		ctx.Logger.Debug().Msg("shutdown complete")
 	}()
 
-	complete := time.After(inputCtx.Config.FlowDuration)
+	complete := time.After(inputCtx.FlowConfig.FlowDuration)
 	for {
 		select {
 		case n := <-f.Input.Format.Out():

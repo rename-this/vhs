@@ -84,12 +84,15 @@ func (l *testListener) Close()                          {}
 
 func TestRead(t *testing.T) {
 	cfg := &session.Config{
-		TCPTimeout:   50 * time.Millisecond,
 		DebugPackets: true,
+	}
+	flowCfg := &session.FlowConfig{
+		TCPTimeout: 50 * time.Millisecond,
 	}
 	cases := []struct {
 		desc     string
 		cfg      *session.Config
+		flowCfg  *session.FlowConfig
 		listener capture.Listener
 		data     []string
 		out      []string
@@ -97,22 +100,26 @@ func TestRead(t *testing.T) {
 		{
 			desc: "nil",
 			cfg:  cfg,
+			flowCfg: flowCfg,
 			data: []string{nilPayload},
 		},
 		{
 			desc: "empty packet",
 			cfg:  cfg,
+			flowCfg: flowCfg,
 			data: []string{""},
 		},
 
 		{
 			desc: "wrong packet type",
 			cfg:  cfg,
+			flowCfg: flowCfg,
 			data: []string{wrongPayloadType},
 		},
 		{
 			desc: "one packet",
 			cfg:  cfg,
+			flowCfg: flowCfg,
 			data: []string{"aaa"},
 			out: []string{
 				"aaa",
@@ -123,7 +130,7 @@ func TestRead(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			var (
 				errs      = make(chan error)
-				ctx, _, _ = session.NewContexts(c.cfg, errs)
+				ctx, _, _ = session.NewContexts(c.cfg, c.flowCfg, errs)
 			)
 
 			defer ctx.Cancel()

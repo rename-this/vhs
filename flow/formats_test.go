@@ -56,7 +56,7 @@ func newTestOutputFormatNoErr(ctx session.Context) OutputFormat {
 func newTestOutputFormat(ctx session.Context) (OutputFormat, error) {
 	return &testOutputFormat{
 		in:       make(chan interface{}),
-		buffered: ctx.Config.BufferOutput,
+		buffered: ctx.FlowConfig.BufferOutput,
 	}, nil
 }
 

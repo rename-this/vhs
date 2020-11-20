@@ -10,8 +10,8 @@ import (
 )
 
 func TestOutput(t *testing.T) {
-	ctx, _, _ := session.NewContexts(&session.Config{}, nil)
-	ctxBuffered, _, _ := session.NewContexts(&session.Config{BufferOutput: true}, nil)
+	ctx, _, _ := session.NewContexts(&session.Config{}, &session.FlowConfig{}, nil)
+	ctxBuffered, _, _ := session.NewContexts(&session.Config{}, &session.FlowConfig{BufferOutput: true}, nil)
 
 	cases := []struct {
 		desc        string
@@ -80,7 +80,7 @@ func TestOutput(t *testing.T) {
 			// hack: Make this big enough to handle any errors we
 			// might end up with.
 			errs := make(chan error, 10)
-			ctx, _, _ := session.NewContexts(nil, errs)
+			ctx, _, _ := session.NewContexts(nil, nil, errs)
 
 			go c.oo.Init(ctx)
 

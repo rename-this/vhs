@@ -268,9 +268,10 @@ func TestHAR(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			ctx, _, _ := session.NewContexts(&session.Config{
-				HTTPTimeout: 30 * time.Second,
-			}, nil)
+			ctx, _, _ := session.NewContexts(&session.Config{},
+				&session.FlowConfig{
+					HTTPTimeout: 30 * time.Second,
+				}, nil)
 
 			h, err := NewHAR(ctx)
 			assert.NilError(t, err)
@@ -386,7 +387,6 @@ func TestExtractPostData(t *testing.T) {
 		})
 	}
 }
-
 
 func TestMapToHarNVP(t *testing.T) {
 	cases := []struct {

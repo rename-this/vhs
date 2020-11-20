@@ -206,7 +206,7 @@ func TestRoot(t *testing.T) {
 			}
 
 			var logBuf bytes.Buffer
-			err := root(cfg, c.inputLine, c.outputLines, parser, &logBuf)
+			err := root(cfg, flowCfg, c.inputLine, c.outputLines, parser, &logBuf)
 			if c.initializeErrContains != "" {
 				assert.ErrorContains(t, err, c.initializeErrContains)
 				return

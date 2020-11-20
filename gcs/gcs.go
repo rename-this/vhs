@@ -33,7 +33,7 @@ func newSink(ctx session.Context, newClient newClientFn) (flow.Sink, error) {
 
 	ctx.Logger.Debug().Msg("client created")
 
-	b := c.Bucket(ctx.Config.GCSBucketName)
+	b := c.Bucket(ctx.FlowConfig.GCSBucketName)
 	if _, err := b.Attrs(ctx.StdContext); err != nil {
 		return nil, fmt.Errorf("failed to find bucket: %w", err)
 	}
@@ -78,7 +78,7 @@ func (s *gcsSource) Init(ctx session.Context) {
 
 	ctx.Logger.Debug().Msg("client created")
 
-	b := c.Bucket(ctx.Config.GCSBucketName)
+	b := c.Bucket(ctx.FlowConfig.GCSBucketName)
 	if _, err := b.Attrs(ctx.StdContext); err != nil {
 		ctx.Errors <- fmt.Errorf("failed to find bucket: %w", err)
 		return
@@ -86,7 +86,7 @@ func (s *gcsSource) Init(ctx session.Context) {
 
 	ctx.Logger.Debug().Msg("bucket found")
 
-	o := b.Object(ctx.Config.GCSObjectName)
+	o := b.Object(ctx.FlowConfig.GCSObjectName)
 	r, err := o.NewReader(ctx.StdContext)
 	if err != nil {
 		ctx.Errors <- fmt.Errorf("failed to create object reader: %w", err)
@@ -97,7 +97,7 @@ func (s *gcsSource) Init(ctx session.Context) {
 
 	s.streams <- &gcsStream{
 		Reader: r,
-		meta:   flow.NewMeta(ctx.Config.GCSObjectName, nil),
+		meta:   flow.NewMeta(ctx.FlowConfig.GCSObjectName, nil),
 	}
 }
 
