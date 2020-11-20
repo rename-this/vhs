@@ -2,12 +2,6 @@ package session
 
 import "time"
 
-// VhsConfig is a vhs config.
-type VhsConfig struct {
-	Config
-	FlowConfig
-}
-
 // Config is a general config.
 type Config struct {
 	Addr            string
