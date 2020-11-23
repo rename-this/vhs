@@ -47,9 +47,9 @@ func TestOutputFormat(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			var (
-				errs      = make(chan error, 1)
-				ctx, _, _ = session.NewContexts(nil, nil, errs)
-				f, _      = NewOutputFormat(ctx)
+				errs = make(chan error, 1)
+				ctx  = session.NewContexts(nil, nil, errs)
+				f, _ = NewOutputFormat(ctx)
 			)
 
 			go f.Init(ctx, c.buf)
@@ -108,8 +108,8 @@ func TestInputFormatInit(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			var (
-				errs      = make(chan error, 1)
-				ctx, _, _ = session.NewContexts(&session.Config{
+				errs = make(chan error, 1)
+				ctx  = session.NewContexts(&session.Config{
 					Debug: true,
 				}, &session.FlowConfig{}, errs)
 			)
@@ -128,6 +128,8 @@ func TestInputFormatInit(t *testing.T) {
 			for i := 0; i < len(c.out); i++ {
 				assert.DeepEqual(t, c.out[i], <-inputFormat.Out())
 			}
+
+			time.Sleep(50 * time.Millisecond)
 
 			ctx.Cancel()
 

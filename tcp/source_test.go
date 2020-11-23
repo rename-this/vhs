@@ -87,7 +87,8 @@ func TestRead(t *testing.T) {
 		DebugPackets: true,
 	}
 	flowCfg := &session.FlowConfig{
-		TCPTimeout: 50 * time.Millisecond,
+		SourceDuration: 800 * time.Millisecond,
+		TCPTimeout:     50 * time.Millisecond,
 	}
 	cases := []struct {
 		desc     string
@@ -98,29 +99,29 @@ func TestRead(t *testing.T) {
 		out      []string
 	}{
 		{
-			desc: "nil",
-			cfg:  cfg,
+			desc:    "nil",
+			cfg:     cfg,
 			flowCfg: flowCfg,
-			data: []string{nilPayload},
+			data:    []string{nilPayload},
 		},
 		{
-			desc: "empty packet",
-			cfg:  cfg,
+			desc:    "empty packet",
+			cfg:     cfg,
 			flowCfg: flowCfg,
-			data: []string{""},
+			data:    []string{""},
 		},
 
 		{
-			desc: "wrong packet type",
-			cfg:  cfg,
+			desc:    "wrong packet type",
+			cfg:     cfg,
 			flowCfg: flowCfg,
-			data: []string{wrongPayloadType},
+			data:    []string{wrongPayloadType},
 		},
 		{
-			desc: "one packet",
-			cfg:  cfg,
+			desc:    "one packet",
+			cfg:     cfg,
 			flowCfg: flowCfg,
-			data: []string{"aaa"},
+			data:    []string{"aaa"},
 			out: []string{
 				"aaa",
 			},
@@ -129,8 +130,8 @@ func TestRead(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			var (
-				errs      = make(chan error)
-				ctx, _, _ = session.NewContexts(c.cfg, c.flowCfg, errs)
+				errs = make(chan error)
+				ctx  = session.NewContexts(c.cfg, c.flowCfg, errs)
 			)
 
 			defer ctx.Cancel()

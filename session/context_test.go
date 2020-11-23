@@ -10,9 +10,9 @@ import (
 
 func TestContexts(t *testing.T) {
 	var (
-		canceled         = make(chan struct{}, 3)
-		errs             = make(chan error, 3)
-		ctx1, ctx2, ctx3 = NewContexts(&Config{}, &FlowConfig{}, errs)
+		canceled = make(chan struct{}, 3)
+		errs     = make(chan error, 3)
+		ctx1     = NewContexts(&Config{}, &FlowConfig{}, errs)
 	)
 
 	fn := func(ctx Context) {
@@ -29,15 +29,11 @@ func TestContexts(t *testing.T) {
 	}
 
 	go fn(ctx1)
-	go fn(ctx2)
-	go fn(ctx3)
 
 	ctx1.Cancel()
-	ctx2.Cancel()
-	ctx3.Cancel()
 
 	time.Sleep(500 * time.Millisecond)
 
-	assert.Equal(t, 3, len(canceled))
-	assert.Equal(t, 3, len(errs))
+	assert.Equal(t, 1, len(canceled))
+	assert.Equal(t, 1, len(errs))
 }

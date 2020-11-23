@@ -23,4 +23,5 @@ func (s *testSource) Init(ctx session.Context) {
 	for _, d := range s.data {
 		s.streams <- d
 	}
+	close(s.streams)
 }

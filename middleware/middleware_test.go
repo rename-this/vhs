@@ -70,7 +70,7 @@ func TestExec(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			ctx, _, _ := session.NewContexts(nil, nil, nil)
+			ctx := session.NewContexts(nil, nil, nil)
 			for i := 0; i < c.num; i++ {
 				req, err := c.m.Exec(ctx, c.header, c.l)
 				if c.errContains != "" {
@@ -122,7 +122,7 @@ func TestMiddleware(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			err := func() error {
-				ctx, _, _ := session.NewContexts(nil, nil, nil)
+				ctx := session.NewContexts(nil, nil, nil)
 				m, err := New(ctx, c.command)
 				assert.NilError(t, err)
 

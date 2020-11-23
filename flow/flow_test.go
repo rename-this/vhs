@@ -13,14 +13,13 @@ import (
 )
 
 func TestFlow(t *testing.T) {
-	cfg := &session.Config{}
+	cfg := &session.Config{Debug: true}
 	flowCfg := &session.FlowConfig{
-		FlowDuration:       500 * time.Millisecond,
-		InputDrainDuration: 500 * time.Millisecond,
-		ShutdownDuration:   500 * time.Millisecond,
+		SourceDuration: 500 * time.Millisecond,
+		DrainDuration:  500 * time.Millisecond,
 	}
 	errs := make(chan error, 1)
-	ctx, inputCtx, outputCtx := session.NewContexts(cfg, flowCfg, errs)
+	ctx := session.NewContexts(cfg, flowCfg, errs)
 
 	var (
 		s = &testSource{
@@ -29,29 +28,31 @@ func TestFlow(t *testing.T) {
 				EmptyMeta(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
 			},
 		}
-		ifmt, _ = newTestInputFormat(inputCtx)
+		ifmt, _ = newTestInputFormat(ctx)
 		mis     = InputModifiers{
 			&TestDoubleInputModifier{},
 		}
 		i = NewInput(s, mis, ifmt)
 
 		ofmt1 = &testSinkInt{}
-		o1    = NewOutput(newTestOutputFormatNoErr(outputCtx), nil, ofmt1)
+		o1    = NewOutput(newTestOutputFormatNoErr(ctx), nil, ofmt1)
 
 		mos = OutputModifiers{
 			&TestDoubleOutputModifier{},
 		}
 		ofmt2 = &testSinkInt{}
-		o2    = NewOutput(newTestOutputFormatNoErr(outputCtx), mos, ofmt2)
+		o2    = NewOutput(newTestOutputFormatNoErr(ctx), mos, ofmt2)
 
 		oo = Outputs{o1, o2}
 
 		f = &Flow{i, oo}
 	)
 
-	f.Run(ctx, inputCtx, outputCtx, nil)
+	f.Run(ctx, nil)
 
 	ctx.Cancel()
+
+	time.Sleep(500 * time.Millisecond)
 
 	assert.Equal(t, 0, len(errs))
 

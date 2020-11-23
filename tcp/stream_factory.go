@@ -25,10 +25,11 @@ const (
 const (
 	// MetaDirection is a key for a flow.Meta to retrieve a direction.
 	MetaDirection = "tcp.direction"
-	MetaSrcAddr   = "ip.srcaddr"
-	MetaDstAddr   = "ip.dstaddr"
-	MetaSrcPort   = "tcp.srcport"
-	MetaDstPort   = "tcp.dstport"
+
+	MetaSrcAddr = "ip.srcaddr"
+	MetaDstAddr = "ip.dstaddr"
+	MetaSrcPort = "tcp.srcport"
+	MetaDstPort = "tcp.dstport"
 )
 
 func newStreamFactory(ctx session.Context, out chan<- flow.InputReader) *streamFactory {
@@ -45,10 +46,13 @@ func newStreamFactory(ctx session.Context, out chan<- flow.InputReader) *streamF
 
 type streamFactory struct {
 	ctx session.Context
-	out chan<- flow.InputReader
 
-	mu    sync.Mutex
-	conns map[string]*conn
+	outMu  sync.Mutex
+	out    chan<- flow.InputReader
+	closed bool
+
+	connsMu sync.Mutex
+	conns   map[string]*conn
 }
 
 type reader struct {
@@ -122,18 +126,29 @@ func (f *streamFactory) New(net, transport gopacket.Flow) tcpassembly.Stream {
 		}),
 	}
 
-	f.out <- r
+	f.outMu.Lock()
+	if !f.closed {
+		f.out <- r
+	}
+	f.outMu.Unlock()
 
 	ctx.Logger.Debug().Msg("emitted reader stream")
 
 	return r
 }
 
+func (f *streamFactory) Close() {
+	f.outMu.Lock()
+	f.closed = true
+	close(f.out)
+	f.outMu.Unlock()
+}
+
 // Prune cleans up old streams and connections that are no longer being used.
 // This is a stop-the-world garbage collection.
 func (f *streamFactory) prune() {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+	f.connsMu.Lock()
+	defer f.connsMu.Unlock()
 
 	f.ctx.Logger.Debug().Msg("pruning")
 
@@ -146,8 +161,8 @@ func (f *streamFactory) prune() {
 }
 
 func (f *streamFactory) trackStream(ctx session.Context, s *stream) Direction {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+	f.connsMu.Lock()
+	defer f.connsMu.Unlock()
 
 	ctx.Logger.Debug().Msg("tracking stream")
 

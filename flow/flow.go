@@ -14,38 +14,32 @@ type Flow struct {
 }
 
 // Run runs the flow.
-func (f *Flow) Run(ctx, inputCtx, outputCtx session.Context, m middleware.Middleware) {
+func (f *Flow) Run(ctx session.Context, m middleware.Middleware) {
 	ctx.Logger = ctx.Logger.With().
 		Str(session.LoggerKeyComponent, "flow").
 		Logger()
 
 	ctx.Logger.Debug().Msg("running")
 
-	go f.Input.Init(inputCtx, m)
-	go f.Outputs.Init(outputCtx)
+	go f.Input.Init(ctx, m)
+	go f.Outputs.Init(ctx)
 
 	defer func() {
-		inputCtx.Cancel()
-		ctx.Logger.Debug().Dur("dur", inputCtx.FlowConfig.InputDrainDuration).Msg("draining inputs")
-		time.Sleep(inputCtx.FlowConfig.InputDrainDuration)
+		ctx.Cancel()
 
-		outputCtx.Cancel()
-		ctx.Logger.Debug().Dur("dur", inputCtx.FlowConfig.ShutdownDuration).Msg("shutting down")
-		time.Sleep(inputCtx.FlowConfig.ShutdownDuration)
-
-		ctx.Logger.Debug().Msg("shutdown complete")
+		ctx.Logger.Debug().Dur("dur", ctx.FlowConfig.DrainDuration).Msg("draining")
+		time.Sleep(ctx.FlowConfig.DrainDuration)
+		ctx.Logger.Debug().Msg("flow complete")
 	}()
 
-	complete := time.After(inputCtx.FlowConfig.FlowDuration)
 	for {
 		select {
 		case n := <-f.Input.Format.Out():
-			go f.Outputs.Write(n)
+			f.Outputs.Write(n)
+		case <-f.Input.Done():
+			return
 		case <-ctx.StdContext.Done():
 			ctx.Logger.Debug().Msg("context canceled")
-			return
-		case <-complete:
-			ctx.Logger.Debug().Msg("complete")
 			return
 		}
 	}

@@ -61,6 +61,7 @@ func (s *tcpSource) read(ctx session.Context, newCapture newCaptureFn, newListen
 		pool      = tcpassembly.NewStreamPool(factory)
 		assembler = tcpassembly.NewAssembler(pool)
 		ticker    = time.Tick(ctx.FlowConfig.TCPTimeout)
+		complete  = time.After(ctx.FlowConfig.SourceDuration)
 		packets   = listener.Packets()
 	)
 
@@ -95,6 +96,10 @@ func (s *tcpSource) read(ctx session.Context, newCapture newCaptureFn, newListen
 			assembler.FlushOlderThan(time.Now().Add(-ctx.FlowConfig.TCPTimeout))
 
 			factory.prune()
+
+		case <-complete:
+			factory.Close()
+			return
 
 		case <-ctx.StdContext.Done():
 			return

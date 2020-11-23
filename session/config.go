@@ -17,9 +17,8 @@ type Config struct {
 
 // FlowConfig is a Flow config.
 type FlowConfig struct {
-	FlowDuration       time.Duration
-	InputDrainDuration time.Duration
-	ShutdownDuration   time.Duration
+	SourceDuration time.Duration
+	DrainDuration  time.Duration
 
 	Addr            string
 	CaptureResponse bool

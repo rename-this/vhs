@@ -136,7 +136,7 @@ func TestInputFormatInit(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			errs := make(chan error, 10)
-			ctx, _, _ := session.NewContexts(&session.Config{Debug: true}, &session.FlowConfig{}, errs)
+			ctx := session.NewContexts(&session.Config{Debug: true}, &session.FlowConfig{}, errs)
 			ctx.SessionID = c.sessionID
 			inputFormat, err := NewInputFormat(ctx)
 			assert.NilError(t, err)
