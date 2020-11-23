@@ -1,9 +1,9 @@
 baseURL: https://rename-this.github.io/vhs
-languageCode: en-us
 title: VHS
 theme: docsy
 enableGitInfo: true
 enableRobotsTXT: true
+languageCode: en-us
 
 menu:
   main:
@@ -11,7 +11,10 @@ menu:
     url: ""
 
 params:
-  github_repo: https://github.com/rename-this
+  github_repo: https://github.com/rename-this/vhs
+  github_subdir: site
+  github_project_repo: https://github.com/rename-this/vhs
+  github_branch: main
 
   #Enable offline search with Lunr.js
   offlineSearch: true
