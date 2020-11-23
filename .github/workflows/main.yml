@@ -72,3 +72,23 @@ jobs:
           --output "type=image,push=true" \
           --tag ${IMAGE}:edge \
           --file ./docker/vhs/Dockerfile ./
+
+  docs:
+    name: docs
+    runs-on: ubuntu-latest
+    steps:
+    -
+      name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    -
+      name: Set up environment
+      run: |
+        make docs-ci
+    -
+      name: Publish Site
+      uses: chabad360/hugo-gh-pages@master
+      with:
+        githubToken: ${{ secrets.GITHUB_TOKEN }}
+        siteDir: /github/workspace/site

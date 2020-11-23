@@ -27,3 +27,14 @@ docker-vhs-push: docker-vhs
 	docker push ghcr.io/rename-this/vhs:$(VERSION) && \
 	docker push ghcr.io/rename-this/vhs:$$(git rev-parse --short HEAD) && \
 	docker push ghcr.io/rename-this/vhs:latest
+
+docs: submods
+	hugo serve
+
+docs-ci: init submods
+
+init: submods
+	npm install -D --save postcss postcss-cli autoprefixer
+
+submods:
+	git submodule update --init --recursive
