@@ -1,0 +1,29 @@
+baseURL: https://rename-this.github.io/vhs
+languageCode: en-us
+title: VHS
+theme: docsy
+enableGitInfo: true
+enableRobotsTXT: true
+
+menu:
+  main:
+  - name: "Documentation"
+    url: ""
+
+params:
+  github_repo: https://github.com/rename-this
+
+  #Enable offline search with Lunr.js
+  offlineSearch: true
+  offlineSearchSummaryLength: 70
+  offlineSearchMaxResults: 10
+
+  # Adds in the `copy` link on code blocks
+  prism_syntax_highlighting: true
+
+  sidebar_search_disable: true
+
+  ui:
+    navbar_logo: true
+    feedback:
+      enable: false
