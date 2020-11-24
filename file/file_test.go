@@ -21,7 +21,7 @@ func TestNewSource(t *testing.T) {
 			errContains: "no such file or directory",
 		},
 		{
-			desc: "bad permissions",
+			desc: "read file",
 			file: "../testdata/test.json",
 		},
 	}
