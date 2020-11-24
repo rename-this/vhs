@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/rename-this/vhs/capture"
+	"github.com/rename-this/vhs/file"
 	"github.com/rename-this/vhs/flow"
 	"github.com/rename-this/vhs/gcs"
 	"github.com/rename-this/vhs/gzipx"
@@ -213,8 +214,9 @@ func startMiddleware(ctx session.Context) (middleware.Middleware, error) {
 func defaultParser() *flow.Parser {
 	return &flow.Parser{
 		Sources: map[string]flow.SourceCtor{
-			"tcp": tcp.NewSource,
-			"gcs": gcs.NewSource,
+			"tcp":  tcp.NewSource,
+			"gcs":  gcs.NewSource,
+			"file": file.NewSource,
 		},
 
 		InputFormats: map[string]flow.InputFormatCtor{
