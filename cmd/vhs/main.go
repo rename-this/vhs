@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/rename-this/vhs/capture"
+	"github.com/rename-this/vhs/file"
 	"github.com/rename-this/vhs/flow"
 	"github.com/rename-this/vhs/gcs"
 	"github.com/rename-this/vhs/gzipx"
@@ -61,6 +62,7 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&cfg.PrometheusAddr, "prometheus-address", "", "Address for Prometheus metrics HTTP endpoint.")
 	cmd.PersistentFlags().StringVar(&flowCfg.GCSBucketName, "gcs-bucket-name", "", "Bucket name for Google Cloud Storage")
 	cmd.PersistentFlags().StringVar(&flowCfg.GCSObjectName, "gcs-object-name", "", "Object name for Google Cloud Storage")
+	cmd.PersistentFlags().StringVar(&flowCfg.InputFile, "input-file", "", "Path to an input file")
 	cmd.PersistentFlags().StringVar(&inputLine, "input", "", "Input description.")
 	cmd.PersistentFlags().StringSliceVar(&outputLines, "output", nil, "Output description.")
 
@@ -212,8 +214,9 @@ func startMiddleware(ctx session.Context) (middleware.Middleware, error) {
 func defaultParser() *flow.Parser {
 	return &flow.Parser{
 		Sources: map[string]flow.SourceCtor{
-			"tcp": tcp.NewSource,
-			"gcs": gcs.NewSource,
+			"tcp":  tcp.NewSource,
+			"gcs":  gcs.NewSource,
+			"file": file.NewSource,
 		},
 
 		InputFormats: map[string]flow.InputFormatCtor{
