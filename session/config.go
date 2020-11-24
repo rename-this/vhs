@@ -6,7 +6,6 @@ import "time"
 type Config struct {
 	PrometheusAddr string
 
-
 	Debug             bool
 	DebugPackets      bool
 	DebugHTTPMessages bool
@@ -33,4 +32,5 @@ type FlowConfig struct {
 	GCSBucketName string
 	GCSObjectName string
 
+	InputFile string
 }

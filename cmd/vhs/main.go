@@ -61,6 +61,7 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&cfg.PrometheusAddr, "prometheus-address", "", "Address for Prometheus metrics HTTP endpoint.")
 	cmd.PersistentFlags().StringVar(&flowCfg.GCSBucketName, "gcs-bucket-name", "", "Bucket name for Google Cloud Storage")
 	cmd.PersistentFlags().StringVar(&flowCfg.GCSObjectName, "gcs-object-name", "", "Object name for Google Cloud Storage")
+	cmd.PersistentFlags().StringVar(&flowCfg.InputFile, "input-file", "", "Path to an input file")
 	cmd.PersistentFlags().StringVar(&inputLine, "input", "", "Input description.")
 	cmd.PersistentFlags().StringSliceVar(&outputLines, "output", nil, "Output description.")
 
