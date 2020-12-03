@@ -22,6 +22,7 @@ import (
 	"github.com/rename-this/vhs/internal/ioutilx"
 	"github.com/rename-this/vhs/jsonx"
 	"github.com/rename-this/vhs/middleware"
+	"github.com/rename-this/vhs/s3compat"
 	"github.com/rename-this/vhs/session"
 	"github.com/rename-this/vhs/tcp"
 
@@ -223,9 +224,10 @@ func startMiddleware(ctx session.Context) (middleware.Middleware, error) {
 func defaultParser() *flow.Parser {
 	return &flow.Parser{
 		Sources: map[string]flow.SourceCtor{
-			"tcp":  tcp.NewSource,
-			"gcs":  gcs.NewSource,
-			"file": file.NewSource,
+			"tcp":      tcp.NewSource,
+			"gcs":      gcs.NewSource,
+			"file":     file.NewSource,
+			"s3compat": s3compat.NewSource,
 		},
 
 		InputFormats: map[string]flow.InputFormatCtor{
@@ -239,7 +241,8 @@ func defaultParser() *flow.Parser {
 		},
 
 		Sinks: map[string]flow.SinkCtor{
-			"gcs": gcs.NewSink,
+			"gcs":      gcs.NewSink,
+			"s3compat": s3compat.NewSink,
 			"stdout": func(_ session.Context) (flow.Sink, error) {
 				return os.Stdout, nil
 			},
