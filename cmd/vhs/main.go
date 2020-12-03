@@ -63,6 +63,15 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&flowCfg.GCSBucketName, "gcs-bucket-name", "", "Bucket name for Google Cloud Storage")
 	cmd.PersistentFlags().StringVar(&flowCfg.GCSObjectName, "gcs-object-name", "", "Object name for Google Cloud Storage")
 	cmd.PersistentFlags().StringVar(&flowCfg.InputFile, "input-file", "", "Path to an input file")
+
+	cmd.PersistentFlags().StringVar(&flowCfg.S3CompatEndpoint, "s3-compat-endpoint", "", "URL for S3-compatible storage.")
+	cmd.PersistentFlags().StringVar(&flowCfg.S3CompatAccessKey, "s3-compat-access-key", "", "Access key for S3-compatible storage.")
+	cmd.PersistentFlags().StringVar(&flowCfg.S3CompatSecretKey, "s3-compat-secret-key", "", "Secret key for S3-compatible storage.")
+	cmd.PersistentFlags().StringVar(&flowCfg.S3CompatToken, "s3-compat-token", "", "Security token for S3-compatible storage.")
+	cmd.PersistentFlags().BoolVar(&flowCfg.S3CompatSecure, "s3-compat-secure", true, "Encrypt communication for S3-compatible storage.")
+	cmd.PersistentFlags().StringVar(&flowCfg.S3CompatBucketName, "s3-compat-bucket-name", "", "Bucket name for S3-compatible storage.")
+	cmd.PersistentFlags().StringVar(&flowCfg.S3CompatObjectName, "s3-compat-object-name", "", "Object name for S3-compatible storage.")
+
 	cmd.PersistentFlags().StringVar(&inputLine, "input", "", "Input description.")
 	cmd.PersistentFlags().StringSliceVar(&outputLines, "output", nil, "Output description.")
 

@@ -33,4 +33,12 @@ type FlowConfig struct {
 	GCSObjectName string
 
 	InputFile string
+
+	S3CompatEndpoint   string
+	S3CompatAccessKey  string
+	S3CompatSecretKey  string
+	S3CompatToken      string
+	S3CompatSecure     bool
+	S3CompatBucketName string
+	S3CompatObjectName string
 }
