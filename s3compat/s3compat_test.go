@@ -9,7 +9,7 @@ import (
 
 	"github.com/rename-this/vhs/internal/smoke"
 	"github.com/rename-this/vhs/session"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
