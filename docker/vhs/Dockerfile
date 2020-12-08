@@ -19,7 +19,7 @@ COPY . .
 
 RUN GODEBUG=netdns=go \
     go build \
-    -ldflags "-s" \
+    -ldflags "-s -extldflags=-static" \
     ./cmd/vhs
 
 ########################################################
