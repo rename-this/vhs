@@ -248,6 +248,7 @@ func defaultParser() *flow.Parser {
 			"discard": func(_ session.Context) (flow.Sink, error) {
 				return ioutilx.NopWriteCloser(ioutil.Discard), nil
 			},
+			"tcp": tcp.NewSink,
 		},
 
 		InputModifiers: map[string]flow.InputModifierCtor{
