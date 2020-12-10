@@ -23,7 +23,7 @@ patchesStrategicMerge:
               memory: 200Mi
               cpu: 100m
         - name: vhs
-          image: us.gcr.io/carbon-relay-dev/vhs:latest
+          image: ghcr.io/rename-this/vhs:edge
           command:
           - /vhs
           args:
@@ -37,14 +37,14 @@ patchesStrategicMerge:
           - --prometheus-address
           - 0.0.0.0:9090
           - --flow-duration
-          - 30s
+          - 300s
           - --gcs-bucket-name
           - vhsdemo
           - --debug
           env:
           - name: GOOGLE_APPLICATION_CREDENTIALS
             value: /root/.config/gcloud/service-account.json
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           volumeMounts:
           # GCP
           - mountPath: /root/.config/gcloud
@@ -53,6 +53,7 @@ patchesStrategicMerge:
         - name: cloud-credentials
           secret:
             secretName: gcs-creds
+# Reduce requests/replicas so we can fit this in a small cluster
 - |-
   apiVersion: apps/v1
   kind: Deployment
