@@ -1,3 +1,5 @@
+// +build smoketest
+
 package s3compat
 
 import (
