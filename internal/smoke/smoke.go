@@ -36,6 +36,12 @@ func SetupDockertestPool(cfg Config) (*dockertest.Resource, func()) {
 		log.Fatalf("failed to run with options: %v", err)
 	}
 
+	cleanup := func() {
+		if err := pool.Purge(resource); err != nil {
+			log.Fatalf("failed to purge: %v", err)
+		}
+	}
+
 	if cfg.ReadinessPath != "" {
 		u := url.URL{
 			Scheme: "http",
@@ -54,13 +60,10 @@ func SetupDockertestPool(cfg Config) (*dockertest.Resource, func()) {
 			return nil
 		})
 		if err != nil {
+			cleanup()
 			log.Fatalf("failed readiness check: %v", err)
 		}
 	}
 
-	return resource, func() {
-		if err := pool.Purge(resource); err != nil {
-			log.Fatalf("failed to purge: %v", err)
-		}
-	}
+	return resource, cleanup
 }

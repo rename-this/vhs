@@ -1,5 +1,3 @@
-// +build smoketest
-
 package s3compat
 
 import (
@@ -30,11 +28,10 @@ func TestMain(m *testing.M) {
 		ReadinessPath: "/minio/health/live",
 		ReadinessPort: "9000",
 		RunOptions: &dockertest.RunOptions{
-			Repository:   "minio/minio",
-			Tag:          "latest",
-			Cmd:          []string{"server", "/data"},
-			Env:          []string{"MINIO_ACCESS_KEY=" + accessKey, "MINIO_SECRET_KEY=" + secretKey},
-			ExposedPorts: []string{"9000"},
+			Repository: "minio/minio",
+			Tag:        "latest",
+			Cmd:        []string{"server", "/data"},
+			Env:        []string{"MINIO_ACCESS_KEY=" + accessKey, "MINIO_SECRET_KEY=" + secretKey},
 		},
 	})
 

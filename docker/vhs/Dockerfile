@@ -1,21 +1,25 @@
-FROM golang:1.15 as builder
+FROM golang:1.15.6-alpine3.12 as base
+
+RUN apk add --no-cache --virtual .build-deps \
+	bash \
+	ca-certificates \
+	g++ \
+	jq \
+	libpcap-dev
 
 RUN go install -v -a std
-
-RUN apt update && \
-    apt install -y \
-    ca-certificates \
-    g++ \
-    jq \
-    libpcap-dev
 
 WORKDIR /src
 
 COPY go.* /src/
 
-RUN go mod download
+RUN go mod download -x
 
 COPY . .
+
+########################################################
+
+FROM base as builder
 
 RUN GODEBUG=netdns=go \
     go build \
@@ -30,10 +34,4 @@ COPY --from=builder /src/vhs /
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 ENTRYPOINT ["/vhs"]
-
-########################################################
-
-FROM builder as test
-
-RUN make test
 
