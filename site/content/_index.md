@@ -1,5 +1,5 @@
 ---
-title: Docs Home
+title: VHS Documentation
 weight: 10
 
 cascade:
@@ -9,7 +9,8 @@ cascade:
 ---
 
 ## Introduction to VHS
-
-VHS provides is a network utility that can:
-- record and replay HTTP traffic
-- capture metrics for HTTP conversations
+ 
+VHS is a versatile tool for network traffic capture. VHS can be run as a command line tool or be deployed into your
+Kubernetes cluster as a sidecar, where it can capture traffic to and from your services. Captured traffic
+can be analyzed to produce live Prometheus metrics or saved for use in offline analysis, load testing, or whatever
+you can imagine.
