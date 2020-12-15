@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/rename-this/vhs/capture"
+	cmd2 "github.com/rename-this/vhs/cmd"
 	"github.com/rename-this/vhs/file"
 	"github.com/rename-this/vhs/flow"
 	"github.com/rename-this/vhs/gcs"
@@ -60,7 +61,6 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&flowCfg.Middleware, "middleware", "", "A path to an executable that VHS will use as middleware.")
 	cmd.PersistentFlags().DurationVar(&flowCfg.TCPTimeout, "tcp-timeout", 5*time.Minute, "A length of time after which unused TCP connections are closed.")
 	cmd.PersistentFlags().DurationVar(&flowCfg.HTTPTimeout, "http-timeout", 30*time.Second, "A length of time after which an HTTP request is considered to have timed out.")
-	cmd.PersistentFlags().StringVar(&cfg.PrometheusAddr, "prometheus-address", "", "Address for Prometheus metrics HTTP endpoint.")
 	cmd.PersistentFlags().StringVar(&flowCfg.GCSBucketName, "gcs-bucket-name", "", "Bucket name for Google Cloud Storage")
 	cmd.PersistentFlags().StringVar(&flowCfg.GCSObjectName, "gcs-object-name", "", "Object name for Google Cloud Storage")
 	cmd.PersistentFlags().StringVar(&flowCfg.InputFile, "input-file", "", "Path to an input file")
@@ -77,13 +77,8 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().StringSliceVar(&outputLines, "output", nil, "Output description.")
 
 	cmd.PersistentFlags().BoolVar(&flowCfg.BufferOutput, "buffer-output", false, "Buffer output until the end of the flow.")
-	cmd.PersistentFlags().BoolVar(&cfg.Debug, "debug", false, "Emit debug logging.")
-	cmd.PersistentFlags().BoolVar(&cfg.DebugPackets, "debug-packets", false, "Emit all packets as debug logs.")
-	cmd.PersistentFlags().BoolVar(&cfg.DebugHTTPMessages, "debug-http-messages", false, "Emit all parsed HTTP messages as debug logs.")
 
-	cmd.PersistentFlags().StringVar(&cfg.ProfilePathCPU, "profile-path-cpu", "", "Output CPU profile to this path.")
-	cmd.PersistentFlags().StringVar(&cfg.ProfilePathMemory, "profile-path-memory", "", "Output memory profile to this path.")
-	cmd.PersistentFlags().StringVar(&cfg.ProfileHTTPAddr, "profile-http-address", "", "Expose profile data on this address.")
+	cmd2.SetConfigFlags(cmd, cfg)
 
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		err := root(cfg, flowCfg, inputLine, outputLines, defaultParser(), os.Stderr)
