@@ -1,4 +1,4 @@
-#Contributing to VHS
+# Contributing to VHS
 - - - -
 
 ## Joining the Community
@@ -14,7 +14,7 @@ Org membership processes and tiers will be discussed in Q1 of 2021
 
 ## Documentation and Discussion
 
-Please refer to the list of existing [issues](https://github.com/rename-this/vhs/issues) and the existing [documentation], to familiarize yourself with the current state of the project and what is already being accomplished.  
+Please refer to the list of existing [issues](https://github.com/rename-this/vhs/issues) and the existing documentation, to familiarize yourself with the current state of the project and what is already being accomplished.  
 * DO use [Github issues](https://github.com/rename-this/vhs/issues) to discuss features and design.
 * DON'T use Github issues to ask usage questions, and instead post questions to our public [Slack] (https://stormforge.slack.com) in the #vhs-to-be-renamed channel or the [mailing list] (https://groups.google.com/g/vhs-pre-rename-launch).
 
@@ -22,12 +22,14 @@ Please refer to the list of existing [issues](https://github.com/rename-this/vhs
 ## High Level Processes
 
 **Getting Started**
+
 Begin by forking this repo and submitting PRs from your local fork.
 
 **Security Issues**
 - [ ] TBD
 
 **Features**
+
 Issues should be opened for any significant feature work.  Please open an issue prior to working on any feature to make sure someone else isn’t already working on it, and to coordinate with others on design decisions and feature progress.
 
 **New Plugins**
@@ -37,6 +39,7 @@ Issues should be opened for any significant feature work.  Please open an issue 
 - [ ] TBD
 
 **Reporting Bugs**
+
 Please be thorough in bug reporting.  Bug reports should be specific, including as much relevant detail as possible, and reproducible, including the steps taken to reproduce the bug.  Also, please keep to a single bug per report.
 
 If you know which area of the code is causing the bug, even better.
@@ -93,13 +96,14 @@ By making a contribution to this project, I certify that:
 ```
 
 Sign your work in Commit Messages on every commit (or squash your commits and sign the squashed result)
+
 Example of Signoff: 
 ```
 Signed-off-by: Boaty McBoatface <boaty@example.org>
 ```
 Use your real name, no pseudonyms or anonymous contributions.
 
-The git git `-s` option will append the `Signed-off-by` line automatically to your commit messages, if you have set `user.name` and `user.email` in your git configs.
+The git `-s` option will append the `Signed-off-by` line automatically to your commit messages, if you have set `user.name` and `user.email` in your git configs.
 ```
 git config --global user.name "Boaty McBoatface"
 git config --global user.email "boaty@example.org"
@@ -113,14 +117,15 @@ git commit -s -m "Adding Boating Support"
 - [ ] TBD
 
 **Requirements**
-At a bare minimum, please describe what changed and why.
+
+At a bare minimum, please describe what changed and why.  Remember, other people will be reading this, and you need to tell them what you've done.
 
 
 ## Approval
 
 All merges will/can be performed by any Org members, until additional maintainer tiers are deemed necessary.
 
-**Approvers must verify commits are signed** (There is no bot checking DCO signatures, yet)
+***Approvers must verify commits are signed*** (There is no bot checking DCO signatures, yet)
 
 All changes must be approved by a number of Org members, not including the submitter.
 * Documentation PRs require only a single approver
