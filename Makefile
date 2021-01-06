@@ -9,7 +9,7 @@ test:
 		--rm \
 		--volume /var/run/docker.sock:/var/run/docker.sock \
 		--network host \
-		-i vhs:test \
+		-it vhs:test \
 		go test -cover -race -coverprofile coverage.out `go list ./... | grep -v -f .testignore`
 
 .PHONY: dev

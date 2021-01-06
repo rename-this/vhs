@@ -3,6 +3,7 @@ package flow
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/rename-this/vhs/internal/observe"
 	"github.com/rename-this/vhs/middleware"
@@ -59,6 +60,7 @@ func (i *Input) Init(ctx session.Context, m middleware.Middleware) {
 				ctx.Logger.Debug().Msg("no more source streams")
 				wg.Wait()
 				ctx.Logger.Debug().Msg("all source streams EOF")
+				time.Sleep(ctx.FlowConfig.InputDrainDuration)
 				i.done <- struct{}{}
 				return
 			}

@@ -66,10 +66,6 @@ func (m *TestDoubleInputModifier) Wrap(r InputReader) (InputReader, error) {
 	}), nil
 }
 
-type testDoubleInputModifier struct {
-	r InputReader
-}
-
 type TestErrInputModifier struct {
 	err error
 }
@@ -91,6 +87,10 @@ type errWriteCloser struct {
 }
 
 func (n *errWriteCloser) Close() error { return n.err }
+
+type testDoubleInputModifier struct {
+	r InputReader
+}
 
 func (i *testDoubleInputModifier) Read(p []byte) (int, error) {
 	b, err := ioutil.ReadAll(i.r)

@@ -84,6 +84,7 @@ func (l *testListener) Close()                          {}
 
 func TestRead(t *testing.T) {
 	cfg := &session.Config{
+		Debug:        true,
 		DebugPackets: true,
 	}
 	flowCfg := &session.FlowConfig{
@@ -110,7 +111,6 @@ func TestRead(t *testing.T) {
 			flowCfg: flowCfg,
 			data:    []string{""},
 		},
-
 		{
 			desc:    "wrong packet type",
 			cfg:     cfg,
@@ -128,13 +128,12 @@ func TestRead(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
+		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			var (
 				errs = make(chan error)
 				ctx  = session.NewContexts(c.cfg, c.flowCfg, errs)
 			)
-
-			defer ctx.Cancel()
 
 			source, err := NewSource(ctx)
 			assert.NilError(t, err)
@@ -148,10 +147,9 @@ func TestRead(t *testing.T) {
 				return newTestListener(t, c.data)
 			})
 
-			// Allow time for flushing and pruning.
-			time.Sleep(time.Second)
-
 			if len(c.out) == 0 {
+				// Give the source a chance to process bad input.
+				time.Sleep(50 * time.Millisecond)
 				return
 			}
 
@@ -167,6 +165,11 @@ func TestRead(t *testing.T) {
 			for _, o := range c.out {
 				assert.Assert(t, strings.Contains(out, o))
 			}
+
+			// Allow time for flushing and pruning.
+			time.Sleep(time.Second)
+
+			ctx.Cancel()
 		})
 	}
 }

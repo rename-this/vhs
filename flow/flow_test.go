@@ -15,9 +15,9 @@ import (
 func TestFlow(t *testing.T) {
 	cfg := &session.Config{Debug: true}
 	flowCfg := &session.FlowConfig{
-		SourceDuration: 500 * time.Millisecond,
-		DrainDuration:  500 * time.Millisecond,
+		InputDrainDuration: 50 * time.Millisecond,
 	}
+
 	errs := make(chan error, 1)
 	ctx := session.NewContexts(cfg, flowCfg, errs)
 
@@ -34,14 +34,14 @@ func TestFlow(t *testing.T) {
 		}
 		i = NewInput(s, mis, ifmt)
 
-		ofmt1 = &testSinkInt{}
-		o1    = NewOutput(newTestOutputFormatNoErr(ctx), nil, ofmt1)
+		sink1 = &testSinkInt{}
+		o1    = NewOutput(newTestOutputFormatNoErr(ctx), nil, sink1)
 
 		mos = OutputModifiers{
 			&TestDoubleOutputModifier{},
 		}
-		ofmt2 = &testSinkInt{}
-		o2    = NewOutput(newTestOutputFormatNoErr(ctx), mos, ofmt2)
+		sink2 = &testSinkInt{}
+		o2    = NewOutput(newTestOutputFormatNoErr(ctx), mos, sink2)
 
 		oo = Outputs{o1, o2}
 
@@ -50,15 +50,11 @@ func TestFlow(t *testing.T) {
 
 	f.Run(ctx, nil)
 
-	ctx.Cancel()
-
-	time.Sleep(500 * time.Millisecond)
-
 	assert.Equal(t, 0, len(errs))
 
-	sort.Ints(ofmt1.data)
-	sort.Ints(ofmt2.data)
+	sort.Ints(sink1.data)
+	sort.Ints(sink2.data)
 
-	assert.DeepEqual(t, ofmt1.data, []int{1, 1, 2, 2, 3, 3})
-	assert.DeepEqual(t, ofmt2.data, []int{11, 11, 22, 22, 33, 33})
+	assert.DeepEqual(t, sink1.data, []int{1, 1, 2, 2, 3, 3})
+	assert.DeepEqual(t, sink2.data, []int{11, 11, 22, 22, 33, 33})
 }

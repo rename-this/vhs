@@ -64,7 +64,7 @@ func TestInput(t *testing.T) {
 			// hack: Make this big enough to handle any errors we
 			// might end up with.
 			errs := make(chan error, 10)
-			ctx := session.NewContexts(&session.Config{}, &session.FlowConfig{DrainDuration: 50 * time.Millisecond}, errs)
+			ctx := session.NewContexts(&session.Config{}, &session.FlowConfig{}, errs)
 
 			var (
 				s = &testSource{

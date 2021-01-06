@@ -97,7 +97,7 @@ func TestSourceWithSink(t *testing.T) {
 			assert.NilError(t, err)
 
 			err = func() error {
-				ctx, _, _ := session.NewContexts(&session.Config{}, &session.FlowConfig{
+				ctx := session.NewContexts(&session.Config{}, &session.FlowConfig{
 					S3CompatEndpoint:   endpoint,
 					S3CompatAccessKey:  accessKey,
 					S3CompatSecretKey:  secretKey,

@@ -47,7 +47,7 @@ func (p *Parser) Parse(ctx session.Context, inputLine string, outputLines []stri
 		return nil, fmt.Errorf("failed to parse input: %v", err)
 	}
 
-	var outputs Outputs
+	var outputs []*Output
 	for _, outputLine := range outputLines {
 		o, err := p.parseOutput(ctx, outputLine)
 		if err != nil {

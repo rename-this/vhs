@@ -1,8 +1,6 @@
 package flow
 
 import (
-	"time"
-
 	"github.com/rename-this/vhs/middleware"
 	"github.com/rename-this/vhs/session"
 )
@@ -27,9 +25,9 @@ func (f *Flow) Run(ctx session.Context, m middleware.Middleware) {
 	defer func() {
 		ctx.Cancel()
 
-		ctx.Logger.Debug().Dur("dur", ctx.FlowConfig.DrainDuration).Msg("draining")
-		time.Sleep(ctx.FlowConfig.DrainDuration)
-		ctx.Logger.Debug().Msg("flow complete")
+		f.Outputs.Close(ctx)
+
+		ctx.Logger.Debug().Msg("complete")
 	}()
 
 	for {
