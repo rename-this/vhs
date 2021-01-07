@@ -25,7 +25,7 @@ func (f *Flow) Run(ctx session.Context, m middleware.Middleware) {
 	defer func() {
 		ctx.Cancel()
 
-		f.Outputs.Close(ctx)
+		f.Outputs.Drain(ctx)
 
 		ctx.Logger.Debug().Msg("complete")
 	}()

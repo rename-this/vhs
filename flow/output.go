@@ -78,13 +78,13 @@ func (oo Outputs) Init(ctx session.Context) {
 	}
 }
 
-// Close closes all outputs.
-func (oo Outputs) Close(ctx session.Context) {
+// Drain closes all outputs.
+func (oo Outputs) Drain(ctx session.Context) {
 	ctx.Logger = ctx.Logger.With().
 		Str(session.LoggerKeyComponent, "outputs").
 		Logger()
 
-	ctx.Logger.Debug().Msg("closing")
+	ctx.Logger.Debug().Msg("draining")
 
 	var (
 		wg  sync.WaitGroup
