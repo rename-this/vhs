@@ -13,14 +13,13 @@ import (
 )
 
 func TestFlow(t *testing.T) {
-	cfg := &session.Config{}
+	cfg := &session.Config{Debug: true}
 	flowCfg := &session.FlowConfig{
-		FlowDuration:       500 * time.Millisecond,
-		InputDrainDuration: 500 * time.Millisecond,
-		ShutdownDuration:   500 * time.Millisecond,
+		InputDrainDuration: 50 * time.Millisecond,
 	}
+
 	errs := make(chan error, 1)
-	ctx, inputCtx, outputCtx := session.NewContexts(cfg, flowCfg, errs)
+	ctx := session.NewContexts(cfg, flowCfg, errs)
 
 	var (
 		s = &testSource{
@@ -29,35 +28,33 @@ func TestFlow(t *testing.T) {
 				EmptyMeta(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
 			},
 		}
-		ifmt, _ = newTestInputFormat(inputCtx)
+		ifmt, _ = newTestInputFormat(ctx)
 		mis     = InputModifiers{
 			&TestDoubleInputModifier{},
 		}
 		i = NewInput(s, mis, ifmt)
 
-		ofmt1 = &testSinkInt{}
-		o1    = NewOutput(newTestOutputFormatNoErr(outputCtx), nil, ofmt1)
+		sink1 = &testSinkInt{}
+		o1    = NewOutput(newTestOutputFormatNoErr(ctx), nil, sink1)
 
 		mos = OutputModifiers{
 			&TestDoubleOutputModifier{},
 		}
-		ofmt2 = &testSinkInt{}
-		o2    = NewOutput(newTestOutputFormatNoErr(outputCtx), mos, ofmt2)
+		sink2 = &testSinkInt{}
+		o2    = NewOutput(newTestOutputFormatNoErr(ctx), mos, sink2)
 
 		oo = Outputs{o1, o2}
 
 		f = &Flow{i, oo}
 	)
 
-	f.Run(ctx, inputCtx, outputCtx, nil)
-
-	ctx.Cancel()
+	f.Run(ctx, nil)
 
 	assert.Equal(t, 0, len(errs))
 
-	sort.Ints(ofmt1.data)
-	sort.Ints(ofmt2.data)
+	sort.Ints(sink1.data)
+	sort.Ints(sink2.data)
 
-	assert.DeepEqual(t, ofmt1.data, []int{1, 1, 2, 2, 3, 3})
-	assert.DeepEqual(t, ofmt2.data, []int{11, 11, 22, 22, 33, 33})
+	assert.DeepEqual(t, sink1.data, []int{1, 1, 2, 2, 3, 3})
+	assert.DeepEqual(t, sink2.data, []int{11, 11, 22, 22, 33, 33})
 }

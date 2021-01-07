@@ -44,8 +44,12 @@ func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, streams
 			}()
 
 			dec := json.NewDecoder(r)
-			go func() {
-				for {
+			for {
+				select {
+				case <-ctx.StdContext.Done():
+					ctx.Logger.Debug().Msg("context canceled")
+					return
+				default:
 					n, err := ctx.Registry.DecodeJSON(dec)
 					if errors.Is(err, io.EOF) {
 						return
@@ -62,9 +66,7 @@ func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, streams
 
 					i.out <- n
 				}
-			}()
-
-			<-ctx.StdContext.Done()
+			}
 		}(rdr)
 	}
 }

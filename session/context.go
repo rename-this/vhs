@@ -16,21 +16,17 @@ const (
 )
 
 // NewContexts creates a new set of contexts.
-func NewContexts(cfg *Config, flowCfg *FlowConfig, errs chan error) (Context, Context, Context) {
+func NewContexts(cfg *Config, flowCfg *FlowConfig, errs chan error) Context {
 	return NewContextsForWriter(cfg, flowCfg, errs, os.Stderr)
 }
 
 // NewContextsForWriter creates a new set of contexts
 // with logs written to a specific writer.
-func NewContextsForWriter(cfg *Config, flowCfg *FlowConfig, errs chan error, w io.Writer) (Context, Context, Context) {
+func NewContextsForWriter(cfg *Config, flowCfg *FlowConfig, errs chan error, w io.Writer) Context {
 	var (
-		sessionID = ksuid.New().String()
-
-		stdCtx1, cancel1 = context.WithCancel(context.Background())
-		stdCtx2, cancel2 = context.WithCancel(context.Background())
-		stdCtx3, cancel3 = context.WithCancel(context.Background())
-
-		registry = envelope.NewRegistry()
+		sessionID      = ksuid.New().String()
+		registry       = envelope.NewRegistry()
+		stdCtx, cancel = context.WithCancel(context.Background())
 	)
 
 	var (
@@ -48,35 +44,15 @@ func NewContextsForWriter(cfg *Config, flowCfg *FlowConfig, errs chan error, w i
 	}
 
 	return Context{
-			Config:     cfg,
-			FlowConfig: flowCfg,
-			SessionID:  sessionID,
-			StdContext: stdCtx1,
-			Cancel:     cancel1,
-			Errors:     errs,
-			Logger:     logger,
-			Registry:   registry,
-		},
-		Context{
-			Config:     cfg,
-			FlowConfig: flowCfg,
-			SessionID:  sessionID,
-			StdContext: stdCtx2,
-			Cancel:     cancel2,
-			Errors:     errs,
-			Logger:     logger,
-			Registry:   registry,
-		},
-		Context{
-			Config:     cfg,
-			FlowConfig: flowCfg,
-			SessionID:  sessionID,
-			StdContext: stdCtx3,
-			Cancel:     cancel3,
-			Errors:     errs,
-			Logger:     logger,
-			Registry:   registry,
-		}
+		Config:     cfg,
+		FlowConfig: flowCfg,
+		SessionID:  sessionID,
+		StdContext: stdCtx,
+		Cancel:     cancel,
+		Errors:     errs,
+		Logger:     logger,
+		Registry:   registry,
+	}
 }
 
 // Context is a context for a session.

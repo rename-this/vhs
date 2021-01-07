@@ -268,7 +268,7 @@ func TestHAR(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			ctx, _, _ := session.NewContexts(&session.Config{},
+			ctx := session.NewContexts(&session.Config{},
 				&session.FlowConfig{
 					HTTPTimeout: 30 * time.Second,
 				}, nil)

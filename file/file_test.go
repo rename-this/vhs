@@ -28,8 +28,8 @@ func TestNewSource(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			var (
-				errs      = make(chan error, 1)
-				ctx, _, _ = session.NewContexts(&session.Config{}, &session.FlowConfig{InputFile: c.file}, errs)
+				errs = make(chan error, 1)
+				ctx  = session.NewContexts(&session.Config{}, &session.FlowConfig{InputFile: c.file}, errs)
 			)
 
 			s, err := NewSource(ctx)

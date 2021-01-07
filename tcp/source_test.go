@@ -84,10 +84,12 @@ func (l *testListener) Close()                          {}
 
 func TestRead(t *testing.T) {
 	cfg := &session.Config{
+		Debug:        true,
 		DebugPackets: true,
 	}
 	flowCfg := &session.FlowConfig{
-		TCPTimeout: 50 * time.Millisecond,
+		SourceDuration: 800 * time.Millisecond,
+		TCPTimeout:     50 * time.Millisecond,
 	}
 	cases := []struct {
 		desc     string
@@ -98,42 +100,40 @@ func TestRead(t *testing.T) {
 		out      []string
 	}{
 		{
-			desc: "nil",
-			cfg:  cfg,
+			desc:    "nil",
+			cfg:     cfg,
 			flowCfg: flowCfg,
-			data: []string{nilPayload},
+			data:    []string{nilPayload},
 		},
 		{
-			desc: "empty packet",
-			cfg:  cfg,
+			desc:    "empty packet",
+			cfg:     cfg,
 			flowCfg: flowCfg,
-			data: []string{""},
-		},
-
-		{
-			desc: "wrong packet type",
-			cfg:  cfg,
-			flowCfg: flowCfg,
-			data: []string{wrongPayloadType},
+			data:    []string{""},
 		},
 		{
-			desc: "one packet",
-			cfg:  cfg,
+			desc:    "wrong packet type",
+			cfg:     cfg,
 			flowCfg: flowCfg,
-			data: []string{"aaa"},
+			data:    []string{wrongPayloadType},
+		},
+		{
+			desc:    "one packet",
+			cfg:     cfg,
+			flowCfg: flowCfg,
+			data:    []string{"aaa"},
 			out: []string{
 				"aaa",
 			},
 		},
 	}
 	for _, c := range cases {
+		c := c
 		t.Run(c.desc, func(t *testing.T) {
 			var (
-				errs      = make(chan error)
-				ctx, _, _ = session.NewContexts(c.cfg, c.flowCfg, errs)
+				errs = make(chan error)
+				ctx  = session.NewContexts(c.cfg, c.flowCfg, errs)
 			)
-
-			defer ctx.Cancel()
 
 			source, err := NewSource(ctx)
 			assert.NilError(t, err)
@@ -147,10 +147,9 @@ func TestRead(t *testing.T) {
 				return newTestListener(t, c.data)
 			})
 
-			// Allow time for flushing and pruning.
-			time.Sleep(time.Second)
-
 			if len(c.out) == 0 {
+				// Give the source a chance to process bad input.
+				time.Sleep(50 * time.Millisecond)
 				return
 			}
 
@@ -166,6 +165,11 @@ func TestRead(t *testing.T) {
 			for _, o := range c.out {
 				assert.Assert(t, strings.Contains(out, o))
 			}
+
+			// Allow time for flushing and pruning.
+			time.Sleep(time.Second)
+
+			ctx.Cancel()
 		})
 	}
 }

@@ -132,7 +132,7 @@ func TestMetrics(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			ctx, _, _ := session.NewContexts(&session.Config{}, &session.FlowConfig{
+			ctx := session.NewContexts(&session.Config{}, &session.FlowConfig{
 				HTTPTimeout: 50 * time.Millisecond, // Short correlator time so we can actually get some timeouts.
 			}, nil)
 
@@ -155,7 +155,6 @@ func TestMetrics(t *testing.T) {
 
 			assert.DeepEqual(t, c.durations, backend.durations)
 			assert.DeepEqual(t, c.counters, backend.counters)
-
 		})
 	}
 }
@@ -180,7 +179,14 @@ func TestStressMetrics(t *testing.T) {
 		errs           = make(chan error)
 	)
 
-	genctx, metricsctx, _ := session.NewContexts(&session.Config{
+	genctx := session.NewContexts(&session.Config{
+		Debug:             false,
+		DebugHTTPMessages: false,
+	}, &session.FlowConfig{
+		HTTPTimeout: 50 * time.Millisecond, // Short correlator time so we can actually get some timeouts.
+	}, errs)
+
+	metricsctx := session.NewContexts(&session.Config{
 		Debug:             false,
 		DebugHTTPMessages: false,
 	}, &session.FlowConfig{
@@ -196,7 +202,6 @@ func TestStressMetrics(t *testing.T) {
 	go metrics.Init(metricsctx, nil)
 
 	for i := 0; i < numSenders; i++ {
-
 		go func() {
 			for msgCount := 0; msgCount < numMessagesPerSender; msgCount++ {
 				connID := ksuid.New().String()
@@ -228,7 +233,6 @@ func TestStressMetrics(t *testing.T) {
 				messageCountCh <- struct{}{}
 			}
 		}()
-
 	}
 
 	for {

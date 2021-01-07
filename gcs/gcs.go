@@ -66,6 +66,8 @@ func (s *gcsSource) Streams() <-chan flow.InputReader {
 }
 
 func (s *gcsSource) Init(ctx session.Context) {
+	defer close(s.streams)
+
 	ctx.Logger = ctx.Logger.With().
 		Str(session.LoggerKeyComponent, "gcs_source").
 		Logger()

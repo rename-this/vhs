@@ -34,17 +34,17 @@ func TestMainFunc(t *testing.T) {
 func TestRoot(t *testing.T) {
 	cases := []struct {
 		desc                  string
-		init                  func(context.Context) *session.Config
+		init                  func(context.Context) *session.FlowConfig
 		cfg                   *session.Config
 		inputLine             string
 		outputLines           []string
-		validate              func(*session.Config, *bytes.Buffer)
+		validate              func(*session.Config, *session.FlowConfig, *bytes.Buffer)
 		flowErrContains       string
 		initializeErrContains string
 	}{
 		{
 			desc: "http with middleware",
-			init: func(ctx context.Context) *session.Config {
+			init: func(ctx context.Context) *session.FlowConfig {
 				s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					fmt.Fprintln(w, time.Now().UnixNano())
 				}))
@@ -66,24 +66,21 @@ func TestRoot(t *testing.T) {
 					}
 				}()
 
-				return &session.Config{
-					FlowDuration:       10 * time.Second,
-					InputDrainDuration: 5 * time.Second,
-					ShutdownDuration:   5 * time.Second,
-					Addr:               strings.TrimLeft(s.URL, "http://"),
-					CaptureResponse:    true,
-					TCPTimeout:         5 * time.Minute,
-					HTTPTimeout:        30 * time.Second,
-					ProfileHTTPAddr:    ":81112",
-					ProfilePathCPU:     "/tmp/vhs_cpu_test.prof",
-					ProfilePathMemory:  "/tmp/vhs_mem_test.prof",
+				return &session.FlowConfig{
+
+					SourceDuration:  10 * time.Second,
+					DrainDuration:   5 * time.Second,
+					Addr:            strings.TrimLeft(s.URL, "http://"),
+					CaptureResponse: true,
+					TCPTimeout:      5 * time.Minute,
+					HTTPTimeout:     30 * time.Second,
 				}
 			},
 			inputLine: "tcp|http",
 			outputLines: []string{
 				"json|testout",
 			},
-			validate: func(cfg *session.Config, buf *bytes.Buffer) {
+			validate: func(_ *session.Config, _ *session.FlowConfig, buf *bytes.Buffer) {
 				scanner := bufio.NewScanner(buf)
 				for scanner.Scan() {
 					var r httpx.Request
@@ -95,7 +92,7 @@ func TestRoot(t *testing.T) {
 		},
 		{
 			desc: "http with middleware and prometheus",
-			init: func(ctx context.Context) *session.Config {
+			init: func(ctx context.Context) *session.FlowConfig {
 				s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					fmt.Fprintln(w, time.Now().UnixNano())
 				}))
@@ -117,23 +114,21 @@ func TestRoot(t *testing.T) {
 					}
 				}()
 
-				return &session.Config{
-					FlowDuration:       10 * time.Second,
-					InputDrainDuration: 5 * time.Second,
-					ShutdownDuration:   5 * time.Second,
-					Addr:               strings.TrimLeft(s.URL, "http://"),
-					CaptureResponse:    true,
-					TCPTimeout:         5 * time.Minute,
-					HTTPTimeout:        30 * time.Second,
-					PrometheusAddr:     ":8080",
-					Middleware:         "../../testdata/http_middleware.bash",
+				return &session.FlowConfig{
+					SourceDuration:  10 * time.Second,
+					DrainDuration:   5 * time.Second,
+					Addr:            strings.TrimLeft(s.URL, "http://"),
+					CaptureResponse: true,
+					TCPTimeout:      5 * time.Minute,
+					HTTPTimeout:     30 * time.Second,
+					Middleware:      "../../testdata/http_middleware.bash",
 				}
 			},
 			inputLine: "tcp|http",
 			outputLines: []string{
 				"json|testout",
 			},
-			validate: func(cfg *session.Config, buf *bytes.Buffer) {
+			validate: func(cfg *session.Config, _ *session.FlowConfig, buf *bytes.Buffer) {
 				scanner := bufio.NewScanner(buf)
 				for scanner.Scan() {
 					var r httpx.Request
@@ -157,8 +152,8 @@ func TestRoot(t *testing.T) {
 		},
 		{
 			desc: "missing middleware",
-			init: func(ctx context.Context) *session.Config {
-				return &session.Config{
+			init: func(ctx context.Context) *session.FlowConfig {
+				return &session.FlowConfig{
 					Middleware: "../../testdata/no_such_file",
 				}
 			},
@@ -166,10 +161,10 @@ func TestRoot(t *testing.T) {
 		},
 		{
 			desc: "middleware crash immediately",
-			init: func(ctx context.Context) *session.Config {
-				return &session.Config{
-					FlowDuration: time.Second,
-					Middleware:   "../../testdata/crash_immediately.bash",
+			init: func(ctx context.Context) *session.FlowConfig {
+				return &session.FlowConfig{
+					SourceDuration: time.Second,
+					Middleware:     "../../testdata/crash_immediately.bash",
 				}
 			},
 			inputLine:       "tcp|http",
@@ -177,10 +172,10 @@ func TestRoot(t *testing.T) {
 		},
 		{
 			desc: "middleware crash eventually",
-			init: func(ctx context.Context) *session.Config {
-				return &session.Config{
-					FlowDuration: 2 * time.Second,
-					Middleware:   "../../testdata/crash_eventually.bash",
+			init: func(ctx context.Context) *session.FlowConfig {
+				return &session.FlowConfig{
+					SourceDuration: 2 * time.Second,
+					Middleware:     "../../testdata/crash_eventually.bash",
 				}
 			},
 			inputLine:       "tcp|http",
@@ -188,8 +183,8 @@ func TestRoot(t *testing.T) {
 		},
 		{
 			desc: "bad input line",
-			init: func(ctx context.Context) *session.Config {
-				return &session.Config{}
+			init: func(ctx context.Context) *session.FlowConfig {
+				return &session.FlowConfig{}
 			},
 			inputLine:             "---",
 			initializeErrContains: "invalid source: ---",
@@ -201,16 +196,25 @@ func TestRoot(t *testing.T) {
 			defer cancel()
 
 			var (
-				cfg    = c.init(ctx)
-				parser = defaultParser()
-				buf    bytes.Buffer
+				flowCfg = c.init(ctx)
+				parser  = defaultParser()
+				buf     bytes.Buffer
 			)
 
 			parser.Sinks["testout"] = func(session.Context) (flow.Sink, error) {
 				return ioutilx.NopWriteCloser(&buf), nil
 			}
 
-			var logBuf bytes.Buffer
+			var (
+				logBuf bytes.Buffer
+				cfg    = &session.Config{
+					ProfileHTTPAddr:   ":81112",
+					PrometheusAddr:    ":8080",
+					ProfilePathCPU:    "/tmp/vhs_cpu_test.prof",
+					ProfilePathMemory: "/tmp/vhs_mem_test.prof",
+				}
+			)
+
 			err := root(cfg, flowCfg, c.inputLine, c.outputLines, parser, &logBuf)
 			if c.initializeErrContains != "" {
 				assert.ErrorContains(t, err, c.initializeErrContains)
@@ -220,7 +224,7 @@ func TestRoot(t *testing.T) {
 			assert.NilError(t, err)
 
 			if c.flowErrContains == "" {
-				c.validate(cfg, &buf)
+				c.validate(cfg, flowCfg, &buf)
 			} else {
 				assert.Assert(t, strings.Contains(logBuf.String(), c.flowErrContains))
 			}
