@@ -78,7 +78,7 @@ func (oo Outputs) Init(ctx session.Context) {
 	}
 }
 
-// Drain closes all outputs.
+// Drain drains all outputs.
 func (oo Outputs) Drain(ctx session.Context) {
 	ctx.Logger = ctx.Logger.With().
 		Str(session.LoggerKeyComponent, "outputs").
