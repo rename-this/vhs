@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/rename-this/vhs/flow"
@@ -95,6 +96,8 @@ func (h *HAR) Init(ctx session.Context, w io.Writer) {
 }
 
 func (h *HAR) addRequest(ctx session.Context, hh *har, req *Request) {
+	ensureAbsoluteURL(req)
+
 	request := harRequest{
 		Method:      req.Method,
 		URL:         req.URL.String(),
@@ -103,7 +106,7 @@ func (h *HAR) addRequest(ctx session.Context, hh *har, req *Request) {
 		Headers:     mapToHarNVP(req.Header),
 		QueryString: mapToHarNVP(req.URL.Query()),
 		PostData:    extractPostData(req),
-		HeaderSize:  -1,
+		HeadersSize: -1,
 		BodySize:    len(req.Body),
 	}
 
@@ -164,7 +167,7 @@ func (h *HAR) addRequest(ctx session.Context, hh *har, req *Request) {
 // or response.
 func extractCookies(cookies []*http.Cookie) []harCookie {
 	if cookies == nil || len(cookies) == 0 {
-		return nil
+		return []harCookie{}
 	}
 
 	harCookies := make([]harCookie, len(cookies))
@@ -215,13 +218,31 @@ func extractPostData(req *Request) harPOST {
 // For each key in the map, an instance of harNVP will be created for each element of
 // the value slice.
 func mapToHarNVP(m map[string][]string) []harNVP {
-	var nvps []harNVP
+	nvps := []harNVP{}
 	for n, vals := range m {
 		for _, v := range vals {
 			nvps = append(nvps, harNVP{Name: n, Value: v})
 		}
 	}
 	return nvps
+}
+
+// ensureAbsoluteURL makes sure that the URL in a given Request is an absolute URL by setting the scheme to "http"
+// and the host to a string built from the server IP address and Port provided in the Request. If scheme and host
+// are already set, there will be no change.
+func ensureAbsoluteURL(req *Request) {
+	if req.URL.Scheme == "" {
+		req.URL.Scheme = "http"
+	}
+
+	if req.URL.Host == "" {
+		var host strings.Builder
+		fmt.Fprintf(&host, "%v", req.ServerAddr)
+		if req.ServerPort != "" {
+			fmt.Fprintf(&host, ":%v", req.ServerPort)
+		}
+		req.URL.Host = host.String()
+	}
 }
 
 // HAR FORMAT DEFINITION STRUCTS
@@ -269,7 +290,7 @@ type harRequest struct {
 	Headers     []harNVP    `json:"headers"`
 	QueryString []harNVP    `json:"queryString"`
 	PostData    harPOST     `json:"postData,omitempty"`
-	HeaderSize  int         `json:"headerSize"`
+	HeadersSize int         `json:"headersSize"`
 	BodySize    int         `json:"bodySize"`
 	Comment     string      `json:"comment,omitempty"`
 }
