@@ -10,7 +10,8 @@ import (
 
 // NewSink creates a new TCP sink.
 func NewSink(ctx session.Context) (flow.Sink, error) {
-	conn, err := net.Dial("tcp", ctx.FlowConfig.Addr)
+	var d net.Dialer
+	conn, err := d.DialContext(ctx.StdContext, "tcp", ctx.FlowConfig.AddrSink)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial TCP: %w", err)
 	}

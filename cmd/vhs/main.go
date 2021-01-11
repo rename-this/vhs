@@ -56,6 +56,7 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().DurationVar(&flowCfg.SourceDuration, "source-duration", math.MaxInt64, "The length of the source is left open. Leave this empty to read to EOF.")
 	cmd.PersistentFlags().DurationVar(&flowCfg.InputDrainDuration, "input-drain-duration", 500*time.Millisecond, "A grace period to allow for inputs to drain.")
 	cmd.PersistentFlags().StringVar(&flowCfg.Addr, "address", capture.DefaultAddr, "Address VHS will use to capture traffic.")
+	cmd.PersistentFlags().StringVar(&flowCfg.AddrSink, "address-sink", "", "Address used for writing to a network-based sink")
 	cmd.PersistentFlags().BoolVar(&flowCfg.CaptureResponse, "capture-response", false, "Capture the responses.")
 	cmd.PersistentFlags().StringVar(&flowCfg.Middleware, "middleware", "", "A path to an executable that VHS will use as middleware.")
 	cmd.PersistentFlags().DurationVar(&flowCfg.TCPTimeout, "tcp-timeout", 5*time.Minute, "A length of time after which unused TCP connections are closed.")

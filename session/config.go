@@ -21,10 +21,12 @@ type FlowConfig struct {
 	InputDrainDuration time.Duration
 
 	Addr            string
+	AddrSink        string
 	CaptureResponse bool
 	Middleware      string
-	TCPTimeout      time.Duration
 	HTTPTimeout     time.Duration
+
+	TCPTimeout time.Duration
 
 	BufferOutput bool
 
