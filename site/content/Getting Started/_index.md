@@ -1,6 +1,5 @@
 ---
 title: "Getting Started"
-linkTitle: "Getting Started"
 weight: 2
 description: >
     Taking VHS for a spin.
@@ -19,25 +18,34 @@ You will need a working Docker installation to successfully execute the followin
 install Docker from your favorite package manager, or you can see the [Docker site](https://www.docker.com/get-started)
 for more details.
 
-Once you have Docker set up and working, you can build the development container (which installs some helpful tools
-and mounts the source in the container) by changing directory into the repository you cloned and running:
+Once you have Docker set up and working, you can build the development container by changing directory into the
+repository you cloned and running:
 
 ```
 $ make dev
 ```
 
+This command will build and run a Docker container called `vhs_dev` that contains a standardized development environment
+for `vhs`. It includes the Go toolchain as well as other useful utilities such as `curl` and `jq`, among others. 
+The `vhs` source tree that you cloned will be mounted inside the development container at `/go/vhs` for convenience.
+Additionally, if present, your Google Cloud SDK configuration folder (`~/.config/gcloud`) will be mounted in the 
+container at `/root/.config/gcloud` and the `GOOGLE_APPLICATION_CREDENTIALS` environment variable will be set to
+`/root/.config/gcloud/application_default_credentials.json`. You may need to ensure that this file exists on your 
+system or change this environment variable to point to your own GCS service account credentials before using the GCS
+functionality of `vhs`.
+
 ## Demo Setup
 Open a bash session on the container by running the following command in a terminal:
 
 ```
-$ docker exect -it vhs_dev bash
+docker exec -it vhs_dev bash
 ```
 
-In your new bash session, run this script to start a simple echo server and a curl request that calls the server every
-second:
+In your new bash session, run this script to start a simple echo server and a script that will make an HTTP request to
+the server once every second using curl.
 
 ```
-$ cd testdata && ./echo.bash
+cd testdata && ./echo.bash
 ```
 
 This will generate some local HTTP traffic for `vhs` to capture.
@@ -46,13 +54,13 @@ This will generate some local HTTP traffic for `vhs` to capture.
 Open another bash session on the container in a new terminal:
 
 ```
-$ docker exect -it vhs_dev bash
+docker exec -it vhs_dev bash
 ```
 
 In this new session, run the following command to build `vhs` and run it to capture our local HTTP traffic.
 
 ```
-$ go build ./cmd/vhs && ./vhs --input "tcp|http" --output "json|stdout" --capture-response --address 0.0.0.0:1111 --middleware ./testdata/http_middleware.bash | jq -R "fromjson | .body" 2> /dev/null
+go build ./cmd/vhs && ./vhs --input "tcp|http" --output "json|stdout" --capture-response --address 0.0.0.0:1111 --middleware ./testdata/http_middleware.bash | jq -R "fromjson | .body" 2> /dev/null
 ```
 
 The output should look something like this:
@@ -134,6 +142,7 @@ filesystem.
 
 The above command will capture live HTTP traffic on port 80 and calculate 
 [RED metrics](https://www.weave.works/blog/the-red-method-key-metrics-for-microservices-architecture/) for the captured
-data in real time. These metrics will be available on a [Prometheus](https://prometheus.io/) endpoint at port 8888. The
-command will run for 60 minutes.
+data in real time. These include metrics on request rate, error rate, and request duration. These metrics will be
+available on a [Prometheus](https://prometheus.io/) endpoint at port 8888. For more information on metrics see the 
+`vhs` [reference](/vhs/reference/#prometheus-metrics) entry on metrics support. The command will run for 60 minutes.
 

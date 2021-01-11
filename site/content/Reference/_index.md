@@ -1,6 +1,5 @@
 ---
 title: "Reference"
-linkTitle: "Reference"
 weight: 3
 description: >
     Usage and command line flags reference.
@@ -20,7 +19,7 @@ This command captures two-way TCP data from the network on address `0.0.0.0` and
 and responses from the TCP data, formats them as JSON, and prints them to the standard output.
 
 ## Specifying Inputs and Outputs
-The core command line flags for `vhs` are focussed on defining the data flow that `vhs` will use for a recording/replay
+The core command line flags for `vhs` are focused on defining the data flow that `vhs` will use for a recording/replay
 session. Inputs and outputs are specified in terms of a simple domain specific language that will be detailed in
 the following sections.
 
@@ -28,17 +27,12 @@ the following sections.
 ```--input "<source|modifier(s)|format>"```
 
 Inputs are specified in a pipe-delimited (`|`), double-quoted string following the `--input` command line flag. 
-The first element in the string must specify a [source](#sources), followed by a pipe character, followed by zero or
-more [modifiers](#input-modifiers) separated by pipe characters, followed by another pipe character, and ending with an
-input [format](#input-formats) specifier. The specified source originates a data stream that is modified by the 
+This string must begin with a [source](#sources), optionally contain [modifiers](#input-modifiers), and end with an
+[input format](#input-formats). The specified source originates a data stream that is modified by the 
 specified modifiers and then formatted, or interpreted by the specified input format.
 
 In the example command given above, the input specifier is `--inputs "tcp|http"` where `tcp` specifies the TCP source
 and `http` specifies the HTTP input format. This example does not use any input modifiers. 
-
-The next sections will detail the currently available [input sources](#input-sources), [modifiers](#input-modifiers),
-and [formats](#input-formats) in `vhs`. Each source, modifier, and format may require additional configuration in the
-form of additional command line flags. These will be described where applicable.
 
 Only one input definition can be specified in a `vhs` session.
 
@@ -57,13 +51,18 @@ configuration:
 
 ##### `file`
 The `file` source reads data from a file on the local filesystem. It requires the following command line flag
-for configuration.
+for configuration. This source reads a file from the filesystem and emits a raw stream of bytes to the 
+[modifiers](#input-modifiers) and [formats](#input-formats) in the specified input chain. These modifiers and formats
+implement specific support for various file formats. JSON and gzipped-JSON files are currently supported by the
+available input modifiers and formats.
+
 * `--input_file <path to input file>` Required. Specifies the path to the input file to be read.
 
 ##### `gcs`
 The `gcs` source reads data from a Google Cloud Storage object. It requires the following command line flags for
 configuration. Note that the GCS source also requires Google Cloud authentication credentials to be present
-on the machine or in the container where `vhs` is run. For more information on GCS authentication, see Google's
+on the machine or in the container where `vhs` is run. The `GOOGLE_APPLICATION_CREDENTIALS` environment variable can be
+used to specify the location of the credentials file. For more information on GCS authentication, see Google's
 documentation [here](https://cloud.google.com/docs/authentication/production).
 * `--gcs-bucket-name <GCS bucket name>` Required. Name of bucket that contains the object to be read.
 * `--gcs-object-name <object name>` Required. Name of object to be read.
@@ -100,8 +99,8 @@ intended for use with the [`tcp` source](#tcp).
 
 ##### `json`
 The `json` input format interprets the incoming data stream as JSON. It is primarily intended for use with the 
-[`file`](#file)
-and cloud storage sources ([`gcs`](#gcs) and [`s3compat`](#s3compat)) for processing data stored in a JSON file.
+[`file`](#file) and cloud storage sources ([`gcs`](#gcs) and [`s3compat`](#s3compat)) for processing data stored 
+in a JSON file.
 
 ### Outputs
 ```--output "<format|modifier(s)|sink>"```
@@ -196,7 +195,7 @@ and must write modified data on the standard output. A simple example middleware
 
 `vhs` supports calculating metrics on HTTP exchanges captured live from the network. This facility can be used to
 non-invasively gather metrics for services utilizing HTTP. Specifying the `--prometheus-address` flag enables metrics
-support. This metrics support is implemented internally as an output format, and requires an input chain that includes
+support. Metrics support is implemented internally as an output format, and requires an input chain that includes
 the [`http`](#http) input format. A typical command for utilizing the metrics support looks like this:
 
 ```./vhs --input "tcp|http" --address 0.0.0.0:80 --capture-response --prometheus-address 0.0.0.0:8080```
@@ -208,10 +207,20 @@ The provided metrics include measures of request rate, error rate, and request d
 the [RED method](https://www.weave.works/blog/the-red-method-key-metrics-for-microservices-architecture/) of 
 microservice monitoring.  Metrics are supplied on a [Prometheus](https://prometheus.io/) endpoint. Request counts are
 available in a [counter vector](https://prometheus.io/docs/concepts/metric_types/#counter) labeled with HTTP method,
-status code, and path. Request durations are available in a 
-[summary vector](https://prometheus.io/docs/concepts/metric_types/#summary) with percentiles at 50% +/- 5%, 75% +/- 1%,
-90% +/- 0.5%, 95% +/- 0.5%, 99% +/- 0.1%, 99.9% +/- 0.01%, and 99.99% +/- 0.001%. Durations are also labeled with HTTP
-method, status code, and path.
+status code, and path. Errors counts are available by querying for HTTP error status codes, and timeouts are counted
+with empty status codes. Request durations are available in a 
+[summary vector](https://prometheus.io/docs/concepts/metric_types/#summary) with quantiles given in the table below.
+Durations are also labeled with HTTP method, status code, and path.
+
+Quantile      | Error (+ / -)
+------------- | ------------------
+50%           | 5%
+75%           | 1%
+90%           | 0.5%
+95%           | 0.5%
+99%           | 0.1% 
+99.9%         | 0.01%
+99.99%        | 0.001%
 
 ## Complete Command Line Flag Reference
 Command line flag               | Description
