@@ -24,7 +24,7 @@ func TestNewSink(t *testing.T) {
 			errContains: "i/o timeout",
 		},
 		{
-			desc: "bad addr",
+			desc: "success",
 			setup: func(t *testing.T) (string, func()) {
 				l, err := net.Listen("tcp", ":0")
 				assert.NilError(t, err)
