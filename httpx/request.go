@@ -8,6 +8,7 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/rename-this/vhs/envelope"
@@ -61,6 +62,25 @@ func (r *Request) SetCreated(created time.Time) { r.Created = created }
 
 // SetSessionID sets the session ID
 func (r *Request) SetSessionID(id string) { r.SessionID = id }
+
+// StdRequest converts a Request into an *http.Request.
+func (r *Request) StdRequest() *http.Request {
+	return &http.Request{
+		Method:           r.Method,
+		URL:              r.URL,
+		Proto:            r.Proto,
+		ProtoMajor:       r.ProtoMajor,
+		ProtoMinor:       r.ProtoMinor,
+		Header:           r.Header,
+		PostForm:         r.PostForm,
+		Body:             ioutil.NopCloser(strings.NewReader(r.Body)),
+		ContentLength:    r.ContentLength,
+		TransferEncoding: r.TransferEncoding,
+		Host:             r.Host,
+		Trailer:          r.Trailer,
+		RequestURI:       r.RequestURI,
+	}
+}
 
 // NewRequest creates a new Request.
 func NewRequest(b *bufio.Reader, connectionID string, exchangeID string, m *flow.Meta) (*Request, error) {
