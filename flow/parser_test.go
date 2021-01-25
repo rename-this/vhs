@@ -9,37 +9,27 @@ import (
 )
 
 func newTestParser() *Parser {
-	return &Parser{
-		Sources: map[string]SourceCtor{
-			"src": newTestSource,
-		},
+	p := NewParser()
 
-		InputFormats: map[string]InputFormatCtor{
-			"ifmt": newTestInputFormat,
-		},
+	p.LoadSource("src", newTestSource)
 
-		OutputFormats: map[string]OutputFormatCtor{
-			"ofmt": newTestOutputFormat,
-		},
+	p.LoadInputModifier("dbl", func(_ session.Context) (InputModifier, error) {
+		return &TestDoubleInputModifier{}, nil
+	})
 
-		Sinks: map[string]SinkCtor{
-			"snk": func(_ session.Context) (Sink, error) {
-				return &testSink{}, nil
-			},
-		},
+	p.LoadInputFormat("ifmt", newTestInputFormat)
 
-		InputModifiers: map[string]InputModifierCtor{
-			"dbl": func(_ session.Context) (InputModifier, error) {
-				return &TestDoubleInputModifier{}, nil
-			},
-		},
+	p.LoadOutputFormat("ofmt", newTestOutputFormat)
 
-		OutputModifiers: map[string]OutputModifierCtor{
-			"dbl": func(_ session.Context) (OutputModifier, error) {
-				return &TestDoubleOutputModifier{}, nil
-			},
-		},
-	}
+	p.LoadOutputModifier("dbl", func(_ session.Context) (OutputModifier, error) {
+		return &TestDoubleOutputModifier{}, nil
+	})
+
+	p.LoadSink("snk", func(_ session.Context) (Sink, error) {
+		return &testSink{}, nil
+	})
+
+	return p
 }
 
 func TestParse(t *testing.T) {

@@ -222,43 +222,33 @@ func startMiddleware(ctx session.Context) (middleware.Middleware, error) {
 }
 
 func defaultParser() *flow.Parser {
-	return &flow.Parser{
-		Sources: map[string]flow.SourceCtor{
-			"tcp":      tcp.NewSource,
-			"gcs":      gcs.NewSource,
-			"file":     file.NewSource,
-			"s3compat": s3compat.NewSource,
-		},
+	p := flow.NewParser()
 
-		InputFormats: map[string]flow.InputFormatCtor{
-			"http": httpx.NewInputFormat,
-			"json": jsonx.NewInputFormat,
-		},
+	p.LoadSource("tcp", tcp.NewSource)
+	p.LoadSource("gcs", gcs.NewSource)
+	p.LoadSource("file", file.NewSource)
+	p.LoadSource("s3compat", s3compat.NewSource)
 
-		OutputFormats: map[string]flow.OutputFormatCtor{
-			"har":  httpx.NewHAR,
-			"json": jsonx.NewOutputFormat,
-			"http": httpx.NewOutputFormat,
-		},
+	p.LoadInputModifier("gzip", gzipx.NewInputModifier)
 
-		Sinks: map[string]flow.SinkCtor{
-			"gcs":      gcs.NewSink,
-			"s3compat": s3compat.NewSink,
-			"stdout": func(_ session.Context) (flow.Sink, error) {
-				return os.Stdout, nil
-			},
-			"discard": func(_ session.Context) (flow.Sink, error) {
-				return ioutilx.NopWriteCloser(ioutil.Discard), nil
-			},
-			"tcp": tcp.NewSink,
-		},
+	p.LoadInputFormat("http", httpx.NewInputFormat)
+	p.LoadInputFormat("json", jsonx.NewInputFormat)
 
-		InputModifiers: map[string]flow.InputModifierCtor{
-			"gzip": gzipx.NewInputModifier,
-		},
+	p.LoadOutputFormat("har", httpx.NewHAR)
+	p.LoadOutputFormat("json", jsonx.NewOutputFormat)
+	p.LoadOutputFormat("http", httpx.NewOutputFormat)
 
-		OutputModifiers: map[string]flow.OutputModifierCtor{
-			"gzip": gzipx.NewOutputModifier,
-		},
-	}
+	p.LoadOutputModifier("gzip", gzipx.NewOutputModifier)
+
+	p.LoadSink("gcs", gcs.NewSink)
+	p.LoadSink("s3compat", s3compat.NewSink)
+	p.LoadSink("stdout", func(_ session.Context) (flow.Sink, error) {
+		return os.Stdout, nil
+	})
+	p.LoadSink("discard", func(_ session.Context) (flow.Sink, error) {
+		return ioutilx.NopWriteCloser(ioutil.Discard), nil
+	})
+	p.LoadSink("tcp", tcp.NewSink)
+
+	return p
 }
