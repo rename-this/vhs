@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/rename-this/vhs/session"
 )
@@ -29,19 +30,102 @@ type (
 	SinkCtor func(session.Context) (Sink, error)
 )
 
+// NewParser creates a new parser.
+func NewParser() *Parser {
+	return &Parser{
+		sources:         make(map[string]SourceCtor),
+		inputModifiers:  make(map[string]InputModifierCtor),
+		inputFormats:    make(map[string]InputFormatCtor),
+		outputFormats:   make(map[string]OutputFormatCtor),
+		outputModifiers: make(map[string]OutputModifierCtor),
+		sinks:           make(map[string]SinkCtor),
+	}
+}
+
 // Parser parses text into a *flow.Flow
 type Parser struct {
-	Sources        map[string]SourceCtor
-	InputModifiers map[string]InputModifierCtor
-	InputFormats   map[string]InputFormatCtor
+	mu sync.RWMutex
 
-	OutputFormats   map[string]OutputFormatCtor
-	OutputModifiers map[string]OutputModifierCtor
-	Sinks           map[string]SinkCtor
+	sources        map[string]SourceCtor
+	inputModifiers map[string]InputModifierCtor
+	inputFormats   map[string]InputFormatCtor
+
+	outputFormats   map[string]OutputFormatCtor
+	outputModifiers map[string]OutputModifierCtor
+	sinks           map[string]SinkCtor
+}
+
+// LoadSource loads a new source and returns a value indicating
+// whether the value replaced a previous entry.
+func (p *Parser) LoadSource(name string, ctor SourceCtor) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	_, replaced := p.sources[name]
+	p.sources[name] = ctor
+	return replaced
+}
+
+// LoadInputModifier loads a new input modifier and returns a value
+// inidicating whether the value replaced a previous entry.
+func (p *Parser) LoadInputModifier(name string, ctor InputModifierCtor) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	_, replaced := p.inputModifiers[name]
+	p.inputModifiers[name] = ctor
+	return replaced
+}
+
+// LoadInputFormat loads a new input format and returns a value
+// indicating whether the value replaced a previous entry.
+func (p *Parser) LoadInputFormat(name string, ctor InputFormatCtor) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	_, replaced := p.inputFormats[name]
+	p.inputFormats[name] = ctor
+	return replaced
+}
+
+// LoadOutputFormat loads a new output format and returns a value
+// indicating whether the value replaced a previous entry.
+func (p *Parser) LoadOutputFormat(name string, ctor OutputFormatCtor) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	_, replaced := p.outputFormats[name]
+	p.outputFormats[name] = ctor
+	return replaced
+}
+
+// LoadOutputModifier loads a new output modifier and returns a value
+// indicating whether the value replaced a previous entry.
+func (p *Parser) LoadOutputModifier(name string, ctor OutputModifierCtor) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	_, replaced := p.outputModifiers[name]
+	p.outputModifiers[name] = ctor
+	return replaced
+}
+
+// LoadSink loads a new sink and returns a value indicatin whether
+// the value replaced a previous entry.
+func (p *Parser) LoadSink(name string, ctor SinkCtor) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	_, replaced := p.sinks[name]
+	p.sinks[name] = ctor
+	return replaced
 }
 
 // Parse parses text into a flow.
 func (p *Parser) Parse(ctx session.Context, inputLine string, outputLines []string) (*Flow, error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
 	input, err := p.parseInput(ctx, inputLine)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse input: %v", err)
@@ -83,7 +167,7 @@ func (p *Parser) parseInput(ctx session.Context, line string) (*Input, error) {
 	)
 
 	sPart := parts[0]
-	sCtor, ok := p.Sources[sPart]
+	sCtor, ok := p.sources[sPart]
 	if !ok {
 		return nil, fmt.Errorf("invalid source: %s", sPart)
 	}
@@ -93,7 +177,7 @@ func (p *Parser) parseInput(ctx session.Context, line string) (*Input, error) {
 	}
 
 	fPart := parts[len(parts)-1]
-	fCtor, ok := p.InputFormats[fPart]
+	fCtor, ok := p.inputFormats[fPart]
 	if !ok {
 		return nil, fmt.Errorf("invalid input format: %s", fPart)
 	}
@@ -103,7 +187,7 @@ func (p *Parser) parseInput(ctx session.Context, line string) (*Input, error) {
 	}
 
 	for _, rcPart := range parts[1 : len(parts)-1] {
-		rcCtor, ok := p.InputModifiers[rcPart]
+		rcCtor, ok := p.inputModifiers[rcPart]
 		if !ok {
 			return nil, fmt.Errorf("invalid modifier: %s", fPart)
 		}
@@ -138,7 +222,7 @@ func (p *Parser) parseOutput(ctx session.Context, line string) (*Output, error) 
 	)
 
 	fPart := parts[0]
-	fCtor, ok := p.OutputFormats[fPart]
+	fCtor, ok := p.outputFormats[fPart]
 	if !ok {
 		return nil, fmt.Errorf("invalid output format: %s", fPart)
 	}
@@ -148,7 +232,7 @@ func (p *Parser) parseOutput(ctx session.Context, line string) (*Output, error) 
 	}
 
 	sPart := parts[len(parts)-1]
-	sCtor, ok := p.Sinks[sPart]
+	sCtor, ok := p.sinks[sPart]
 	if !ok {
 		return nil, fmt.Errorf("invalid sink: %s", sPart)
 	}
@@ -158,7 +242,7 @@ func (p *Parser) parseOutput(ctx session.Context, line string) (*Output, error) 
 	}
 
 	for _, wcPart := range parts[1 : len(parts)-1] {
-		wcCtor, ok := p.OutputModifiers[wcPart]
+		wcCtor, ok := p.outputModifiers[wcPart]
 		if !ok {
 			return nil, fmt.Errorf("invalid modifier: %s", fPart)
 		}
