@@ -13,6 +13,8 @@ type Config struct {
 	ProfilePathCPU    string
 	ProfilePathMemory string
 	ProfileHTTPAddr   string
+
+	Plugin string
 }
 
 // FlowConfig is a Flow config.

@@ -23,6 +23,7 @@ import (
 	"github.com/rename-this/vhs/internal/ioutilx"
 	"github.com/rename-this/vhs/jsonx"
 	"github.com/rename-this/vhs/middleware"
+	"github.com/rename-this/vhs/plugin"
 	"github.com/rename-this/vhs/s3compat"
 	"github.com/rename-this/vhs/session"
 	"github.com/rename-this/vhs/tcp"
@@ -86,6 +87,8 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&cfg.ProfilePathMemory, "profile-path-memory", "", "Output memory profile to this path.")
 	cmd.PersistentFlags().StringVar(&cfg.ProfileHTTPAddr, "profile-http-address", "", "Expose profile data on this address.")
 
+	cmd.PersistentFlags().StringVar(&cfg.Plugin, "plugin", "", "Path to plugin shared object.")
+
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		err := root(cfg, flowCfg, inputLine, outputLines, defaultParser(), os.Stderr)
 		if err != nil {
@@ -111,6 +114,20 @@ func root(cfg *session.Config, flowCfg *session.FlowConfig, inputLine string, ou
 	}()
 
 	ctx.Logger.Debug().Msg("hello, vhs")
+
+	if cfg.Plugin != "" {
+		p, err := plugin.Load(cfg.Plugin)
+		if err != nil {
+			return fmt.Errorf("failed to load plugin: %v", err)
+		}
+		s, err := p.Apply(ctx, parser)
+		if err != nil {
+			return fmt.Errorf("failed to apply plugin: %v", err)
+		}
+		for _, r := range s.Replaced {
+			ctx.Logger.Debug().Str("replaced", r).Msg("default parser value replaced")
+		}
+	}
 
 	m, err := startMiddleware(ctx)
 	if err != nil {
