@@ -74,7 +74,6 @@ func (r *Request) StdRequest() *http.Request {
 		Header:           r.Header,
 		PostForm:         r.PostForm,
 		Body:             ioutil.NopCloser(strings.NewReader(r.Body)),
-		ContentLength:    r.ContentLength,
 		TransferEncoding: r.TransferEncoding,
 		Host:             r.Host,
 		Trailer:          r.Trailer,
