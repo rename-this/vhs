@@ -12,7 +12,8 @@ import (
 )
 
 // NewOutputFormat creates an HTTP output format.
-func NewOutputFormat(_ session.Context) (flow.OutputFormat, error) {
+func NewOutputFormat(ctx session.Context) (flow.OutputFormat, error) {
+	registerEnvelopes(ctx)
 	return &outputFormat{
 		in: make(chan interface{}),
 	}, nil
