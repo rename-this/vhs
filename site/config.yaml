@@ -26,8 +26,8 @@ params:
     enable: true
     theme: neutral
 
-  # Adds in the `copy` link on code blocks
-  prism_syntax_highlighting: true
+  # Disabled to fix rendering issues
+  prism_syntax_highlighting: false
 
   sidebar_search_disable: true
 
