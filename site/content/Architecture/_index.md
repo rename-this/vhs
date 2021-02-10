@@ -8,26 +8,16 @@ description: >
 
 ## Introduction
 
-`vhs` is a network traffic utility that works by chaining modules or plugins. It offers a high-performance concurrent
-architecture for routing data and executing modules that enables users to configure and extend `vhs` for a variety of
-purposes, including traffic recording, replay, live metrics collection, and many others.
+`vhs` is a network traffic utility that works by chaining modules loaded from plugins. It offers a high-performance
+concurrent architecture for routing data and executing modules that enables users to configure and extend `vhs` for
+ a variety of purposes, including traffic recording, replay, live metrics collection, and many others.
 
 ## Concepts
 
 The architecture of `vhs` is built around the concept of a data flow, a directed graph that represents the routing of a
 stream of data through software components that act on that data stream. In a data flow graph, nodes represent software
 components that originate, terminate, or modify the data stream passing through them, and edges represent the data
-stream passing between components. A data flow graph might look something like this:
-
-```mermaid
-graph LR
-  compA[Software Component A]
-  compB[Software Component B]
-  compC[Software Component C]
-
-  compA -- Data --> compB
-  compB -- Data --> compC
-```
+stream passing between components.
 
 In `vhs`, the data flow graph looks something like this:
 
@@ -58,26 +48,31 @@ categories, as listed below:
 
 - `source`: **source** components originate data streams. A source brings data into `vhs` from somewhere else. This
 could mean capturing data from a network interface, reading from cloud storage, reading from a local file, etc. More
-information on the internal architecture of source components can be found [here](/vhs/architecture/source), and
-information about the sources currently available in `vhs` can be found [here](/vhs/reference/#sources).
-- `modifier`: **modifier** components modify the data passing through them in its raw format (stream of bytes). More
-information about the architecture of modifiers can be found [here](/vhs/architecture/modifier), and information about
-the input and output modifiers currently avaialable in `vhs` can be found here: [input
-modifiers](/vhs/reference/#input-modifiers) and [output modifiers](/vhs/reference/#output-modifiers).
+information on the internal architecture of source components can be found here:
+[source architecture](/vhs/architecture/source). Information about the sources currently available in `vhs` can be
+ found here: [sources](/vhs/reference/#sources).
+- `modifier`: **modifier** components modify the data passing through them in its raw format (stream of bytes).
+Modifiers may exist in either the input chain or the output chain of the `vhs` data flow, and input and output
+modifiers are implemented separately. More information about the architecture of modifiers can be found here:
+[modifier architecture](/vhs/architecture/modifier). Information about the input and output modifiers currently
+ available in `vhs` can be found here:
+[input modifiers](/vhs/reference/#input-modifiers) and [output modifiers](/vhs/reference/#output-modifiers).
 - `format`: **format** components modify or interpret the data passing through them by imposing a format on it, usually
-in terms of native Go datatypes. More information about the architecture of formats can be found
-[here](/vhs/architecture/format), and information about the input and output formats currently avaialable in `vhs` can
-be found here: [input formats](/vhs/reference/#input-formats) and [output formats](/vhs/reference/#output-formats).
+in terms of native Go datatypes. Like modifiers, formats may exist in either the input chain or output chain, and input
+and output formats are implemented separately. More information about the architecture of formats can be found here:
+[format architecture](/vhs/architecture/format). Information about the input and output formats currently available
+in `vhs` can be found here: [input formats](/vhs/reference/#input-formats) and
+[output formats](/vhs/reference/#output-formats).
 - `sink`: **sink** components terminate data streams. A sink provides a way for data to leave `vhs`. This data could be
 written to a file, stored on cloud storage, transmitted to a network location, etc. More information on the internal
 architecture of sink components can be found [here](/vhs/architecture/sink), and information about the sinks currently
 available in `vhs` can be found [here](/vhs/reference/#sinks).
 
-As seen in the diagram above, formats and modifiers are present in both the input portion and the output portion of the
-`vhs` data flow. Additionally, `vhs` provides an optional facility for **middleware**. The middleware facility allows
+Additionally, `vhs` provides an optional facility for **middleware**. The middleware facility allows
 users to place their own external modifier code into the `vhs` data flow. If used, the middleware is placed into the
 data flow between the output format and the output modifier as shown in the diagram below. This external middleware
-will receive formatted data from the chosen output format on `stdout` and must write modified data to `stdin`.
+will receive formatted data in the form of stringified JSON from the chosen output format on `stdin` and must write
+modified data to `stdout`.
 
 ```mermaid
 graph LR
@@ -104,30 +99,20 @@ graph LR
 
 The edges of the data flow graph represent data streams that pass between components. In `vhs`, these edges represent
 the connections between the components described in the previous section. These connections are implemented using
-channels, a facility for communication between concurrent software components provided by the Go language. Channels in
-Go are strongly typed, so channel connections between `vhs` components utilize Go interface types and data types. Where
-raw data streams are needed, `vhs` uses types from the `io` package in the Go standard library, specifically the
-`io.ReadCloser` interface. Where structured data needs to be passed between components, the empty interface type
-`interface{}` is used for maximum flexibility.
+channels, a facility for communication between concurrent software components provided by the Go language. At the most
+basic level, communications between components in `vhs` utilize two basic strategies. Where raw data streams are needed,
+`vhs` uses types from the `io` package in the Go standard library, specifically the `io.ReadCloser` interface. Where
+structured data needs to be passed between components, the empty interface type `interface{}` is used for maximum
+flexibility.
 
 #### Metadata
 
 Sometimes it is useful to pass descriptive information about a data stream between two connected components. For
 example, the `tcp` source tracks information about source and destination IP addresses and ports for the tcp streams it
-captures. This information may be useful to components downstream in the `vhs` data flow, so `vhs` provides a metadata
-facility for recording this type of information and passing it between components. This metadata facility is
-implemented with a construct called `Meta` that is implemented in
+captures. This information may be useful to components downstream in the `vhs` data flow, so `vhs` provides a key-value
+metadata facility for recording this type of information and passing it between components. This metadata facility takes the
+form of a construct called `Meta` that is implemented in
 [`flow/meta.go`](https://github.com/rename-this/vhs/blob/main/flow/meta.go).
-
-```go
-// Meta is a map of flow-related metadata.
-type Meta struct {
-  SourceID string
-
-  mu     sync.RWMutex
-  values map[string]interface{}
-}
-```
 
 To pass `Meta` between components, it is wrapped together with an `io.ReadCloser` into struct. For example, the
 `InputReader` interface is used as the connection between a source and an input modifier. It is defined as follows:
@@ -137,6 +122,16 @@ To pass `Meta` between components, it is wrapped together with an `io.ReadCloser
 type InputReader interface {
   io.ReadCloser
   Meta() *Meta
+}
+```
+
+Metadata is not currently supported on the output chain of the `vhs` data flow, so the corresponding output interface
+`OutputWriter` is much simpler:
+
+```go
+// OutputWriter is an output writer.
+type OutputWriter interface {
+  io.WriteCloser
 }
 ```
 
@@ -154,8 +149,8 @@ graph LR
 
   src -- InputReader --> in_mod
   in_mod -- InputReader --> in_fmt
-  in_fmt -. stdin .-> mware 
-  mware -. stdout .-> out_fmt
+  in_fmt -. JSON string .-> mware 
+  mware -. JSON string .-> out_fmt
   in_fmt -- "interface{}" --> out_fmt 
   out_fmt -- OutputWriter --> out_mod
   out_mod -- OutputWriter --> sink
@@ -180,7 +175,7 @@ chain per session. Defined in
 output chains per session. Defined in
 [`flow/output.go`](https://github.com/rename-this/vhs/blob/main/flow/output.go).
 
-The conceptual arrangment of these constructs is shown in the figure below. In most cases, it should not be necessary
+The conceptual arrangement of these constructs is shown in the figure below. In most cases, it should not be necessary
 to modify these portions of the codebase when adding new data flow components, but a general understanding of these
 constructs should be helpful for both `vhs` developers and end users.
 

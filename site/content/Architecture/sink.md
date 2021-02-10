@@ -24,8 +24,8 @@ type Sink io.WriteCloser
 Since a sink is simply an `io.WriteCloser`, any existing types that conform to this interface can be used a sink. This
 means that a simple sink can be implemented in only a handful of lines of code, as with the [`stdout`
 sink](/vhs/reference/#stdout), which is implemented in
-[`cmd/vhs/main.go`](<https://github.com/rename-this/vhs/blob/main/cmd/vhs/main.go#L2>
-62) in the default parser definition. Since it is so short, it is recreated here:
+[`cmd/vhs/main.go`](https://github.com/rename-this/vhs/blob/main/cmd/vhs/main.go#L262)
+in the default parser definition. Since it is so short, it is recreated here:
 
 ```go
 p.LoadSink("stdout", func(_ session.Context) (flow.Sink, error) {
