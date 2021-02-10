@@ -38,6 +38,7 @@ docs: submods
 	hugo serve
 
 docs-ci: init submods
+	hugo -s site -b / --gc
 
 init: submods
 	npm install -D --save postcss postcss-cli autoprefixer
