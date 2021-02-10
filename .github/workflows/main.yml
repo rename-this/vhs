@@ -85,7 +85,7 @@ jobs:
     -
       name: Set up environment
       run: |
-        make docs-ci
+        make init
     -
       name: Publish Site
       uses: chabad360/hugo-gh-pages@master
