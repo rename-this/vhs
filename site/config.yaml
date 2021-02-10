@@ -16,10 +16,15 @@ params:
   github_project_repo: https://github.com/rename-this/vhs
   github_branch: main
 
-  #Enable offline search with Lunr.js
+  # Enable offline search with Lunr.js
   offlineSearch: true
   offlineSearchSummaryLength: 70
   offlineSearchMaxResults: 10
+  
+  # Enable mermaid diagrams
+  mermaid:
+    enable: true
+    theme: neutral
 
   # Adds in the `copy` link on code blocks
   prism_syntax_highlighting: true
