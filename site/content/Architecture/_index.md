@@ -15,7 +15,7 @@ purposes, including traffic recording, replay, live metrics collection, and many
 ## Concepts
 
 The architecture of `vhs` is built around the concept of a data flow, a directed graph that represents the routing of a
-stream of data through sofrware components that act on that data stream. In a data flow graph, nodes represent software
+stream of data through software components that act on that data stream. In a data flow graph, nodes represent software
 components that originate, terminate, or modify the data stream passing through them, and edges represent the data
 stream passing between components. A data flow graph might look something like this:
 
@@ -76,7 +76,7 @@ available in `vhs` can be found [here](/vhs/reference/#sinks).
 As seen in the diagram above, formats and modifiers are present in both the input portion and the output portion of the
 `vhs` data flow. Additionally, `vhs` provides an optional facility for **middleware**. The middleware facility allows
 users to place their own external modifier code into the `vhs` data flow. If used, the middleware is placed into the
-data flow between the output format and the output modifier as shown in the diagram below. This external middelware
+data flow between the output format and the output modifier as shown in the diagram below. This external middleware
 will receive formatted data from the chosen output format on `stdout` and must write modified data to `stdin`.
 
 ```mermaid
