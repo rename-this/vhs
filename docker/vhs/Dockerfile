@@ -1,13 +1,9 @@
-FROM golang:1.15.6-alpine3.12 as base
-
-RUN apk add --no-cache --virtual .build-deps \
-	bash \
-	ca-certificates \
-	g++ \
-	jq \
-	libpcap-dev
+FROM golang:1.15 as base
 
 RUN go install -v -a std
+
+RUN apt update && \
+    apt install -y  libpcap-dev
 
 WORKDIR /src
 
@@ -17,21 +13,17 @@ RUN go mod download -x
 
 COPY . .
 
-########################################################
-
-FROM base as builder
-
-RUN GODEBUG=netdns=go \
-    go build \
-    -ldflags "-s -extldflags=-static" \
-    ./cmd/vhs
+RUN go build ./cmd/vhs
 
 ########################################################
 
-FROM scratch as application
+FROM gcr.io/distroless/base-debian10 as application
 
-COPY --from=builder /src/vhs /
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=base /src/vhs /
+
+# Copy libpcap
+COPY --from=base /usr/include/pcap /usr/include/pcap
+COPY --from=base /usr/lib/x86_64-linux-gnu/libpcap* /usr/lib/x86_64-linux-gnu/
 
 ENTRYPOINT ["/vhs"]
 
