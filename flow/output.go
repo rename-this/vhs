@@ -4,24 +4,24 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 )
 
 // Output joins a format and sink with
 // optional modifiers.
 type Output struct {
-	Format    OutputFormat
-	Modifiers OutputModifiers
-	Sink      Sink
+	Format    core.OutputFormat
+	Modifiers core.OutputModifiers
+	Sink      core.Sink
 
 	done chan struct{}
 }
 
 // NewOutput creates an output connecting a format and a sink.
-func NewOutput(f OutputFormat, mos OutputModifiers, s Sink) *Output {
+func NewOutput(f core.OutputFormat, mods core.OutputModifiers, s core.Sink) *Output {
 	return &Output{
 		Format:    f,
-		Modifiers: mos,
+		Modifiers: mods,
 		Sink:      s,
 		done:      make(chan struct{}),
 	}
@@ -33,9 +33,9 @@ func (o *Output) Done() <-chan struct{} {
 }
 
 // Init starts the output.
-func (o *Output) Init(ctx session.Context) {
+func (o *Output) Init(ctx core.Context) {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "output").
+		Str(core.LoggerKeyComponent, "output").
 		Logger()
 
 	ctx.Logger.Debug().Msg("init")
@@ -72,16 +72,16 @@ func (oo Outputs) Write(n interface{}) {
 }
 
 // Init initializes the outputs.
-func (oo Outputs) Init(ctx session.Context) {
+func (oo Outputs) Init(ctx core.Context) {
 	for _, o := range oo {
 		go o.Init(ctx)
 	}
 }
 
 // Drain drains all outputs.
-func (oo Outputs) Drain(ctx session.Context) {
+func (oo Outputs) Drain(ctx core.Context) {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "outputs").
+		Str(core.LoggerKeyComponent, "outputs").
 		Logger()
 
 	ctx.Logger.Debug().Msg("draining")

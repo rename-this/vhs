@@ -5,18 +5,17 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 )
 
 // NewOutputModifier creates a new gzip output modifier.
-func NewOutputModifier(_ session.Context) (flow.OutputModifier, error) {
+func NewOutputModifier(_ core.Context) (core.OutputModifier, error) {
 	return &outputModifier{}, nil
 }
 
 type outputModifier struct{}
 
-func (*outputModifier) Wrap(w flow.OutputWriter) (flow.OutputWriter, error) {
+func (*outputModifier) Wrap(w core.OutputWriter) (core.OutputWriter, error) {
 	return &gzipWriter{
 		Writer: gzip.NewWriter(w),
 		parent: w,
@@ -29,17 +28,17 @@ type gzipWriter struct {
 }
 
 func (w *gzipWriter) Close() error {
-	return flow.CloseSequentially(w.Writer, w.parent)
+	return core.CloseSequentially(w.Writer, w.parent)
 }
 
 // NewInputModifier creates a new gzip input modifier.
-func NewInputModifier(_ session.Context) (flow.InputModifier, error) {
+func NewInputModifier(_ core.Context) (core.InputModifier, error) {
 	return &inputModifier{}, nil
 }
 
 type inputModifier struct{}
 
-func (*inputModifier) Wrap(r flow.InputReader) (flow.InputReader, error) {
+func (*inputModifier) Wrap(r core.InputReader) (core.InputReader, error) {
 	gr, err := gzip.NewReader(r)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gzip reader: %w", err)
@@ -52,14 +51,14 @@ func (*inputModifier) Wrap(r flow.InputReader) (flow.InputReader, error) {
 
 type gzipReader struct {
 	*gzip.Reader
-	parent flow.InputReader
-	meta   *flow.Meta
+	parent core.InputReader
+	meta   *core.Meta
 }
 
-func (r *gzipReader) Meta() *flow.Meta {
+func (r *gzipReader) Meta() *core.Meta {
 	return r.parent.Meta()
 }
 
 func (r *gzipReader) Close() error {
-	return flow.CloseSequentially(r.Reader, r.parent)
+	return core.CloseSequentially(r.Reader, r.parent)
 }

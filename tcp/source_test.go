@@ -10,7 +10,7 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/rename-this/vhs/capture"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 	"gotest.tools/v3/assert"
 )
 
@@ -79,22 +79,22 @@ func newTestListener(t *testing.T, data []string) capture.Listener {
 }
 
 func (l *testListener) Packets() <-chan gopacket.Packet { return l.packets }
-func (l *testListener) Listen(ctx session.Context)      {}
+func (l *testListener) Listen(ctx core.Context)         {}
 func (l *testListener) Close()                          {}
 
 func TestRead(t *testing.T) {
-	cfg := &session.Config{
+	cfg := &core.Config{
 		Debug:        true,
 		DebugPackets: true,
 	}
-	flowCfg := &session.FlowConfig{
+	flowCfg := &core.FlowConfig{
 		SourceDuration: 800 * time.Millisecond,
 		TCPTimeout:     50 * time.Millisecond,
 	}
 	cases := []struct {
 		desc     string
-		cfg      *session.Config
-		flowCfg  *session.FlowConfig
+		cfg      *core.Config
+		flowCfg  *core.FlowConfig
 		listener capture.Listener
 		data     []string
 		out      []string
@@ -132,7 +132,7 @@ func TestRead(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			var (
 				errs = make(chan error)
-				ctx  = session.NewContexts(c.cfg, c.flowCfg, errs)
+				ctx  = core.NewContext(c.cfg, c.flowCfg, errs)
 			)
 
 			source, err := NewSource(ctx)

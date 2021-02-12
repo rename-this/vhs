@@ -66,7 +66,7 @@ func TestRoot(t *testing.T) {
 					}
 				}()
 
-				return &session.FlowConfig{
+				return &core.FlowConfig{
 
 					SourceDuration:  10 * time.Second,
 					DrainDuration:   5 * time.Second,
@@ -114,7 +114,7 @@ func TestRoot(t *testing.T) {
 					}
 				}()
 
-				return &session.FlowConfig{
+				return &core.FlowConfig{
 					SourceDuration:  10 * time.Second,
 					DrainDuration:   5 * time.Second,
 					Addr:            strings.TrimLeft(s.URL, "http://"),
@@ -153,7 +153,7 @@ func TestRoot(t *testing.T) {
 		{
 			desc: "missing middleware",
 			init: func(ctx context.Context) *session.FlowConfig {
-				return &session.FlowConfig{
+				return &core.FlowConfig{
 					Middleware: "../../testdata/no_such_file",
 				}
 			},
@@ -162,7 +162,7 @@ func TestRoot(t *testing.T) {
 		{
 			desc: "middleware crash immediately",
 			init: func(ctx context.Context) *session.FlowConfig {
-				return &session.FlowConfig{
+				return &core.FlowConfig{
 					SourceDuration: time.Second,
 					Middleware:     "../../testdata/crash_immediately.bash",
 				}
@@ -173,7 +173,7 @@ func TestRoot(t *testing.T) {
 		{
 			desc: "middleware crash eventually",
 			init: func(ctx context.Context) *session.FlowConfig {
-				return &session.FlowConfig{
+				return &core.FlowConfig{
 					SourceDuration: 2 * time.Second,
 					Middleware:     "../../testdata/crash_eventually.bash",
 				}
@@ -184,7 +184,7 @@ func TestRoot(t *testing.T) {
 		{
 			desc: "bad input line",
 			init: func(ctx context.Context) *session.FlowConfig {
-				return &session.FlowConfig{}
+				return &core.FlowConfig{}
 			},
 			inputLine:             "---",
 			initializeErrContains: "invalid source: ---",
@@ -201,13 +201,13 @@ func TestRoot(t *testing.T) {
 				buf     bytes.Buffer
 			)
 
-			parser.Sinks["testout"] = func(session.Context) (flow.Sink, error) {
+			parser.Sinks["testout"] = func(core.Context) (flow.Sink, error) {
 				return ioutilx.NopWriteCloser(&buf), nil
 			}
 
 			var (
 				logBuf bytes.Buffer
-				cfg    = &session.Config{
+				cfg    = &core.Config{
 					ProfileHTTPAddr:   ":81112",
 					PrometheusAddr:    ":8080",
 					ProfilePathCPU:    "/tmp/vhs_cpu_test.prof",

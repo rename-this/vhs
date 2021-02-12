@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/internal/smoke"
-	"github.com/rename-this/vhs/session"
 	"gotest.tools/v3/assert"
 
 	"github.com/minio/minio-go/v7"
@@ -97,7 +97,7 @@ func TestSourceWithSink(t *testing.T) {
 			assert.NilError(t, err)
 
 			err = func() error {
-				ctx := session.NewContexts(&session.Config{}, &session.FlowConfig{
+				ctx := core.NewContext(&core.Config{}, &core.FlowConfig{
 					S3CompatEndpoint:   endpoint,
 					S3CompatAccessKey:  accessKey,
 					S3CompatSecretKey:  secretKey,

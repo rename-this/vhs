@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/internal/prunemap"
-	"github.com/rename-this/vhs/session"
 )
 
 // Correlator aggregates HTTP requests and responses and
@@ -30,9 +30,9 @@ func NewCorrelator(timeout time.Duration) *Correlator {
 }
 
 // Start starts the correlator. Goroutines are now spawned internally within this method.
-func (c *Correlator) Start(ctx session.Context) {
+func (c *Correlator) Start(ctx core.Context) {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "correlator").
+		Str(core.LoggerKeyComponent, "correlator").
 		Logger()
 
 	ctx.Logger.Debug().Msg("start")

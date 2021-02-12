@@ -10,7 +10,7 @@ import (
 
 	"github.com/segmentio/ksuid"
 
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 
 	"gotest.tools/v3/assert"
 )
@@ -132,7 +132,7 @@ func TestMetrics(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			ctx := session.NewContexts(&session.Config{}, &session.FlowConfig{
+			ctx := core.NewContext(&core.Config{}, &core.FlowConfig{
 				HTTPTimeout: 50 * time.Millisecond, // Short correlator time so we can actually get some timeouts.
 			}, nil)
 
@@ -179,17 +179,17 @@ func TestStressMetrics(t *testing.T) {
 		errs           = make(chan error)
 	)
 
-	genctx := session.NewContexts(&session.Config{
+	genctx := core.NewContext(&core.Config{
 		Debug:             false,
 		DebugHTTPMessages: false,
-	}, &session.FlowConfig{
+	}, &core.FlowConfig{
 		HTTPTimeout: 50 * time.Millisecond, // Short correlator time so we can actually get some timeouts.
 	}, errs)
 
-	metricsctx := session.NewContexts(&session.Config{
+	metricsctx := core.NewContext(&core.Config{
 		Debug:             false,
 		DebugHTTPMessages: false,
-	}, &session.FlowConfig{
+	}, &core.FlowConfig{
 		HTTPTimeout: 50 * time.Millisecond, // Short correlator time so we can actually get some timeouts.
 	}, errs)
 

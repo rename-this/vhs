@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/internal/safebuffer"
-	"github.com/rename-this/vhs/session"
 	"github.com/segmentio/ksuid"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/assert/cmp"
@@ -76,7 +76,7 @@ func TestNewOutputFormat(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			var (
 				errs = make(chan error, 1)
-				ctx  = session.NewContexts(nil, nil, errs)
+				ctx  = core.NewContext(nil, nil, errs)
 				o, _ = NewOutputFormat(ctx)
 				in   = o.In()
 				w    safebuffer.SafeBuffer

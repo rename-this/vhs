@@ -5,26 +5,25 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/internal/observe"
-	"github.com/rename-this/vhs/middleware"
-	"github.com/rename-this/vhs/session"
 )
 
 // Input joins a source and a format with
 // optional modifiers.
 type Input struct {
-	Source    Source
-	Modifiers InputModifiers
-	Format    InputFormat
+	Source    core.Source
+	Modifiers core.InputModifiers
+	Format    core.InputFormat
 
 	done chan struct{}
 }
 
 // NewInput creates a new input.
-func NewInput(s Source, mis InputModifiers, f InputFormat) *Input {
+func NewInput(s core.Source, mods core.InputModifiers, f core.InputFormat) *Input {
 	return &Input{
 		Source:    s,
-		Modifiers: mis,
+		Modifiers: mods,
 		Format:    f,
 		done:      make(chan struct{}),
 	}
@@ -36,9 +35,9 @@ func (i *Input) Done() <-chan struct{} {
 }
 
 // Init starts the input.
-func (i *Input) Init(ctx session.Context, m middleware.Middleware) {
+func (i *Input) Init(ctx core.Context, m core.Middleware) {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "input").
+		Str(core.LoggerKeyComponent, "input").
 		Logger()
 
 	ctx.Logger.Debug().Msg("init")
@@ -46,7 +45,7 @@ func (i *Input) Init(ctx session.Context, m middleware.Middleware) {
 	// This is an interim channel that allows
 	// the streams to be wrapped before passed
 	// to the format.
-	streams := make(chan InputReader)
+	streams := make(chan core.InputReader)
 
 	go i.Format.Init(ctx, m, streams)
 	go i.Source.Init(ctx)
@@ -94,7 +93,7 @@ func (i *Input) Init(ctx session.Context, m middleware.Middleware) {
 
 type wrappedStream struct {
 	rc   observe.ReadCloser
-	meta *Meta
+	meta *core.Meta
 }
 
 func (s *wrappedStream) Read(p []byte) (int, error) {
@@ -105,6 +104,6 @@ func (s *wrappedStream) Close() error {
 	return s.rc.Close()
 }
 
-func (s *wrappedStream) Meta() *Meta {
+func (s *wrappedStream) Meta() *core.Meta {
 	return s.meta
 }

@@ -1,4 +1,4 @@
-package session
+package core
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ func TestContexts(t *testing.T) {
 	var (
 		canceled = make(chan struct{}, 3)
 		errs     = make(chan error, 3)
-		ctx1     = NewContexts(&Config{}, &FlowConfig{}, errs)
+		ctx      = NewContext(&Config{}, &FlowConfig{}, errs)
 	)
 
 	fn := func(ctx Context) {
@@ -28,9 +28,9 @@ func TestContexts(t *testing.T) {
 		}
 	}
 
-	go fn(ctx1)
+	go fn(ctx)
 
-	ctx1.Cancel()
+	ctx.Cancel()
 
 	time.Sleep(500 * time.Millisecond)
 

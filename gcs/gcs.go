@@ -4,24 +4,23 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/storage"
-	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 )
 
-type newClientFn func(session.Context) (*storage.Client, error)
+type newClientFn func(core.Context) (*storage.Client, error)
 
-func newClient(ctx session.Context) (*storage.Client, error) {
+func newClient(ctx core.Context) (*storage.Client, error) {
 	return storage.NewClient(ctx.StdContext)
 }
 
 // NewSink creates a new Google Cloud Storage sink.
-func NewSink(ctx session.Context) (flow.Sink, error) {
+func NewSink(ctx core.Context) (core.Sink, error) {
 	return newSink(ctx, newClient)
 }
 
-func newSink(ctx session.Context, newClient newClientFn) (flow.Sink, error) {
+func newSink(ctx core.Context, newClient newClientFn) (core.Sink, error) {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "gcs_sink").
+		Str(core.LoggerKeyComponent, "gcs_sink").
 		Logger()
 
 	ctx.Logger.Debug().Msg("creating sink")
@@ -44,32 +43,32 @@ func newSink(ctx session.Context, newClient newClientFn) (flow.Sink, error) {
 }
 
 // NewSource creates a new Google Cloud Storage source.
-func NewSource(ctx session.Context) (flow.Source, error) {
+func NewSource(ctx core.Context) (core.Source, error) {
 	return newSource(ctx, newClient), nil
 }
 
-func newSource(ctx session.Context, newClient newClientFn) flow.Source {
+func newSource(ctx core.Context, newClient newClientFn) core.Source {
 	ctx.Logger.Debug().Msg("creating gcs source")
 	return &gcsSource{
-		streams:   make(chan flow.InputReader),
+		streams:   make(chan core.InputReader),
 		newClient: newClient,
 	}
 }
 
 type gcsSource struct {
-	streams   chan flow.InputReader
+	streams   chan core.InputReader
 	newClient newClientFn
 }
 
-func (s *gcsSource) Streams() <-chan flow.InputReader {
+func (s *gcsSource) Streams() <-chan core.InputReader {
 	return s.streams
 }
 
-func (s *gcsSource) Init(ctx session.Context) {
+func (s *gcsSource) Init(ctx core.Context) {
 	defer close(s.streams)
 
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "gcs_source").
+		Str(core.LoggerKeyComponent, "gcs_source").
 		Logger()
 
 	c, err := s.newClient(ctx)
@@ -99,15 +98,15 @@ func (s *gcsSource) Init(ctx session.Context) {
 
 	s.streams <- &gcsStream{
 		Reader: r,
-		meta:   flow.NewMeta(ctx.FlowConfig.GCSObjectName, nil),
+		meta:   core.NewMeta(ctx.FlowConfig.GCSObjectName, nil),
 	}
 }
 
 type gcsStream struct {
 	*storage.Reader
-	meta *flow.Meta
+	meta *core.Meta
 }
 
-func (s *gcsStream) Meta() *flow.Meta {
+func (s *gcsStream) Meta() *core.Meta {
 	return s.meta
 }

@@ -9,7 +9,7 @@ import (
 
 	"gotest.tools/v3/assert"
 
-	"github.com/rename-this/vhs/flow"
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/tcp"
 )
 
@@ -20,7 +20,7 @@ func TestNewResponset(t *testing.T) {
 		r           *Response
 		cID         string
 		eID         string
-		meta        *flow.Meta
+		meta        *core.Meta
 		errContains string
 	}{
 		{
@@ -40,7 +40,7 @@ func TestNewResponset(t *testing.T) {
 			cID:  "111",
 			eID:  "111",
 			b:    bufio.NewReader(strings.NewReader("HTTP/1.1 204 No Content\r\n\r\n")),
-			meta: flow.NewMeta("source", map[string]interface{}{
+			meta: core.NewMeta("source", map[string]interface{}{
 				tcp.MetaDstAddr: "10.10.10.1",
 				tcp.MetaDstPort: "2346",
 				tcp.MetaSrcAddr: "10.10.10.2",
@@ -69,7 +69,7 @@ func TestNewResponset(t *testing.T) {
 			cID:  "111",
 			eID:  "111",
 			b:    bufio.NewReader(strings.NewReader("HTTP/1.1 204 No Content\r\nLocation: /111.html\r\nSet-Cookie: grault=foo\r\n\r\n")),
-			meta: flow.NewMeta("source", map[string]interface{}{
+			meta: core.NewMeta("source", map[string]interface{}{
 				tcp.MetaDstAddr: "10.10.10.1",
 				tcp.MetaDstPort: "2346",
 				tcp.MetaSrcAddr: "10.10.10.2",

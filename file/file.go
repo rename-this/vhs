@@ -4,24 +4,23 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 )
 
 // NewSource creates a new file source.
-func NewSource(_ session.Context) (flow.Source, error) {
+func NewSource(_ core.Context) (core.Source, error) {
 	return &source{
-		streams: make(chan flow.InputReader),
+		streams: make(chan core.InputReader),
 	}, nil
 }
 
 type source struct {
-	streams chan flow.InputReader
+	streams chan core.InputReader
 }
 
-func (s *source) Init(ctx session.Context) {
+func (s *source) Init(ctx core.Context) {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "file_source").
+		Str(core.LoggerKeyComponent, "file_source").
 		Logger()
 
 	file, err := os.Open(ctx.FlowConfig.InputFile)
@@ -32,19 +31,19 @@ func (s *source) Init(ctx session.Context) {
 
 	s.streams <- &fileReader{
 		file: file,
-		meta: flow.NewMeta(ctx.FlowConfig.InputFile, nil),
+		meta: core.NewMeta(ctx.FlowConfig.InputFile, nil),
 	}
 
 	<-ctx.StdContext.Done()
 }
 
-func (s *source) Streams() <-chan flow.InputReader {
+func (s *source) Streams() <-chan core.InputReader {
 	return s.streams
 }
 
 type fileReader struct {
 	file *os.File
-	meta *flow.Meta
+	meta *core.Meta
 }
 
 func (f *fileReader) Read(p []byte) (int, error) {
@@ -55,6 +54,6 @@ func (f *fileReader) Close() error {
 	return f.file.Close()
 }
 
-func (f *fileReader) Meta() *flow.Meta {
+func (f *fileReader) Meta() *core.Meta {
 	return f.meta
 }

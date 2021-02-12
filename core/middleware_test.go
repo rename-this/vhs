@@ -1,4 +1,4 @@
-package middleware
+package core
 
 import (
 	"bytes"
@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rename-this/vhs/session"
 	"gotest.tools/v3/assert"
 )
 
@@ -70,7 +69,7 @@ func TestExec(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			ctx := session.NewContexts(nil, nil, nil)
+			ctx := NewContext(nil, nil, nil)
 			for i := 0; i < c.num; i++ {
 				req, err := c.m.Exec(ctx, c.header, c.l)
 				if c.errContains != "" {
@@ -122,8 +121,8 @@ func TestMiddleware(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			err := func() error {
-				ctx := session.NewContexts(nil, nil, nil)
-				m, err := New(ctx, c.command)
+				ctx := NewContext(nil, nil, nil)
+				m, err := NewMiddleware(ctx, c.command)
 				assert.NilError(t, err)
 
 				if c.command == "" {

@@ -5,13 +5,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
+	"github.com/rename-this/vhs/coretest"
 	"gotest.tools/v3/assert"
 )
 
 func TestOutput(t *testing.T) {
-	ctx := session.NewContexts(&session.Config{}, &session.FlowConfig{}, nil)
-	ctxBuffered := session.NewContexts(&session.Config{}, &session.FlowConfig{BufferOutput: true}, nil)
+	ctx := core.NewContext(&core.Config{}, &core.FlowConfig{}, nil)
+	ctxBuffered := core.NewContext(&core.Config{}, &core.FlowConfig{BufferOutput: true}, nil)
 
 	cases := []struct {
 		desc        string
@@ -23,7 +24,7 @@ func TestOutput(t *testing.T) {
 		{
 			desc: "unbuffered",
 			oo: Outputs{
-				NewOutput(newTestOutputFormatNoErr(ctx), nil, &testSink{}),
+				NewOutput(coretest.NewTestOutputFormatNoErr(ctx), nil, &coretest.TestSink{}),
 			},
 			data: []interface{}{1, 2, 3},
 			out:  `123`,
@@ -31,7 +32,7 @@ func TestOutput(t *testing.T) {
 		{
 			desc: "buffered",
 			oo: Outputs{
-				NewOutput(newTestOutputFormatNoErr(ctxBuffered), nil, &testSink{}),
+				NewOutput(coretest.NewTestOutputFormatNoErr(ctxBuffered), nil, &coretest.TestSink{}),
 			},
 			data: []interface{}{1, 2, 3},
 			out:  `6`,
@@ -39,10 +40,10 @@ func TestOutput(t *testing.T) {
 		{
 			desc: "modifiers",
 			oo: Outputs{
-				NewOutput(newTestOutputFormatNoErr(ctx), OutputModifiers{
-					&TestDoubleOutputModifier{},
-					&TestDoubleOutputModifier{},
-				}, &testSink{}),
+				NewOutput(coretest.NewTestOutputFormatNoErr(ctx), core.OutputModifiers{
+					&coretest.TestDoubleOutputModifier{},
+					&coretest.TestDoubleOutputModifier{},
+				}, &coretest.TestSink{}),
 			},
 			data: []interface{}{1, 2, 3},
 			out:  "111122223333",
@@ -50,27 +51,27 @@ func TestOutput(t *testing.T) {
 		{
 			desc: "bad modifier",
 			oo: Outputs{
-				NewOutput(newTestOutputFormatNoErr(ctx), OutputModifiers{
-					&TestErrOutputModifier{err: errors.New("111")},
-				}, &testSink{}),
+				NewOutput(coretest.NewTestOutputFormatNoErr(ctx), core.OutputModifiers{
+					&coretest.TestErrOutputModifier{Err: errors.New("111")},
+				}, &coretest.TestSink{}),
 			},
 			errContains: "111",
 		},
 		{
 			desc: "bad modifier closer",
 			oo: Outputs{
-				NewOutput(newTestOutputFormatNoErr(ctx), OutputModifiers{
-					&TestDoubleOutputModifier{optCloseErr: errors.New("111")},
-				}, &testSink{}),
+				NewOutput(coretest.NewTestOutputFormatNoErr(ctx), core.OutputModifiers{
+					&coretest.TestDoubleOutputModifier{OptCloseErr: errors.New("111")},
+				}, &coretest.TestSink{}),
 			},
 			errContains: "111",
 		},
 		{
 			desc: "bad sink closer",
 			oo: Outputs{
-				NewOutput(newTestOutputFormatNoErr(ctx), OutputModifiers{
-					&TestDoubleOutputModifier{},
-				}, &testSink{optCloseErr: errors.New("111")}),
+				NewOutput(coretest.NewTestOutputFormatNoErr(ctx), core.OutputModifiers{
+					&coretest.TestDoubleOutputModifier{},
+				}, &coretest.TestSink{OptCloseErr: errors.New("111")}),
 			},
 			errContains: "111",
 		},
@@ -80,7 +81,7 @@ func TestOutput(t *testing.T) {
 			// hack: Make this big enough to handle any errors we
 			// might end up with.
 			errs := make(chan error, 10)
-			ctx := session.NewContexts(nil, nil, errs)
+			ctx := core.NewContext(nil, nil, errs)
 
 			for _, o := range c.oo {
 				go o.Init(ctx)
@@ -99,7 +100,7 @@ func TestOutput(t *testing.T) {
 			time.Sleep(500 * time.Millisecond)
 
 			if c.errContains == "" {
-				s := c.oo[0].Sink.(*testSink)
+				s := c.oo[0].Sink.(*coretest.TestSink)
 				assert.DeepEqual(t, string(s.Data()), c.out)
 			} else {
 				assert.Equal(t, len(errs), 1)

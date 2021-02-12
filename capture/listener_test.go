@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 	"gotest.tools/v3/assert"
 )
 
@@ -36,7 +36,7 @@ func TestNewHandle(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			ctx := session.NewContexts(&session.Config{}, &session.FlowConfig{}, nil)
+			ctx := core.NewContext(&core.Config{}, &core.FlowConfig{}, nil)
 			l := NewListener(&Capture{})
 			_, err := l.(*listener).newHandle(ctx, c.i, c.activate)
 			if c.errContains == "" {
@@ -107,7 +107,7 @@ func TestReadPackets(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			packets := c.listener.Packets()
 
-			ctx := session.NewContexts(&session.Config{DebugPackets: true}, &session.FlowConfig{}, nil)
+			ctx := core.NewContext(&core.Config{DebugPackets: true}, &core.FlowConfig{}, nil)
 
 			go c.listener.(*listener).readPackets(ctx, c.source, c.decoder)
 			for _, d := range c.source.data {

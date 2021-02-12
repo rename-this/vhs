@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 )
 
 const (
@@ -14,31 +14,15 @@ const (
 	Separator = "|"
 )
 
-type (
-	// SourceCtor is a map of string to source constructors.
-	SourceCtor func(session.Context) (Source, error)
-	// InputModifierCtor is a map of string to input modifier constructors.
-	InputModifierCtor func(session.Context) (InputModifier, error)
-	// InputFormatCtor is a map of string to input format constructors.
-	InputFormatCtor func(session.Context) (InputFormat, error)
-
-	// OutputFormatCtor is a map of string to output format constructors.
-	OutputFormatCtor func(session.Context) (OutputFormat, error)
-	// OutputModifierCtor is a map of string to output modifier constructors.
-	OutputModifierCtor func(session.Context) (OutputModifier, error)
-	// SinkCtor is a map of string to sink constructors.
-	SinkCtor func(session.Context) (Sink, error)
-)
-
 // NewParser creates a new parser.
 func NewParser() *Parser {
 	return &Parser{
-		sources:         make(map[string]SourceCtor),
-		inputModifiers:  make(map[string]InputModifierCtor),
-		inputFormats:    make(map[string]InputFormatCtor),
-		outputFormats:   make(map[string]OutputFormatCtor),
-		outputModifiers: make(map[string]OutputModifierCtor),
-		sinks:           make(map[string]SinkCtor),
+		sources:         make(map[string]core.SourceCtor),
+		inputModifiers:  make(map[string]core.InputModifierCtor),
+		inputFormats:    make(map[string]core.InputFormatCtor),
+		outputFormats:   make(map[string]core.OutputFormatCtor),
+		outputModifiers: make(map[string]core.OutputModifierCtor),
+		sinks:           make(map[string]core.SinkCtor),
 	}
 }
 
@@ -46,18 +30,18 @@ func NewParser() *Parser {
 type Parser struct {
 	mu sync.RWMutex
 
-	sources        map[string]SourceCtor
-	inputModifiers map[string]InputModifierCtor
-	inputFormats   map[string]InputFormatCtor
+	sources        map[string]core.SourceCtor
+	inputModifiers map[string]core.InputModifierCtor
+	inputFormats   map[string]core.InputFormatCtor
 
-	outputFormats   map[string]OutputFormatCtor
-	outputModifiers map[string]OutputModifierCtor
-	sinks           map[string]SinkCtor
+	outputFormats   map[string]core.OutputFormatCtor
+	outputModifiers map[string]core.OutputModifierCtor
+	sinks           map[string]core.SinkCtor
 }
 
 // LoadSource loads a new source and returns a value indicating
 // whether the value replaced a previous entry.
-func (p *Parser) LoadSource(name string, ctor SourceCtor) bool {
+func (p *Parser) LoadSource(name string, ctor core.SourceCtor) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -68,7 +52,7 @@ func (p *Parser) LoadSource(name string, ctor SourceCtor) bool {
 
 // LoadInputModifier loads a new input modifier and returns a value
 // inidicating whether the value replaced a previous entry.
-func (p *Parser) LoadInputModifier(name string, ctor InputModifierCtor) bool {
+func (p *Parser) LoadInputModifier(name string, ctor core.InputModifierCtor) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -79,7 +63,7 @@ func (p *Parser) LoadInputModifier(name string, ctor InputModifierCtor) bool {
 
 // LoadInputFormat loads a new input format and returns a value
 // indicating whether the value replaced a previous entry.
-func (p *Parser) LoadInputFormat(name string, ctor InputFormatCtor) bool {
+func (p *Parser) LoadInputFormat(name string, ctor core.InputFormatCtor) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -90,7 +74,7 @@ func (p *Parser) LoadInputFormat(name string, ctor InputFormatCtor) bool {
 
 // LoadOutputFormat loads a new output format and returns a value
 // indicating whether the value replaced a previous entry.
-func (p *Parser) LoadOutputFormat(name string, ctor OutputFormatCtor) bool {
+func (p *Parser) LoadOutputFormat(name string, ctor core.OutputFormatCtor) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -101,7 +85,7 @@ func (p *Parser) LoadOutputFormat(name string, ctor OutputFormatCtor) bool {
 
 // LoadOutputModifier loads a new output modifier and returns a value
 // indicating whether the value replaced a previous entry.
-func (p *Parser) LoadOutputModifier(name string, ctor OutputModifierCtor) bool {
+func (p *Parser) LoadOutputModifier(name string, ctor core.OutputModifierCtor) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -112,7 +96,7 @@ func (p *Parser) LoadOutputModifier(name string, ctor OutputModifierCtor) bool {
 
 // LoadSink loads a new sink and returns a value indicatin whether
 // the value replaced a previous entry.
-func (p *Parser) LoadSink(name string, ctor SinkCtor) bool {
+func (p *Parser) LoadSink(name string, ctor core.SinkCtor) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -122,7 +106,7 @@ func (p *Parser) LoadSink(name string, ctor SinkCtor) bool {
 }
 
 // Parse parses text into a flow.
-func (p *Parser) Parse(ctx session.Context, inputLine string, outputLines []string) (*Flow, error) {
+func (p *Parser) Parse(ctx core.Context, inputLine string, outputLines []string) (*Flow, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
@@ -152,16 +136,16 @@ func (p *Parser) Parse(ctx session.Context, inputLine string, outputLines []stri
 // 		gcs|gzip|json
 // The first part is expected to be a valid source, the last is expected
 // to be a valid input format. Any parts in the middle are modifiers.
-func (p *Parser) parseInput(ctx session.Context, line string) (*Input, error) {
+func (p *Parser) parseInput(ctx core.Context, line string) (*Input, error) {
 	if line == "" {
 		return nil, errors.New("empty input")
 	}
 
 	var (
-		s   Source
-		f   InputFormat
-		mis InputModifiers
-		err error
+		s    core.Source
+		f    core.InputFormat
+		mods core.InputModifiers
+		err  error
 
 		parts = strings.Split(line, Separator)
 	)
@@ -195,10 +179,10 @@ func (p *Parser) parseInput(ctx session.Context, line string) (*Input, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create modifier: %v", err)
 		}
-		mis = append(mis, rc)
+		mods = append(mods, rc)
 	}
 
-	return NewInput(s, mis, f), nil
+	return NewInput(s, mods, f), nil
 }
 
 // parseOutput parses an output line.
@@ -207,16 +191,16 @@ func (p *Parser) parseInput(ctx session.Context, line string) (*Input, error) {
 // 		http|har
 // The first part is expected to be a valid output format, the last is expected
 // to be a valid sink. Any parts in the middle are modifiers.
-func (p *Parser) parseOutput(ctx session.Context, line string) (*Output, error) {
+func (p *Parser) parseOutput(ctx core.Context, line string) (*Output, error) {
 	if line == "" {
 		return nil, errors.New("empty output")
 	}
 
 	var (
-		f   OutputFormat
-		s   Sink
-		mos OutputModifiers
-		err error
+		f    core.OutputFormat
+		s    core.Sink
+		mods core.OutputModifiers
+		err  error
 
 		parts = strings.Split(line, Separator)
 	)
@@ -250,8 +234,8 @@ func (p *Parser) parseOutput(ctx session.Context, line string) (*Output, error) 
 		if err != nil {
 			return nil, fmt.Errorf("failed to create modifier: %v", err)
 		}
-		mos = append(mos, wc)
+		mods = append(mods, wc)
 	}
 
-	return NewOutput(f, mos, s), nil
+	return NewOutput(f, mods, s), nil
 }

@@ -7,14 +7,12 @@ import (
 	"io"
 	"reflect"
 
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/envelope"
-	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/middleware"
-	"github.com/rename-this/vhs/session"
 )
 
 // NewInputFormat creates a new JSON input format.
-func NewInputFormat(_ session.Context) (flow.InputFormat, error) {
+func NewInputFormat(_ core.Context) (core.InputFormat, error) {
 	return &inputFormat{
 		out: make(chan interface{}),
 	}, nil
@@ -28,15 +26,15 @@ func (i *inputFormat) Out() <-chan interface{} {
 	return i.out
 }
 
-func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, streams <-chan flow.InputReader) {
+func (i *inputFormat) Init(ctx core.Context, m core.Middleware, streams <-chan core.InputReader) {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "json_input_format").
+		Str(core.LoggerKeyComponent, "json_input_format").
 		Logger()
 
 	ctx.Logger.Debug().Msg("init")
 
 	for rdr := range streams {
-		go func(r flow.InputReader) {
+		go func(r core.InputReader) {
 			defer func() {
 				if err := r.Close(); err != nil {
 					ctx.Errors <- fmt.Errorf("failed to close JSON input format: %w", err)
@@ -72,7 +70,7 @@ func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, streams
 }
 
 // NewOutputFormat creates a JSON output.
-func NewOutputFormat(_ session.Context) (flow.OutputFormat, error) {
+func NewOutputFormat(_ core.Context) (core.OutputFormat, error) {
 	return &outputFormat{
 		in: make(chan interface{}),
 	}, nil
@@ -84,9 +82,9 @@ type outputFormat struct {
 
 func (f *outputFormat) In() chan<- interface{} { return f.in }
 
-func (f *outputFormat) Init(ctx session.Context, w io.Writer) {
+func (f *outputFormat) Init(ctx core.Context, w io.Writer) {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "output_json").
+		Str(core.LoggerKeyComponent, "output_json").
 		Logger()
 
 	ctx.Logger.Debug().Msg("init")

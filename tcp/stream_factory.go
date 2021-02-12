@@ -7,8 +7,7 @@ import (
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
 
-	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 )
 
 // Direction is an enum indicating the direction
@@ -25,16 +24,19 @@ const (
 const (
 	// MetaDirection is a key for a flow.Meta to retrieve a direction.
 	MetaDirection = "tcp.direction"
-
+	// MetaSrcAddr is address of the source.
 	MetaSrcAddr = "ip.srcaddr"
+	// MetaDstAddr is the address of the destination.
 	MetaDstAddr = "ip.dstaddr"
+	// MetaSrcPort is the port of the source.
 	MetaSrcPort = "tcp.srcport"
+	// MetaDstPort is the port of the destination.
 	MetaDstPort = "tcp.dstport"
 )
 
-func newStreamFactory(ctx session.Context, out chan<- flow.InputReader) *streamFactory {
+func newStreamFactory(ctx core.Context, out chan<- core.InputReader) *streamFactory {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "tcp_stream_factory").
+		Str(core.LoggerKeyComponent, "tcp_stream_factory").
 		Logger()
 
 	return &streamFactory{
@@ -45,10 +47,10 @@ func newStreamFactory(ctx session.Context, out chan<- flow.InputReader) *streamF
 }
 
 type streamFactory struct {
-	ctx session.Context
+	ctx core.Context
 
 	outMu  sync.Mutex
-	out    chan<- flow.InputReader
+	out    chan<- core.InputReader
 	closed bool
 
 	connsMu sync.Mutex
@@ -56,10 +58,10 @@ type streamFactory struct {
 }
 
 type reader struct {
-	ctx  session.Context
+	ctx  core.Context
 	rs   tcpreader.ReaderStream
 	s    *stream
-	meta *flow.Meta
+	meta *core.Meta
 }
 
 func (r *reader) Reassembled(reassembly []tcpassembly.Reassembly) {
@@ -85,12 +87,12 @@ func (r *reader) Close() error {
 	return r.rs.Close()
 }
 
-func (r *reader) Meta() *flow.Meta {
+func (r *reader) Meta() *core.Meta {
 	return r.meta
 }
 
 type stream struct {
-	ctx       session.Context
+	ctx       core.Context
 	net       gopacket.Flow
 	transport gopacket.Flow
 	conn      *conn
@@ -117,7 +119,7 @@ func (f *streamFactory) New(net, transport gopacket.Flow) tcpassembly.Stream {
 		ctx: ctx,
 		rs:  tcpreader.NewReaderStream(),
 		s:   s,
-		meta: flow.NewMeta(s.conn.id, map[string]interface{}{
+		meta: core.NewMeta(s.conn.id, map[string]interface{}{
 			MetaDirection: d,
 			MetaSrcAddr:   net.Src().String(),
 			MetaSrcPort:   transport.Src().String(),
@@ -160,7 +162,7 @@ func (f *streamFactory) prune() {
 	}
 }
 
-func (f *streamFactory) trackStream(ctx session.Context, s *stream) Direction {
+func (f *streamFactory) trackStream(ctx core.Context, s *stream) Direction {
 	f.connsMu.Lock()
 	defer f.connsMu.Unlock()
 

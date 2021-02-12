@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 	"gotest.tools/v3/assert"
 )
 
@@ -29,7 +29,7 @@ func TestNewSource(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			var (
 				errs = make(chan error, 1)
-				ctx  = session.NewContexts(&session.Config{}, &session.FlowConfig{InputFile: c.file}, errs)
+				ctx  = core.NewContext(&core.Config{}, &core.FlowConfig{InputFile: c.file}, errs)
 			)
 
 			s, err := NewSource(ctx)

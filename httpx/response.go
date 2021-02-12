@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/envelope"
-	"github.com/rename-this/vhs/flow"
 	"github.com/rename-this/vhs/tcp"
 )
 
@@ -57,7 +57,7 @@ func (r *Response) SetCreated(created time.Time) { r.Created = created }
 func (r *Response) SetSessionID(id string) { r.SessionID = id }
 
 // NewResponse creates a new Response.
-func NewResponse(b *bufio.Reader, connectionID, exchangeID string, m *flow.Meta) (*Response, error) {
+func NewResponse(b *bufio.Reader, connectionID, exchangeID string, m *core.Meta) (*Response, error) {
 	res, err := http.ReadResponse(b, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)

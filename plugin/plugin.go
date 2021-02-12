@@ -4,8 +4,8 @@ import (
 	"fmt"
 	stdplugin "plugin"
 
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/session"
 )
 
 const (
@@ -19,13 +19,13 @@ const (
 )
 
 type (
-	sourcesFuncType        = func() map[string]flow.SourceCtor
-	inputModifiersFuncType = func() map[string]flow.InputModifierCtor
-	inputFormatsFuncType   = func() map[string]flow.InputFormatCtor
+	sourcesFuncType        = func() map[string]core.SourceCtor
+	inputModifiersFuncType = func() map[string]core.InputModifierCtor
+	inputFormatsFuncType   = func() map[string]core.InputFormatCtor
 
-	outputFormatsFuncType   = func() map[string]flow.OutputFormatCtor
-	outputModifiersFuncType = func() map[string]flow.OutputModifierCtor
-	sinksFuncType           = func() map[string]flow.SinkCtor
+	outputFormatsFuncType   = func() map[string]core.OutputFormatCtor
+	outputModifiersFuncType = func() map[string]core.OutputModifierCtor
+	sinksFuncType           = func() map[string]core.SinkCtor
 )
 
 // Plugin loads flow components.
@@ -52,7 +52,7 @@ type Summary struct {
 
 // Apply adds and flow components from the plugin
 // to the parser.
-func (p *Plugin) Apply(ctx session.Context, parser *flow.Parser) (Summary, error) {
+func (p *Plugin) Apply(ctx core.Context, parser *flow.Parser) (Summary, error) {
 	var s Summary
 
 	sourcesSymbol, err := p.sp.Lookup(sourcesFuncName)

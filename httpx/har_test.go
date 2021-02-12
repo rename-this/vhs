@@ -11,8 +11,8 @@ import (
 
 	"gotest.tools/v3/assert"
 
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/internal/safebuffer"
-	"github.com/rename-this/vhs/session"
 )
 
 func TestHAR(t *testing.T) {
@@ -283,8 +283,8 @@ func TestHAR(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			ctx := session.NewContexts(&session.Config{},
-				&session.FlowConfig{
+			ctx := core.NewContext(&core.Config{},
+				&core.FlowConfig{
 					HTTPTimeout: 30 * time.Second,
 				}, nil)
 

@@ -9,7 +9,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/fsouza/fake-gcs-server/fakestorage"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 	"gotest.tools/v3/assert"
 )
 
@@ -32,14 +32,14 @@ func TestNewSink(t *testing.T) {
 			bucketName: bucketName,
 			sessionID:  "111",
 			data:       "data-111",
-			newClientFn: func(_ session.Context) (*storage.Client, error) {
+			newClientFn: func(_ core.Context) (*storage.Client, error) {
 				return server.Client(), nil
 			},
 		},
 		{
 			desc:        "error on client",
 			errContains: "111",
-			newClientFn: func(_ session.Context) (*storage.Client, error) {
+			newClientFn: func(_ core.Context) (*storage.Client, error) {
 				return nil, errors.New("111")
 			},
 		},
@@ -47,7 +47,7 @@ func TestNewSink(t *testing.T) {
 			desc:        "missing bucket",
 			bucketName:  "none",
 			errContains: "failed to find bucket",
-			newClientFn: func(_ session.Context) (*storage.Client, error) {
+			newClientFn: func(_ core.Context) (*storage.Client, error) {
 				return server.Client(), nil
 			},
 		},
@@ -55,7 +55,7 @@ func TestNewSink(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			err := func() error {
-				ctx := session.NewContexts(&session.Config{}, &session.FlowConfig{
+				ctx := core.NewContext(&core.Config{}, &core.FlowConfig{
 					GCSBucketName: c.bucketName,
 				}, nil)
 				ctx.SessionID = c.sessionID
@@ -130,14 +130,14 @@ func TestNewSource(t *testing.T) {
 			desc:       "success",
 			bucketName: bucketName,
 			objectName: objectName,
-			newClientFn: func(_ session.Context) (*storage.Client, error) {
+			newClientFn: func(_ core.Context) (*storage.Client, error) {
 				return server.Client(), nil
 			},
 		},
 		{
 			desc:        "error on client",
 			errContains: "111",
-			newClientFn: func(_ session.Context) (*storage.Client, error) {
+			newClientFn: func(_ core.Context) (*storage.Client, error) {
 				return nil, errors.New("111")
 			},
 		},
@@ -145,7 +145,7 @@ func TestNewSource(t *testing.T) {
 			desc:        "missing bucket",
 			bucketName:  "none",
 			errContains: "failed to find bucket",
-			newClientFn: func(_ session.Context) (*storage.Client, error) {
+			newClientFn: func(_ core.Context) (*storage.Client, error) {
 				return server.Client(), nil
 			},
 		},
@@ -154,7 +154,7 @@ func TestNewSource(t *testing.T) {
 			bucketName:  bucketName,
 			objectName:  "none",
 			errContains: "object doesn't exist",
-			newClientFn: func(_ session.Context) (*storage.Client, error) {
+			newClientFn: func(_ core.Context) (*storage.Client, error) {
 				return server.Client(), nil
 			},
 		},
@@ -162,7 +162,7 @@ func TestNewSource(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			errs := make(chan error, 10)
-			ctx := session.NewContexts(&session.Config{}, &session.FlowConfig{
+			ctx := core.NewContext(&core.Config{}, &core.FlowConfig{
 				GCSBucketName: c.bucketName,
 				GCSObjectName: c.objectName,
 			}, errs)
@@ -190,7 +190,7 @@ func TestNewSource(t *testing.T) {
 }
 
 func TestNewSinkFail(t *testing.T) {
-	ctx := session.NewContexts(&session.Config{}, &session.FlowConfig{}, nil)
+	ctx := core.NewContext(&core.Config{}, &core.FlowConfig{}, nil)
 	_, err := NewSink(ctx)
 	assert.Assert(t, err != nil)
 }

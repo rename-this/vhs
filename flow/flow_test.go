@@ -9,39 +9,37 @@ import (
 
 	"gotest.tools/v3/assert"
 
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
+	"github.com/rename-this/vhs/coretest"
 )
 
 func TestFlow(t *testing.T) {
-	cfg := &session.Config{Debug: true}
-	flowCfg := &session.FlowConfig{
+	cfg := &core.Config{Debug: true}
+	flowCfg := &core.FlowConfig{
 		InputDrainDuration: 50 * time.Millisecond,
 	}
 
 	errs := make(chan error, 1)
-	ctx := session.NewContexts(cfg, flowCfg, errs)
+	ctx := core.NewContext(cfg, flowCfg, errs)
 
 	var (
-		s = &testSource{
-			streams: make(chan InputReader),
-			data: []InputReader{
-				EmptyMeta(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
-			},
+		s = coretest.NewTestSourceData([]core.InputReader{
+			core.EmptyMeta(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
+		})
+		ifmt, _ = coretest.NewTestInputFormat(ctx)
+		imods   = core.InputModifiers{
+			&coretest.TestDoubleInputModifier{},
 		}
-		ifmt, _ = newTestInputFormat(ctx)
-		mis     = InputModifiers{
-			&TestDoubleInputModifier{},
-		}
-		i = NewInput(s, mis, ifmt)
+		i = NewInput(s, imods, ifmt)
 
-		sink1 = &testSinkInt{}
-		o1    = NewOutput(newTestOutputFormatNoErr(ctx), nil, sink1)
+		sink1 = &coretest.TestSinkInt{}
+		o1    = NewOutput(coretest.NewTestOutputFormatNoErr(ctx), nil, sink1)
 
-		mos = OutputModifiers{
-			&TestDoubleOutputModifier{},
+		omods = core.OutputModifiers{
+			&coretest.TestDoubleOutputModifier{},
 		}
-		sink2 = &testSinkInt{}
-		o2    = NewOutput(newTestOutputFormatNoErr(ctx), mos, sink2)
+		sink2 = &coretest.TestSinkInt{}
+		o2    = NewOutput(coretest.NewTestOutputFormatNoErr(ctx), omods, sink2)
 
 		oo = Outputs{o1, o2}
 
@@ -52,9 +50,13 @@ func TestFlow(t *testing.T) {
 
 	assert.Equal(t, 0, len(errs))
 
-	sort.Ints(sink1.data)
-	sort.Ints(sink2.data)
+	var (
+		sink1Data = sink1.Data()
+		sink2Data = sink2.Data()
+	)
+	sort.Ints(sink1Data)
+	sort.Ints(sink2Data)
 
-	assert.DeepEqual(t, sink1.data, []int{1, 1, 2, 2, 3, 3})
-	assert.DeepEqual(t, sink2.data, []int{11, 11, 22, 22, 33, 33})
+	assert.DeepEqual(t, sink1Data, []int{1, 1, 2, 2, 3, 3})
+	assert.DeepEqual(t, sink2Data, []int{11, 11, 22, 22, 33, 33})
 }

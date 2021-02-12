@@ -6,10 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/envelope"
-	"github.com/rename-this/vhs/flow"
 	"github.com/rename-this/vhs/internal/safebuffer"
-	"github.com/rename-this/vhs/session"
 	"gotest.tools/v3/assert"
 )
 
@@ -48,7 +47,7 @@ func TestOutputFormat(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			var (
 				errs = make(chan error, 1)
-				ctx  = session.NewContexts(nil, nil, errs)
+				ctx  = core.NewContext(nil, nil, errs)
 				f, _ = NewOutputFormat(ctx)
 			)
 
@@ -109,9 +108,9 @@ func TestInputFormatInit(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			var (
 				errs = make(chan error, 1)
-				ctx  = session.NewContexts(&session.Config{
+				ctx  = core.NewContext(&core.Config{
 					Debug: true,
-				}, &session.FlowConfig{}, errs)
+				}, &core.FlowConfig{}, errs)
 			)
 
 			ctx.Registry.Register(func() envelope.Kindify { return &goose{} })
@@ -119,11 +118,11 @@ func TestInputFormatInit(t *testing.T) {
 			inputFormat, err := NewInputFormat(ctx)
 			assert.NilError(t, err)
 
-			streams := make(chan flow.InputReader)
+			streams := make(chan core.InputReader)
 
 			go inputFormat.Init(ctx, nil, streams)
 
-			streams <- flow.EmptyMeta(ioutil.NopCloser(strings.NewReader(c.data)))
+			streams <- core.EmptyMeta(ioutil.NopCloser(strings.NewReader(c.data)))
 
 			for i := 0; i < len(c.out); i++ {
 				assert.DeepEqual(t, c.out[i], <-inputFormat.Out())
