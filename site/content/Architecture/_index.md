@@ -112,7 +112,7 @@ example, the `tcp` source tracks information about source and destination IP add
 captures. This information may be useful to components downstream in the `vhs` data flow, so `vhs` provides a key-value
 metadata facility for recording this type of information and passing it between components. This metadata facility takes the
 form of a construct called `Meta` that is implemented in
-[`flow/meta.go`](https://github.com/rename-this/vhs/blob/main/flow/meta.go).
+[`core/meta.go`](https://github.com/rename-this/vhs/blob/main/core/meta.go).
 
 To pass `Meta` between components, it is wrapped together with an `io.ReadCloser` into struct. For example, the
 `InputReader` interface is used as the connection between a source and an input modifier. It is defined as follows:

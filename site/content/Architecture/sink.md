@@ -12,7 +12,7 @@ location, among others. Information on the sinks available in the current releas
 ## Developing a Sink
 
 Sinks are the simplest components in `vhs`. Sinks must conform to the the interface defined in
-[`flow/sink.go`](https://github.com/rename-this/vhs/blob/main/flow/sink.go) as shown below:
+[`core/sink.go`](https://github.com/rename-this/vhs/blob/main/core/sink.go) as shown below:
 
 ```go
 // Sink is a writable location for output.
