@@ -3,48 +3,11 @@ package core
 import (
 	"bytes"
 	"errors"
-	"io"
 	"testing"
 
 	"github.com/rename-this/vhs/internal/ioutilx"
 	"gotest.tools/assert"
 )
-
-type TestDoubleOutputModifier struct {
-	OptCloseErr error
-}
-
-// Wrap wraps.
-func (m *TestDoubleOutputModifier) Wrap(w OutputWriter) (OutputWriter, error) {
-	tdom := &testDoubleOutputModifier{w: w}
-	if m.OptCloseErr == nil {
-		return tdom, nil
-	}
-
-	return &errWriteCloser{
-		Writer: tdom,
-		err:    m.OptCloseErr,
-	}, nil
-}
-
-type testDoubleOutputModifier struct {
-	w io.WriteCloser
-}
-
-func (o *testDoubleOutputModifier) Write(p []byte) (int, error) {
-	return o.w.Write(append(p, p...))
-}
-
-func (o *testDoubleOutputModifier) Close() error {
-	return o.w.Close()
-}
-
-type errWriteCloser struct {
-	io.Writer
-	err error
-}
-
-func (n *errWriteCloser) Close() error { return n.err }
 
 func TestCloseSequentially(t *testing.T) {
 	cases := []struct {
