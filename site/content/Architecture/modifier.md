@@ -14,7 +14,7 @@ separately. Information on the input and output modifiers available in the curre
 Modifiers are implemented in a slightly different fashion when compared to other `vhs` components. They do not have an
 `Init` function, and are instead implemented as wrappers around an `InputReader` or `OutputWriter`.
 Input modifiers must conform to the `InputModifier` interface defined in
-[`core/input_modifier.go`](https://github.com/rename-this/vhs/blob/main/core/input_modifiers.go), which is shown below:
+[`core/input_modifier.go`](https://github.com/rename-this/vhs/blob/main/core/input_modifier.go), which is shown below:
 
 ```go
 // InputModifier wraps an InputReader.
