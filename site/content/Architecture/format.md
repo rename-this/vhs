@@ -15,7 +15,7 @@ Internally, the implementation of a format bears some resemblance to that of a [
 with the added wrinkle of reading from an incoming channel.
 
 Input formats must conform to the `InputFormat` interface as implemented in
-[`core/input_formats.go`](https://github.com/rename-this/vhs/blob/main/core/input_format.go) and shown below:
+[`core/input_format.go`](https://github.com/rename-this/vhs/blob/main/core/input_format.go) and shown below:
 
 ```go
 // InputFormat is an interface for formatting input
