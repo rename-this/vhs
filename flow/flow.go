@@ -1,8 +1,7 @@
 package flow
 
 import (
-	"github.com/rename-this/vhs/middleware"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 )
 
 // Flow connects a input and one or more outputs.
@@ -12,9 +11,9 @@ type Flow struct {
 }
 
 // Run runs the flow.
-func (f *Flow) Run(ctx session.Context, m middleware.Middleware) {
+func (f *Flow) Run(ctx core.Context, m core.Middleware) {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "flow").
+		Str(core.LoggerKeyComponent, "flow").
 		Logger()
 
 	ctx.Logger.Debug().Msg("running")

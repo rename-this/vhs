@@ -7,26 +7,25 @@ import (
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/rename-this/vhs/capture"
-	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 )
 
 // NewSource creates a new TCP source.
-func NewSource(_ session.Context) (flow.Source, error) {
+func NewSource(_ core.Context) (core.Source, error) {
 	return &tcpSource{
-		streams: make(chan flow.InputReader),
+		streams: make(chan core.InputReader),
 	}, nil
 }
 
 type tcpSource struct {
-	streams chan flow.InputReader
+	streams chan core.InputReader
 }
 
-func (s *tcpSource) Streams() <-chan flow.InputReader {
+func (s *tcpSource) Streams() <-chan core.InputReader {
 	return s.streams
 }
 
-func (s *tcpSource) Init(ctx session.Context) {
+func (s *tcpSource) Init(ctx core.Context) {
 	s.read(ctx, capture.NewCapture, capture.NewListener)
 }
 
@@ -35,9 +34,9 @@ type (
 	newListenerFn func(*capture.Capture) capture.Listener
 )
 
-func (s *tcpSource) read(ctx session.Context, newCapture newCaptureFn, newListener newListenerFn) {
+func (s *tcpSource) read(ctx core.Context, newCapture newCaptureFn, newListener newListenerFn) {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "tcp_source").
+		Str(core.LoggerKeyComponent, "tcp_source").
 		Logger()
 
 	ctx.Logger.Debug().Msg("read")

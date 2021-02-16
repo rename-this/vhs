@@ -9,7 +9,7 @@ import (
 
 	"gotest.tools/v3/assert"
 
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 )
 
 func TestCorrelator(t *testing.T) {
@@ -31,7 +31,7 @@ func TestCorrelator(t *testing.T) {
 	}()
 
 	errs := make(chan error)
-	ctx := session.NewContexts(&session.Config{DebugHTTPMessages: true}, &session.FlowConfig{}, errs)
+	ctx := core.NewContext(&core.Config{DebugHTTPMessages: true}, &core.FlowConfig{}, errs)
 
 	m.Start(ctx)
 
@@ -73,9 +73,9 @@ func TestStressCorrelator(t *testing.T) {
 
 	var (
 		errs    = make(chan error)
-		genctx  = session.NewContexts(&session.Config{DebugHTTPMessages: true}, &session.FlowConfig{}, errs)
-		recvctx = session.NewContexts(&session.Config{DebugHTTPMessages: true}, &session.FlowConfig{}, errs)
-		corctx  = session.NewContexts(&session.Config{DebugHTTPMessages: true}, &session.FlowConfig{}, errs)
+		genctx  = core.NewContext(&core.Config{DebugHTTPMessages: true}, &core.FlowConfig{}, errs)
+		recvctx = core.NewContext(&core.Config{DebugHTTPMessages: true}, &core.FlowConfig{}, errs)
+		corctx  = core.NewContext(&core.Config{DebugHTTPMessages: true}, &core.FlowConfig{}, errs)
 	)
 
 	c := NewCorrelator(httptimeout)

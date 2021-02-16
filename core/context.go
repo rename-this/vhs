@@ -1,4 +1,4 @@
-package session
+package core
 
 import (
 	"context"
@@ -15,14 +15,14 @@ const (
 	LoggerKeyComponent = "component"
 )
 
-// NewContexts creates a new set of contexts.
-func NewContexts(cfg *Config, flowCfg *FlowConfig, errs chan error) Context {
-	return NewContextsForWriter(cfg, flowCfg, errs, os.Stderr)
+// NewContext creates a new context.
+func NewContext(cfg *Config, flowCfg *FlowConfig, errs chan error) Context {
+	return NewContextForWriter(cfg, flowCfg, errs, os.Stderr)
 }
 
-// NewContextsForWriter creates a new set of contexts
+// NewContextForWriter creates a new context
 // with logs written to a specific writer.
-func NewContextsForWriter(cfg *Config, flowCfg *FlowConfig, errs chan error, w io.Writer) Context {
+func NewContextForWriter(cfg *Config, flowCfg *FlowConfig, errs chan error, w io.Writer) Context {
 	var (
 		sessionID      = ksuid.New().String()
 		registry       = envelope.NewRegistry()

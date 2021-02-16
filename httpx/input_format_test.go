@@ -11,9 +11,7 @@ import (
 
 	"gotest.tools/v3/assert"
 
-	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/middleware"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/tcp"
 )
 
@@ -25,7 +23,7 @@ func (m *testMiddleware) Start() error { return nil }
 func (m *testMiddleware) Wait() error  { return nil }
 func (m *testMiddleware) Close()       {}
 
-func (m *testMiddleware) Exec(_ session.Context, header []byte, n interface{}) (interface{}, error) {
+func (m *testMiddleware) Exec(_ core.Context, header []byte, n interface{}) (interface{}, error) {
 	if m.expectedErr != nil {
 		return nil, m.expectedErr
 	}
@@ -38,13 +36,13 @@ func (m *testMiddleware) Exec(_ session.Context, header []byte, n interface{}) (
 	return n, nil
 }
 
-func newTestInputReader(direction tcp.Direction, s string) flow.InputReader {
+func newTestInputReader(direction tcp.Direction, s string) core.InputReader {
 	var (
 		sr = strings.NewReader(s)
 		br = bufio.NewReader(sr)
 		c  = ioutil.NopCloser(br)
 	)
-	r := flow.EmptyMeta(c)
+	r := core.EmptyMeta(c)
 	r.Meta().Set(tcp.MetaDirection, direction)
 	return r
 }
@@ -52,9 +50,9 @@ func newTestInputReader(direction tcp.Direction, s string) flow.InputReader {
 func TestInputFormatInit(t *testing.T) {
 	cases := []struct {
 		desc        string
-		m           middleware.Middleware
-		up          flow.InputReader
-		down        flow.InputReader
+		m           core.Middleware
+		up          core.InputReader
+		down        core.InputReader
 		msgs        []Message
 		count       int
 		sessionID   string
@@ -62,8 +60,8 @@ func TestInputFormatInit(t *testing.T) {
 	}{
 		{
 			desc: "empty",
-			up:   flow.EmptyMeta(ioutil.NopCloser(strings.NewReader(""))),
-			down: flow.EmptyMeta(ioutil.NopCloser(strings.NewReader(""))),
+			up:   core.EmptyMeta(ioutil.NopCloser(strings.NewReader(""))),
+			down: core.EmptyMeta(ioutil.NopCloser(strings.NewReader(""))),
 		},
 		{
 			desc:  "no middleware",
@@ -136,12 +134,12 @@ func TestInputFormatInit(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			errs := make(chan error, 10)
-			ctx := session.NewContexts(&session.Config{Debug: true}, &session.FlowConfig{}, errs)
+			ctx := core.NewContext(&core.Config{Debug: true}, &core.FlowConfig{}, errs)
 			ctx.SessionID = c.sessionID
 			inputFormat, err := NewInputFormat(ctx)
 			assert.NilError(t, err)
 
-			streams := make(chan flow.InputReader)
+			streams := make(chan core.InputReader)
 
 			go inputFormat.Init(ctx, c.m, streams)
 

@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 
 	// See https://pkg.go.dev/github.com/google/gopacket?tab=doc#hdr-A_Final_Note
 	_ "github.com/google/gopacket/layers"
@@ -26,7 +26,7 @@ func NewListener(cap *Capture) Listener {
 // given address and port.
 type Listener interface {
 	Packets() <-chan gopacket.Packet
-	Listen(session.Context)
+	Listen(core.Context)
 	Close()
 }
 
@@ -46,9 +46,9 @@ func (l *listener) Packets() <-chan gopacket.Packet {
 }
 
 // Listen starts listening.
-func (l *listener) Listen(ctx session.Context) {
+func (l *listener) Listen(ctx core.Context) {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "listener").
+		Str(core.LoggerKeyComponent, "listener").
 		Logger()
 
 	for _, i := range l.Capture.Interfaces {
@@ -62,7 +62,7 @@ func (l *listener) Listen(ctx session.Context) {
 
 type activateFn func(inactive *pcap.InactiveHandle) (*pcap.Handle, error)
 
-func (l *listener) newHandle(ctx session.Context, i pcap.Interface, activate activateFn) (*pcap.Handle, error) {
+func (l *listener) newHandle(ctx core.Context, i pcap.Interface, activate activateFn) (*pcap.Handle, error) {
 	ctx.Logger = ctx.Logger.With().
 		Interface("interface", i).
 		Logger()
@@ -98,7 +98,7 @@ func (l *listener) newHandle(ctx session.Context, i pcap.Interface, activate act
 	return handle, nil
 }
 
-func (l *listener) readPackets(ctx session.Context, dataSource gopacket.PacketDataSource, decoder gopacket.Decoder) {
+func (l *listener) readPackets(ctx core.Context, dataSource gopacket.PacketDataSource, decoder gopacket.Decoder) {
 	source := gopacket.NewPacketSource(dataSource, decoder)
 	source.Lazy = true
 	source.NoCopy = true

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 	"gotest.tools/v3/assert"
 )
 
@@ -46,7 +46,7 @@ func TestNewSink(t *testing.T) {
 			addr, cleanup := c.setup(t)
 			defer cleanup()
 
-			ctx := session.NewContexts(nil, &session.FlowConfig{
+			ctx := core.NewContext(nil, &core.FlowConfig{
 				AddrSink: addr,
 			}, nil)
 

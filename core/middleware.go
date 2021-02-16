@@ -1,4 +1,4 @@
-package middleware
+package core
 
 import (
 	"bufio"
@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"sync"
 
-	"github.com/rename-this/vhs/session"
 	"github.com/rs/zerolog"
 )
 
@@ -17,17 +16,17 @@ type Middleware interface {
 	Start() error
 	Wait() error
 	Close()
-	Exec(session.Context, []byte, interface{}) (interface{}, error)
+	Exec(Context, []byte, interface{}) (interface{}, error)
 }
 
-// New creates a new Middleware.
-func New(ctx session.Context, command string) (Middleware, error) {
+// NewMiddleware creates a new Middleware.
+func NewMiddleware(ctx Context, command string) (Middleware, error) {
 	if command == "" {
 		return nil, nil
 	}
 
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "middleware").
+		Str(LoggerKeyComponent, "middleware").
 		Str("command", command).
 		Logger()
 
@@ -87,7 +86,7 @@ func (m *mware) Close() {
 // Exec executes the middleware for n. The header bytes are written
 // directly before the payload (which is JSON serialized) separated
 // by a single space.
-func (m *mware) Exec(ctx session.Context, header []byte, n interface{}) (interface{}, error) {
+func (m *mware) Exec(ctx Context, header []byte, n interface{}) (interface{}, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

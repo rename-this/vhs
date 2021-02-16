@@ -7,12 +7,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 )
 
 // NewOutputFormat creates an HTTP output format.
-func NewOutputFormat(ctx session.Context) (flow.OutputFormat, error) {
+func NewOutputFormat(ctx core.Context) (core.OutputFormat, error) {
 	registerEnvelopes(ctx)
 	return &outputFormat{
 		in: make(chan interface{}),
@@ -27,9 +26,9 @@ func (o *outputFormat) In() chan<- interface{} {
 	return o.in
 }
 
-func (o *outputFormat) Init(ctx session.Context, w io.Writer) {
+func (o *outputFormat) Init(ctx core.Context, w io.Writer) {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "output_http").
+		Str(core.LoggerKeyComponent, "output_http").
 		Logger()
 
 	ctx.Logger.Debug().Msg("init")
@@ -62,7 +61,7 @@ func (o *outputFormat) Init(ctx session.Context, w io.Writer) {
 	}
 }
 
-func (o *outputFormat) writeRequest(ctx session.Context, wait time.Duration, w io.Writer, r *Request) {
+func (o *outputFormat) writeRequest(ctx core.Context, wait time.Duration, w io.Writer, r *Request) {
 	time.Sleep(wait)
 
 	if err := r.StdRequest().Write(w); err != nil {

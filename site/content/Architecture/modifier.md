@@ -14,7 +14,7 @@ separately. Information on the input and output modifiers available in the curre
 Modifiers are implemented in a slightly different fashion when compared to other `vhs` components. They do not have an
 `Init` function, and are instead implemented as wrappers around an `InputReader` or `OutputWriter`.
 Input modifiers must conform to the `InputModifier` interface defined in
-[`flow/modifiers.go`](https://github.com/rename-this/vhs/blob/main/flow/modifiers.go), which is shown below:
+[`core/input_modifier.go`](https://github.com/rename-this/vhs/blob/main/core/input_modifier.go), which is shown below:
 
 ```go
 // InputModifier wraps an InputReader.
@@ -24,7 +24,7 @@ type InputModifier interface {
 ```
 
 Output modifiers must conform to the `OutputModifier` interface defined in
-[`flow/modifiers.go`](https://github.com/rename-this/vhs/blob/main/flow/modifiers.go), which is shown below:
+[`core/output_modifier.go`](https://github.com/rename-this/vhs/blob/main/core/output_modifier.go), which is shown below:
 
 ```go
 // OutputModifier wraps an OtputWriter.
@@ -45,10 +45,10 @@ Other considerations when developing a modifier include:
 * Modifiers may utilize command line arguments if necessary. These flags must be declared in `newRootCmd` in
 [`cmd/vhs/main.go`](https://github.com/rename-this/vhs/blob/main/cmd/vhs/main.go). The values of these flags should be
 stored in `FlowConfig` in the `session` package at
-[`session/config.go`](https://github.com/rename-this/vhs/blob/main/session/config.go). These values will then be
-available within your package as part of the `session.Context`.
+[`core/config.go`](https://github.com/rename-this/vhs/blob/main/core/config.go). These values will then be
+available within your package as part of the `core.Context`.
 * If a modifier uses any internal goroutines, these must clean up and exit upon receiving a signal on the
-`session.Context.Done()` channel.
+`core.Context.Done()` channel.
 
 ### Example
 

@@ -80,5 +80,4 @@ func TestMap(t *testing.T) {
 	m.Add("test", "test")
 	test := <-m.Evictions
 	assert.Equal(t, test, "test")
-
 }

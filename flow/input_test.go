@@ -7,54 +7,54 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rename-this/vhs/middleware"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
+	"github.com/rename-this/vhs/coretest"
 	"gotest.tools/v3/assert"
 )
 
 func TestInput(t *testing.T) {
 	cases := []struct {
 		desc        string
-		m           middleware.Middleware
-		data        []InputReader
-		mis         InputModifiers
+		m           core.Middleware
+		data        []core.InputReader
+		mis         core.InputModifiers
 		out         []interface{}
 		errContains string
 	}{
 		{
 			desc: "no modifiers",
-			data: []InputReader{
-				EmptyMeta(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
+			data: []core.InputReader{
+				core.EmptyMeta(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
 			},
 			out: []interface{}{1, 2, 3},
 		},
 		{
 			desc: "modifiers",
-			data: []InputReader{
-				EmptyMeta(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
+			data: []core.InputReader{
+				core.EmptyMeta(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
 			},
-			mis: InputModifiers{
-				&TestDoubleInputModifier{},
+			mis: core.InputModifiers{
+				&coretest.TestDoubleInputModifier{},
 			},
 			out: []interface{}{1, 2, 3, 1, 2, 3},
 		},
 		{
 			desc: "bad modifier",
-			data: []InputReader{
-				EmptyMeta(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
+			data: []core.InputReader{
+				core.EmptyMeta(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
 			},
-			mis: InputModifiers{
-				&TestErrInputModifier{err: errors.New("111")},
+			mis: core.InputModifiers{
+				&coretest.TestErrInputModifier{Err: errors.New("111")},
 			},
 			errContains: "111",
 		},
 		{
 			desc: "bad modifier closer",
-			data: []InputReader{
-				EmptyMeta(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
+			data: []core.InputReader{
+				core.EmptyMeta(ioutil.NopCloser(strings.NewReader("1\n2\n3\n"))),
 			},
-			mis: InputModifiers{
-				&TestDoubleInputModifier{optCloseErr: errors.New("111")},
+			mis: core.InputModifiers{
+				&coretest.TestDoubleInputModifier{OptCloseErr: errors.New("111")},
 			},
 			errContains: "111",
 		},
@@ -64,14 +64,11 @@ func TestInput(t *testing.T) {
 			// hack: Make this big enough to handle any errors we
 			// might end up with.
 			errs := make(chan error, 10)
-			ctx := session.NewContexts(&session.Config{}, &session.FlowConfig{}, errs)
+			ctx := core.NewContext(&core.Config{}, &core.FlowConfig{}, errs)
 
 			var (
-				s = &testSource{
-					streams: make(chan InputReader),
-					data:    c.data,
-				}
-				f, _ = newTestInputFormat(ctx)
+				s    = coretest.NewTestSourceData(c.data)
+				f, _ = coretest.NewTestInputFormat(ctx)
 				i    = NewInput(s, c.mis, f)
 			)
 

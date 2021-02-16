@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/envelope"
-	"github.com/rename-this/vhs/flow"
 	"github.com/rename-this/vhs/tcp"
 )
 
@@ -82,7 +82,7 @@ func (r *Request) StdRequest() *http.Request {
 }
 
 // NewRequest creates a new Request.
-func NewRequest(b *bufio.Reader, connectionID string, exchangeID string, m *flow.Meta) (*Request, error) {
+func NewRequest(b *bufio.Reader, connectionID string, exchangeID string, m *core.Meta) (*Request, error) {
 	req, err := http.ReadRequest(b)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read request: %w", err)

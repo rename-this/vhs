@@ -27,7 +27,7 @@ type Source interface {
 The `Init` function should handle the initialization and concurrent operation of the source. It will be run in its own
 goroutine by the `vhs` flow infrastructure. `vhs` does not use buffered channels, and all components are expected to
 run concurrently, so care should be taken to avoid internal deadlocks or contention that could cause blocks or
-bottlenecks. The Init function should clean up and exit upon receiving a signal on `session.Context.Done()`.
+bottlenecks. The Init function should clean up and exit upon receiving a signal on `core.Context.Done()`.
 
 Other important considerations include:
 
@@ -36,8 +36,8 @@ Other important considerations include:
 * Sources may declare command line flags in `newRootCmd()` in
 [`cmd/vhs/main.go`](https://github.com/rename-this/vhs/blob/main/cmd/vhs/main.go). The values of these flags should be
 stored in `FlowConfig` in the `session` package at
-[`session/config.go`](https://github.com/rename-this/vhs/blob/main/session/config.go). These values will then be
-available within your package as part of the `session.Context`.
+[`core/config.go`](https://github.com/rename-this/vhs/blob/main/core/config.go). These values will then be
+available within your package as part of the `core.Context`.
 
 ### Example
 

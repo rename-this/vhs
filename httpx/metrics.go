@@ -5,16 +5,16 @@ import (
 	"io"
 	"io/ioutil"
 
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/flow"
 	"github.com/rename-this/vhs/internal/ioutilx"
-	"github.com/rename-this/vhs/session"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 // Ensure Metrics conforms to Format interface.
-var _ flow.OutputFormat = &Metrics{}
+var _ core.OutputFormat = &Metrics{}
 
 // Metrics is a format that calculates HTTP metrics for Prometheus monitoring
 // Note that this format does not modify data passing through it, it merely extracts metrics.
@@ -67,9 +67,9 @@ func NewMetrics() *Metrics {
 func (m *Metrics) In() chan<- interface{} { return m.in }
 
 // Init initializes the metrics format and registers the metrics with Prometheus
-func (m *Metrics) Init(ctx session.Context, _ io.Writer) {
+func (m *Metrics) Init(ctx core.Context, _ io.Writer) {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "http_metrics").
+		Str(core.LoggerKeyComponent, "http_metrics").
 		Logger()
 
 	ctx.Logger.Debug().Msg("init")
@@ -113,11 +113,10 @@ func (m *Metrics) Init(ctx session.Context, _ io.Writer) {
 			return
 		}
 	}
-
 }
 
 // Calculates the desired metrics. Currently calculates latency between request and response and number of timeouts.
-func calcMetrics(ctx session.Context, req *Request, met metricsBackend) {
+func calcMetrics(ctx core.Context, req *Request, met metricsBackend) {
 	if req.Response == nil {
 		met.IncrementCounter(metricsLabels{
 			method: req.Method,

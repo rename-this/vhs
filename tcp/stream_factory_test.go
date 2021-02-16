@@ -12,7 +12,6 @@ func TestReader(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-
 		})
 	}
 }

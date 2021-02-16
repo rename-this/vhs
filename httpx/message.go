@@ -3,8 +3,8 @@ package httpx
 import (
 	"time"
 
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/envelope"
-	"github.com/rename-this/vhs/session"
 )
 
 // MessageType is the type of an HTTP message.
@@ -25,7 +25,7 @@ type Message interface {
 	SetSessionID(string)
 }
 
-func registerEnvelopes(ctx session.Context) {
+func registerEnvelopes(ctx core.Context) {
 	ctx.Registry.Register(func() envelope.Kindify { return &Request{} })
 	ctx.Registry.Register(func() envelope.Kindify { return &Response{} })
 }

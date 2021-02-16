@@ -8,8 +8,8 @@ import (
 	"path"
 	"testing"
 
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/session"
 	"github.com/segmentio/ksuid"
 	"gotest.tools/v3/assert"
 )
@@ -134,7 +134,7 @@ func TestPlugin(t *testing.T) {
 	for _, c := range cases {
 		c := c
 		t.Run(c.desc, func(t *testing.T) {
-			ctx := session.NewContexts(&session.Config{Debug: true}, nil, nil)
+			ctx := core.NewContext(&core.Config{Debug: true}, nil, nil)
 
 			dir, err := ioutil.TempDir("", "")
 			assert.NilError(t, err)
@@ -206,17 +206,16 @@ const sourcePlugin = `
 package main
 
 import (
-	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 )
 
-func newTestSource(session.Context) (flow.Source, error) { return &testSource{}, nil }
+func newTestSource(core.Context) (core.Source, error) { return &testSource{}, nil }
 type testSource struct {}
-func (*testSource) Streams() <-chan flow.InputReader { return nil }
-func (*testSource) Init(session.Context) {}
+func (*testSource) Streams() <-chan core.InputReader { return nil }
+func (*testSource) Init(core.Context) {}
 
-func Sources() map[string]flow.SourceCtor { 
-	return map[string]flow.SourceCtor{
+func Sources() map[string]core.SourceCtor { 
+	return map[string]core.SourceCtor{
 		"source": newTestSource,
 	}
 }
@@ -226,17 +225,16 @@ const inputModifierPlugin = `
 package main
 
 import (
-	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 )
 
-func newTestInputModifier(session.Context) (flow.InputModifier, error) { return &testInputModifier{}, nil }
+func newTestInputModifier(core.Context) (core.InputModifier, error) { return &testInputModifier{}, nil }
 type testInputModifier struct {}
 func (*testInputModifier) Read([]byte) (int, error) { return -1, nil }
-func (*testInputModifier) Wrap(flow.InputReader) (flow.InputReader, error) { return nil, nil }
+func (*testInputModifier) Wrap(core.InputReader) (core.InputReader, error) { return nil, nil }
 
-func InputModifiers() map[string]flow.InputModifierCtor { 
-	return map[string]flow.InputModifierCtor{
+func InputModifiers() map[string]core.InputModifierCtor { 
+	return map[string]core.InputModifierCtor{
 		"input_modifier": newTestInputModifier,
 	}
 }
@@ -246,18 +244,16 @@ const inputFormatPlugin = `
 package main
 
 import (
-	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/session"
-	"github.com/rename-this/vhs/middleware"
+	"github.com/rename-this/vhs/core"
 )
 
-func newTestInputFormat(session.Context) (flow.InputFormat, error) { return &testInputFormat{}, nil }
+func newTestInputFormat(core.Context) (core.InputFormat, error) { return &testInputFormat{}, nil }
 type testInputFormat struct {}
-func (*testInputFormat) Init(session.Context, middleware.Middleware, <-chan flow.InputReader) {}
+func (*testInputFormat) Init(core.Context, core.Middleware, <-chan core.InputReader) {}
 func (*testInputFormat) Out() <-chan interface{} { return nil }
 
-func InputFormats() map[string]flow.InputFormatCtor { 
-	return map[string]flow.InputFormatCtor{
+func InputFormats() map[string]core.InputFormatCtor { 
+	return map[string]core.InputFormatCtor{
 		"input_format": newTestInputFormat,
 	}
 }
@@ -269,17 +265,16 @@ package main
 import (
 	"io"
 
-	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 )
 
-func newTestOutputFormat(session.Context) (flow.OutputFormat, error) { return &testOutputFormat{}, nil }
+func newTestOutputFormat(core.Context) (core.OutputFormat, error) { return &testOutputFormat{}, nil }
 type testOutputFormat struct {}
-func (*testOutputFormat) Init(session.Context, io.Writer) {}
+func (*testOutputFormat) Init(core.Context, io.Writer) {}
 func (*testOutputFormat) In() chan<- interface{} { return nil }
 
-func OutputFormats() map[string]flow.OutputFormatCtor { 
-	return map[string]flow.OutputFormatCtor{
+func OutputFormats() map[string]core.OutputFormatCtor { 
+	return map[string]core.OutputFormatCtor{
 		"output_format": newTestOutputFormat,
 	}
 }
@@ -289,17 +284,16 @@ const outputModifierPlugin = `
 package main
 
 import (
-	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 )
 
-func newTestOutputModifier(session.Context) (flow.OutputModifier, error) { return &testOutputModifier{}, nil }
+func newTestOutputModifier(core.Context) (core.OutputModifier, error) { return &testOutputModifier{}, nil }
 type testOutputModifier struct {}
-func (*testOutputModifier) Wrap(flow.OutputWriter) (flow.OutputWriter, error) { return nil, nil }
+func (*testOutputModifier) Wrap(core.OutputWriter) (core.OutputWriter, error) { return nil, nil }
 func (*testOutputModifier) Write([]byte) (int, error) { return -1, nil }
 
-func OutputModifiers() map[string]flow.OutputModifierCtor { 
-	return map[string]flow.OutputModifierCtor{
+func OutputModifiers() map[string]core.OutputModifierCtor { 
+	return map[string]core.OutputModifierCtor{
 		"output_modifier": newTestOutputModifier,
 	}
 }
@@ -309,18 +303,17 @@ const sinkPlugin = `
 package main
 
 import (
-	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 )
 
-func newTestSink(session.Context) (flow.Sink, error) { return &testSink{}, nil }
+func newTestSink(core.Context) (core.Sink, error) { return &testSink{}, nil }
 type testSink struct{}
 func (*testSink) Write([]byte) (int, error) { return -1, nil }
 func (*testSink) Close() error { return nil }
 
 
-func Sinks() map[string]flow.SinkCtor { 
-	return map[string]flow.SinkCtor{
+func Sinks() map[string]core.SinkCtor { 
+	return map[string]core.SinkCtor{
 		"sink": newTestSink,
 	}
 }

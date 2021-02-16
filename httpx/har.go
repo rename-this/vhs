@@ -8,8 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 )
 
 // HAR is an HTTP Archive.
@@ -20,7 +19,7 @@ type HAR struct {
 }
 
 // NewHAR creates a mew HAR format.
-func NewHAR(ctx session.Context) (flow.OutputFormat, error) {
+func NewHAR(ctx core.Context) (core.OutputFormat, error) {
 	registerEnvelopes(ctx)
 	return &HAR{
 		in: make(chan interface{}),
@@ -31,9 +30,9 @@ func NewHAR(ctx session.Context) (flow.OutputFormat, error) {
 func (h *HAR) In() chan<- interface{} { return h.in }
 
 // Init initializes the HAR sink.
-func (h *HAR) Init(ctx session.Context, w io.Writer) {
+func (h *HAR) Init(ctx core.Context, w io.Writer) {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "har").
+		Str(core.LoggerKeyComponent, "har").
 		Logger()
 
 	ctx.Logger.Debug().Msg("init")
@@ -95,7 +94,7 @@ func (h *HAR) Init(ctx session.Context, w io.Writer) {
 	}
 }
 
-func (h *HAR) addRequest(ctx session.Context, hh *har, req *Request) {
+func (h *HAR) addRequest(ctx core.Context, hh *har, req *Request) {
 	ensureAbsoluteURL(req)
 
 	request := harRequest{

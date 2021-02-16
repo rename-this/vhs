@@ -6,14 +6,13 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 )
 
 // NewSink creates a new S3-compatible sink.
-func NewSink(ctx session.Context) (flow.Sink, error) {
+func NewSink(ctx core.Context) (core.Sink, error) {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "s3compat_sink").
+		Str(core.LoggerKeyComponent, "s3compat_sink").
 		Logger()
 
 	ctx.Logger.Debug().Msg("creating sink")
@@ -33,7 +32,7 @@ func NewSink(ctx session.Context) (flow.Sink, error) {
 }
 
 type sink struct {
-	ctx    session.Context
+	ctx    core.Context
 	client *minio.Client
 	buf    *bytes.Buffer
 }
@@ -60,25 +59,25 @@ func (s *sink) Close() error {
 }
 
 // NewSource creates a new S3-compatible source.
-func NewSource(ctx session.Context) (flow.Source, error) {
+func NewSource(ctx core.Context) (core.Source, error) {
 	client, err := newClient(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("falied to create S3-compatible source client: %w", err)
 	}
 	return &source{
 		client:  client,
-		streams: make(chan flow.InputReader),
+		streams: make(chan core.InputReader),
 	}, nil
 }
 
 type source struct {
 	client  *minio.Client
-	streams chan flow.InputReader
+	streams chan core.InputReader
 }
 
-func (s *source) Init(ctx session.Context) {
+func (s *source) Init(ctx core.Context) {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "s3compat_source").
+		Str(core.LoggerKeyComponent, "s3compat_source").
 		Logger()
 
 	o, err := s.client.GetObject(
@@ -93,26 +92,26 @@ func (s *source) Init(ctx session.Context) {
 
 	s.streams <- &stream{
 		Object: o,
-		meta:   flow.NewMeta(ctx.FlowConfig.S3CompatObjectName, nil),
+		meta:   core.NewMeta(ctx.FlowConfig.S3CompatObjectName, nil),
 	}
 
 	ctx.Logger.Debug().Msg("init complete")
 }
 
-func (s *source) Streams() <-chan flow.InputReader {
+func (s *source) Streams() <-chan core.InputReader {
 	return s.streams
 }
 
 type stream struct {
 	*minio.Object
-	meta *flow.Meta
+	meta *core.Meta
 }
 
-func (s *stream) Meta() *flow.Meta {
+func (s *stream) Meta() *core.Meta {
 	return s.meta
 }
 
-func newClient(ctx session.Context) (*minio.Client, error) {
+func newClient(ctx core.Context) (*minio.Client, error) {
 	return minio.New(ctx.FlowConfig.S3CompatEndpoint, &minio.Options{
 		Creds: credentials.NewStaticV4(
 			ctx.FlowConfig.S3CompatAccessKey,

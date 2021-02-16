@@ -27,7 +27,6 @@ type Map struct {
 
 // New creates a new Map
 func New(itemTTL, pruneInterval time.Duration) *Map {
-
 	m := &Map{
 		Evictions: make(chan interface{}),
 		ticker:    time.NewTicker(pruneInterval),

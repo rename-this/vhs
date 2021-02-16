@@ -5,9 +5,8 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/rename-this/vhs/flow"
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/internal/ioutilx"
-	"github.com/rename-this/vhs/session"
 	"gotest.tools/v3/assert"
 )
 
@@ -21,7 +20,7 @@ var (
 )
 
 func TestNewOutputModifier(t *testing.T) {
-	om, err := NewOutputModifier(session.Context{})
+	om, err := NewOutputModifier(core.Context{})
 	assert.NilError(t, err)
 
 	var buf bytes.Buffer
@@ -57,10 +56,10 @@ func TestNewInputModifier(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			im, err := NewInputModifier(session.Context{})
+			im, err := NewInputModifier(core.Context{})
 			assert.NilError(t, err)
 
-			buf := flow.EmptyMeta(ioutil.NopCloser(bytes.NewBuffer(c.in)))
+			buf := core.EmptyMeta(ioutil.NopCloser(bytes.NewBuffer(c.in)))
 			r, err := im.Wrap(buf)
 			if c.errContains != "" {
 				assert.ErrorContains(t, err, c.errContains)

@@ -7,9 +7,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/rename-this/vhs/flow"
-	"github.com/rename-this/vhs/middleware"
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/tcp"
 	"github.com/segmentio/ksuid"
 )
@@ -19,7 +17,7 @@ const (
 )
 
 // NewInputFormat creates an HTTP input formatter.
-func NewInputFormat(ctx session.Context) (flow.InputFormat, error) {
+func NewInputFormat(ctx core.Context) (core.InputFormat, error) {
 	registerEnvelopes(ctx)
 	return &inputFormat{
 		out: make(chan interface{}),
@@ -30,9 +28,9 @@ type inputFormat struct {
 	out chan interface{}
 }
 
-func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, streams <-chan flow.InputReader) {
+func (i *inputFormat) Init(ctx core.Context, m core.Middleware, streams <-chan core.InputReader) {
 	ctx.Logger = ctx.Logger.With().
-		Str(session.LoggerKeyComponent, "http_input_format").
+		Str(core.LoggerKeyComponent, "http_input_format").
 		Logger()
 
 	ctx.Logger.Debug().Msg("init")
@@ -45,7 +43,7 @@ func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, streams
 	exchangeIDs := make(chan string, exchangeIDBufferSize)
 
 	for rdr := range streams {
-		go func(r flow.InputReader) {
+		go func(r core.InputReader) {
 			defer func() {
 				if err := r.Close(); err != nil {
 					ctx.Errors <- fmt.Errorf("failed to close httpx input format: %w", err)
@@ -107,7 +105,7 @@ func (i *inputFormat) Init(ctx session.Context, m middleware.Middleware, streams
 	}
 }
 
-func (i *inputFormat) handle(ctx session.Context, m middleware.Middleware, t MessageType, msg Message) {
+func (i *inputFormat) handle(ctx core.Context, m core.Middleware, t MessageType, msg Message) {
 	msg.SetCreated(time.Now())
 	msg.SetSessionID(ctx.SessionID)
 

@@ -4,29 +4,30 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/rename-this/vhs/session"
+	"github.com/rename-this/vhs/core"
+	"github.com/rename-this/vhs/coretest"
 	"gotest.tools/v3/assert"
 )
 
 func newTestParser() *Parser {
 	p := NewParser()
 
-	p.LoadSource("src", newTestSource)
+	p.LoadSource("src", coretest.NewTestSource)
 
-	p.LoadInputModifier("dbl", func(_ session.Context) (InputModifier, error) {
-		return &TestDoubleInputModifier{}, nil
+	p.LoadInputModifier("dbl", func(core.Context) (core.InputModifier, error) {
+		return &coretest.TestDoubleInputModifier{}, nil
 	})
 
-	p.LoadInputFormat("ifmt", newTestInputFormat)
+	p.LoadInputFormat("ifmt", coretest.NewTestInputFormat)
 
-	p.LoadOutputFormat("ofmt", newTestOutputFormat)
+	p.LoadOutputFormat("ofmt", coretest.NewTestOutputFormat)
 
-	p.LoadOutputModifier("dbl", func(_ session.Context) (OutputModifier, error) {
-		return &TestDoubleOutputModifier{}, nil
+	p.LoadOutputModifier("dbl", func(_ core.Context) (core.OutputModifier, error) {
+		return &coretest.TestDoubleOutputModifier{}, nil
 	})
 
-	p.LoadSink("snk", func(_ session.Context) (Sink, error) {
-		return &testSink{}, nil
+	p.LoadSink("snk", func(_ core.Context) (core.Sink, error) {
+		return &coretest.TestSink{}, nil
 	})
 
 	return p
@@ -49,7 +50,7 @@ func TestParse(t *testing.T) {
 				"ofmt|dbl|dbl|dbl|dbl|snk",
 				"ofmt|dbl|dbl|dbl|dbl|snk",
 			},
-			flowJSON: `{"Input":{"Source":{},"Modifiers":[{},{},{},{}],"Format":{}},"Outputs":[{"Format":{},"Modifiers":[{},{},{},{}],"Sink":{}},{"Format":{},"Modifiers":[{},{},{},{}],"Sink":{}}]}`,
+			flowJSON: `{"Input":{"Source":{"Data":null},"Modifiers":[{"OptCloseErr":null},{"OptCloseErr":null},{"OptCloseErr":null},{"OptCloseErr":null}],"Format":{}},"Outputs":[{"Format":{},"Modifiers":[{"OptCloseErr":null},{"OptCloseErr":null},{"OptCloseErr":null},{"OptCloseErr":null}],"Sink":{"OptCloseErr":null}},{"Format":{},"Modifiers":[{"OptCloseErr":null},{"OptCloseErr":null},{"OptCloseErr":null},{"OptCloseErr":null}],"Sink":{"OptCloseErr":null}}]}`,
 		},
 		{
 			desc:        "bad input",
@@ -67,7 +68,7 @@ func TestParse(t *testing.T) {
 	}
 	for _, c := range cases {
 		parser := newTestParser()
-		ctx := session.NewContexts(&session.Config{}, &session.FlowConfig{}, nil)
+		ctx := core.NewContext(&core.Config{}, &core.FlowConfig{}, nil)
 		t.Run(c.desc, func(t *testing.T) {
 			i, err := parser.Parse(ctx, c.inputLine, c.outputLines)
 			if c.errContains == "" {
@@ -108,23 +109,23 @@ func TestParseInput(t *testing.T) {
 		{
 			desc:      "no modifiers",
 			line:      "src|ifmt",
-			inputJSON: `{"Source":{},"Modifiers":null,"Format":{}}`,
+			inputJSON: `{"Source":{"Data":null},"Modifiers":null,"Format":{}}`,
 		},
 		{
 			desc:      "one modifier",
 			line:      "src|dbl|ifmt",
-			inputJSON: `{"Source":{},"Modifiers":[{}],"Format":{}}`,
+			inputJSON: `{"Source":{"Data":null},"Modifiers":[{"OptCloseErr":null}],"Format":{}}`,
 		},
 		{
 			desc:      "many modifier",
 			line:      "src|dbl|dbl|dbl|dbl|ifmt",
-			inputJSON: `{"Source":{},"Modifiers":[{},{},{},{}],"Format":{}}`,
+			inputJSON: `{"Source":{"Data":null},"Modifiers":[{"OptCloseErr":null},{"OptCloseErr":null},{"OptCloseErr":null},{"OptCloseErr":null}],"Format":{}}`,
 		},
 	}
 	for _, c := range cases {
 		parser := newTestParser()
 		t.Run(c.desc, func(t *testing.T) {
-			i, err := parser.parseInput(session.Context{}, c.line)
+			i, err := parser.parseInput(core.Context{}, c.line)
 			if c.errContains == "" {
 				assert.NilError(t, err)
 				b, err := json.Marshal(i)
@@ -163,22 +164,22 @@ func TestParseOutput(t *testing.T) {
 		{
 			desc:       "no modifiers",
 			line:       "ofmt|snk",
-			outputJSON: `{"Format":{},"Modifiers":null,"Sink":{}}`,
+			outputJSON: `{"Format":{},"Modifiers":null,"Sink":{"OptCloseErr":null}}`,
 		},
 		{
 			desc:       "one modifier",
 			line:       "ofmt|dbl|snk",
-			outputJSON: `{"Format":{},"Modifiers":[{}],"Sink":{}}`,
+			outputJSON: `{"Format":{},"Modifiers":[{"OptCloseErr":null}],"Sink":{"OptCloseErr":null}}`,
 		},
 		{
 			desc:       "many modifier",
 			line:       "ofmt|dbl|dbl|dbl|dbl|snk",
-			outputJSON: `{"Format":{},"Modifiers":[{},{},{},{}],"Sink":{}}`,
+			outputJSON: `{"Format":{},"Modifiers":[{"OptCloseErr":null},{"OptCloseErr":null},{"OptCloseErr":null},{"OptCloseErr":null}],"Sink":{"OptCloseErr":null}}`,
 		},
 	}
 	for _, c := range cases {
 		parser := newTestParser()
-		ctx := session.NewContexts(&session.Config{}, &session.FlowConfig{}, nil)
+		ctx := core.NewContext(&core.Config{}, &core.FlowConfig{}, nil)
 		t.Run(c.desc, func(t *testing.T) {
 			i, err := parser.parseOutput(ctx, c.line)
 			if c.errContains == "" {

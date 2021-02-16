@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/rename-this/vhs/capture"
+	"github.com/rename-this/vhs/core"
 	"github.com/rename-this/vhs/file"
 	"github.com/rename-this/vhs/flow"
 	"github.com/rename-this/vhs/gcs"
@@ -22,10 +23,8 @@ import (
 	"github.com/rename-this/vhs/httpx"
 	"github.com/rename-this/vhs/internal/ioutilx"
 	"github.com/rename-this/vhs/jsonx"
-	"github.com/rename-this/vhs/middleware"
 	"github.com/rename-this/vhs/plugin"
 	"github.com/rename-this/vhs/s3compat"
-	"github.com/rename-this/vhs/session"
 	"github.com/rename-this/vhs/tcp"
 
 	_ "net/http/pprof"
@@ -48,8 +47,8 @@ func newRootCmd() *cobra.Command {
 			Short: "A tool for capturing and recording network traffic.",
 		}
 
-		cfg         = &session.Config{}
-		flowCfg     = &session.FlowConfig{}
+		cfg         = &core.Config{}
+		flowCfg     = &core.FlowConfig{}
 		inputLine   string
 		outputLines []string
 	)
@@ -99,10 +98,10 @@ func newRootCmd() *cobra.Command {
 	return cmd
 }
 
-func root(cfg *session.Config, flowCfg *session.FlowConfig, inputLine string, outputLines []string, parser *flow.Parser, logWriter io.Writer) error {
+func root(cfg *core.Config, flowCfg *core.FlowConfig, inputLine string, outputLines []string, parser *flow.Parser, logWriter io.Writer) error {
 	var (
 		errs = make(chan error, errBufSize)
-		ctx  = session.NewContextsForWriter(cfg, flowCfg, errs, logWriter)
+		ctx  = core.NewContextForWriter(cfg, flowCfg, errs, logWriter)
 	)
 
 	go func() {
@@ -210,13 +209,13 @@ func root(cfg *session.Config, flowCfg *session.FlowConfig, inputLine string, ou
 	return nil
 }
 
-func startMiddleware(ctx session.Context) (middleware.Middleware, error) {
+func startMiddleware(ctx core.Context) (core.Middleware, error) {
 	if ctx.FlowConfig.Middleware == "" {
 		ctx.Logger.Debug().Msg("no middleware configured")
 		return nil, nil
 	}
 
-	m, err := middleware.New(ctx, ctx.FlowConfig.Middleware)
+	m, err := core.NewMiddleware(ctx, ctx.FlowConfig.Middleware)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create middleware: %w", err)
 	}
@@ -259,10 +258,10 @@ func defaultParser() *flow.Parser {
 
 	p.LoadSink("gcs", gcs.NewSink)
 	p.LoadSink("s3compat", s3compat.NewSink)
-	p.LoadSink("stdout", func(_ session.Context) (flow.Sink, error) {
+	p.LoadSink("stdout", func(_ core.Context) (core.Sink, error) {
 		return os.Stdout, nil
 	})
-	p.LoadSink("discard", func(_ session.Context) (flow.Sink, error) {
+	p.LoadSink("discard", func(_ core.Context) (core.Sink, error) {
 		return ioutilx.NopWriteCloser(ioutil.Discard), nil
 	})
 	p.LoadSink("tcp", tcp.NewSink)
