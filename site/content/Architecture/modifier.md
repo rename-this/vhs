@@ -24,7 +24,7 @@ type InputModifier interface {
 ```
 
 Output modifiers must conform to the `OutputModifier` interface defined in
-[`core/output_modifiers.go`](https://github.com/rename-this/vhs/blob/main/core/output_modifiers.go), which is shown below:
+[`core/output_modifier.go`](https://github.com/rename-this/vhs/blob/main/core/output_modifier.go), which is shown below:
 
 ```go
 // OutputModifier wraps an OtputWriter.
