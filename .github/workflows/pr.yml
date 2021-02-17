@@ -13,8 +13,13 @@ jobs:
     - name: checkout
       uses: actions/checkout@v2
 
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.15
+
     - name: Cache Go
-      id: cache
+      id: go-cache
       uses: actions/cache@v2.1.4
       with:
         path: |
@@ -25,7 +30,9 @@ jobs:
           ${{ runner.os }}-go-
 
     - name: test
-      run: make test
+      run: |
+        sudo apt install -y bash libpcap-dev jq
+        make test-host
 
   container:
     name: container
