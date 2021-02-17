@@ -3,7 +3,10 @@ FROM golang:1.15 as base
 RUN go install -v -a std
 
 RUN apt update && \
-    apt install -y  libpcap-dev
+    apt install -y  \
+    bash \
+    libpcap-dev \
+    jq
 
 WORKDIR /src
 
