@@ -12,6 +12,10 @@ test:
 		-i vhs:test \
 		go test -cover -race -coverprofile coverage.out `go list ./... | grep -v -f .testignore`
 
+.PHONY: test-host
+test-host:
+		go test -cover -race -coverprofile coverage.out `go list ./... | grep -v -f .testignore`
+
 .PHONY: dev
 dev:
 	docker build -t vhs:dev . && \

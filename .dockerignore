@@ -1,1 +1,5 @@
 coverage.out
+dist
+.git
+Dockerfile
+vhs/docker
