@@ -84,9 +84,9 @@ There are several ways to contact the `vhs` team:
 
 * You can file a GitHub [issue](https://github.com/rename-this/vhs/issues) with an idea, feature request, or bug.
 * You can join the public `vhs` [mailing list](https://groups.google.com/g/vhs-pre-rename-launch).
-* You can join the public `vhs` [Slack](https://forms.gle/zikShrEjUCAN9XcC6).
+* You can join the public `vhs` [Slack](https://stormforge.slack.com/) using [this form](https://forms.gle/zikShrEjUCAN9XcC6). `vhs`-related discussions can be found in the [#vhs-to-be-renamed channel](https://stormforge.slack.com/archives/C01EXEZLZ52)
 
-If you are interested in contributing, please join the mailing list and Slack above, and be sure to check out the 
+If you are interested in contributing, please join the mailing list and Slack above, and be sure to check out the
 [contributor guidelines](https://github.com/rename-this/vhs/blob/main/CONTRIBUTING.md) and the
 [code of conduct](https://github.com/rename-this/vhs/blob/main/CODE_OF_CONDUCT.md).
 
