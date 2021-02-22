@@ -5,8 +5,6 @@
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
 
-
-
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
@@ -24,21 +22,19 @@ The cloud-native swiss army knife for network traffic data.
 <a href="https://github.com/rename-this/vhs/issues">Request Feature</a>
 </p>
 
-
 <!-- TABLE OF CONTENTS -->
 <details open="open">
   <summary><h2 style="display: inline-block">Table of Contents</h2></summary>
   <ol>
     <li><a href="#about-the-project">About The Project</a></li>
     <li><a href="#getting-started">Getting Started</a></li>
-    <li><a href="#more-information">More Information</a></li>    
+    <li><a href="#more-information">More Information</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#built-with">Built With</a></li>
     <li><a href="#contact">Contact</a></li>
   </ol>
 </details>
-
 
 ## About The Project
 
@@ -47,15 +43,14 @@ Kubernetes cluster as a sidecar, where it can capture traffic to and from your s
 can be analyzed in real time to produce Prometheus metrics or saved for use in offline analysis, load testing, or 
 whatever you can imagine!
 
-
 ## Getting Started
 
 The quickest way to see `vhs` in action is to visit our 
 [getting started](https://rename-this.github.io/vhs/getting-started/) page to run through a simple demo of `vhs` and
 see a few straightforward usage examples that demonstrate various aspects of `vhs` functionality.
 
-
 ### More Information
+
 A [complete guide](https://rename-this.github.io/vhs/reference/) to the usage and flags of `vhs` is available on
 our documentation site. `vhs` operates on the concept of a data flow that originates with a 
 [source](https://rename-this.github.io/vhs/reference/#sources) and
@@ -68,35 +63,32 @@ send data to other destinations. Along the way, data may pass through a series o
 and [formats](https://rename-this.github.io/vhs/reference/#output-formats) that transform the data. This architecture
 is described in more detail [here](https://rename-this.github.io/vhs/architecture/).
 
-
 ## Roadmap
 
 We want **your help** in determining the future of `vhs`. See the [issues](https://github.com/rename-this/vhs/issues)
 page and please let us know what features are important to you!
 
-
 ## License
 
 Distributed under the Apache 2.0 license. See `LICENSE` for more information.
 
-
 ## Built With
+
 * [cobra](https://github.com/spf13/cobra)
 * [zerolog](https://github.com/rs/zerolog)
 * [go-packet](https://github.com/google/gopacket)
 
-
 ## Contact
+
 There are several ways to contact the `vhs` team:
+
 * You can file a GitHub [issue](https://github.com/rename-this/vhs/issues) with an idea, feature request, or bug.
 * You can join the public `vhs` [mailing list](https://groups.google.com/g/vhs-pre-rename-launch).
-* You can join the public `vhs` [Slack](https://stormforge.slack.com).
+* You can join the public `vhs` [Slack](https://stormforge.slack.com/) using [this form](https://forms.gle/zikShrEjUCAN9XcC6). `vhs`-related discussions can be found in the [#vhs-to-be-renamed channel](https://stormforge.slack.com/archives/C01EXEZLZ52)
 
-If you are interested in contributing, please join the mailing list and Slack above, and be sure to check out the 
+If you are interested in contributing, please join the mailing list and Slack above, and be sure to check out the
 [contributor guidelines](https://github.com/rename-this/vhs/blob/main/CONTRIBUTING.md) and the
 [code of conduct](https://github.com/rename-this/vhs/blob/main/CODE_OF_CONDUCT.md).
-
-
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
