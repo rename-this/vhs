@@ -1,19 +1,17 @@
-FROM golang:1.14.2
+FROM debian:10 as base
 
-RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+RUN apt update && \
+    apt install -y  \
+    libpcap0.8
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    curl \
-    google-cloud-sdk \
-    hping3 \
-    jq \
-    libpcap-dev \
-    tcpdump \
-    telnet \
-    tmux
+########################################################
 
-ENV GOOGLE_APPLICATION_CREDENTIALS "/root/.config/gcloud/application_default_credentials.json"
+FROM gcr.io/distroless/base-debian10 as application
 
-WORKDIR /go/vhs
+COPY vhs /
+
+# Copy libpcap
+COPY --from=base /usr/lib/x86_64-linux-gnu/libpcap* /usr/lib/x86_64-linux-gnu/
+
+ENTRYPOINT ["/vhs"]
+

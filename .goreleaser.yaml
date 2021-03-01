@@ -1,0 +1,40 @@
+project_name: vhs
+snapshot:
+  name_template: "{{ .Version }}-snapshot-{{ .ShortCommit }}"
+
+builds:
+-
+  goos:
+  - linux
+  goarch:
+  - amd64
+  main: ./cmd/vhs
+  flags: -trimpath
+  binary: vhs
+
+nfpms:
+  -
+    id: deb
+    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    vendor:
+    homepage: https://github.com/rename-this/vhs
+    formats:
+      - deb
+    bindir: /usr/bin
+    dependencies:
+    - libpcap0.8
+
+dockers:
+  -
+    image_templates:
+      - "ghcr.io/rename-this/vhs:{{ .Version }}"
+      - "ghcr.io/rename-this/vhs:edge"
+    skip_push: true
+    build_flag_templates:
+      - "--pull"
+      - "--build-arg=ARCH=amd64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.name={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=homepage=https://github.com/rename-this/vhs"
