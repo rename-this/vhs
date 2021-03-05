@@ -272,6 +272,7 @@ func newTestOutputFormat(core.Context) (core.OutputFormat, error) { return &test
 type testOutputFormat struct {}
 func (*testOutputFormat) Init(core.Context, io.Writer) {}
 func (*testOutputFormat) In() chan<- interface{} { return nil }
+func (*testOutputFormat) Complete() <-chan struct{} { return nil }
 
 func OutputFormats() map[string]core.OutputFormatCtor { 
 	return map[string]core.OutputFormatCtor{

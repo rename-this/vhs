@@ -19,6 +19,8 @@ type source struct {
 }
 
 func (s *source) Init(ctx core.Context) {
+	defer close(s.streams)
+
 	ctx.Logger = ctx.Logger.With().
 		Str(core.LoggerKeyComponent, "file_source").
 		Logger()
@@ -33,8 +35,6 @@ func (s *source) Init(ctx core.Context) {
 		file: file,
 		meta: core.NewMeta(ctx.FlowConfig.InputFile, nil),
 	}
-
-	<-ctx.StdContext.Done()
 }
 
 func (s *source) Streams() <-chan core.InputReader {

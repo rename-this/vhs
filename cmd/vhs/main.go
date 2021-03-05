@@ -187,9 +187,7 @@ func root(cfg *core.Config, flowCfg *core.FlowConfig, inputLine string, outputLi
 		ctx.Cancel()
 	}()
 
-	go f.Run(ctx, m)
-
-	<-ctx.StdContext.Done()
+	f.Run(ctx, m)
 
 	if cfg.ProfilePathMemory != "" {
 		f, err := os.Create(cfg.ProfilePathMemory)

@@ -15,19 +15,26 @@ import (
 // https://w3c.github.io/web-performance/specs/HAR/Overview.html
 // http://www.softwareishard.com/blog/har-12-spec/
 type HAR struct {
-	in chan interface{}
+	in       chan interface{}
+	complete chan struct{}
 }
 
 // NewHAR creates a mew HAR format.
 func NewHAR(ctx core.Context) (core.OutputFormat, error) {
 	registerEnvelopes(ctx)
 	return &HAR{
-		in: make(chan interface{}),
+		in:       make(chan interface{}),
+		complete: make(chan struct{}, 1),
 	}, nil
 }
 
 // In returns the input channel.
 func (h *HAR) In() chan<- interface{} { return h.in }
+
+// Complete returns a completion channel.
+func (h *HAR) Complete() <-chan struct{} {
+	return h.complete
+}
 
 // Init initializes the HAR sink.
 func (h *HAR) Init(ctx core.Context, w io.Writer) {
@@ -36,6 +43,10 @@ func (h *HAR) Init(ctx core.Context, w io.Writer) {
 		Logger()
 
 	ctx.Logger.Debug().Msg("init")
+
+	defer func() {
+		h.complete <- struct{}{}
+	}()
 
 	c := NewCorrelator(ctx.FlowConfig.HTTPTimeout)
 	c.Start(ctx)
@@ -88,6 +99,8 @@ func (h *HAR) Init(ctx core.Context, w io.Writer) {
 	}()
 
 	<-ctx.StdContext.Done()
+
+	ctx.Logger.Debug().Msg("context canceled")
 
 	if err := json.NewEncoder(w).Encode(hh); err != nil {
 		ctx.Errors <- fmt.Errorf("failed to encode to JSON: %w", err)

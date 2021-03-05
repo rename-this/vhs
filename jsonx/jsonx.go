@@ -72,15 +72,23 @@ func (i *inputFormat) Init(ctx core.Context, m core.Middleware, streams <-chan c
 // NewOutputFormat creates a JSON output.
 func NewOutputFormat(_ core.Context) (core.OutputFormat, error) {
 	return &outputFormat{
-		in: make(chan interface{}),
+		in:       make(chan interface{}),
+		complete: make(chan struct{}, 1),
 	}, nil
 }
 
 type outputFormat struct {
-	in chan interface{}
+	in       chan interface{}
+	complete chan struct{}
 }
 
-func (f *outputFormat) In() chan<- interface{} { return f.in }
+func (f *outputFormat) In() chan<- interface{} {
+	return f.in
+}
+
+func (f *outputFormat) Complete() <-chan struct{} {
+	return f.complete
+}
 
 func (f *outputFormat) Init(ctx core.Context, w io.Writer) {
 	ctx.Logger = ctx.Logger.With().

@@ -14,16 +14,22 @@ import (
 func NewOutputFormat(ctx core.Context) (core.OutputFormat, error) {
 	registerEnvelopes(ctx)
 	return &outputFormat{
-		in: make(chan interface{}),
+		in:       make(chan interface{}),
+		complete: make(chan struct{}, 1),
 	}, nil
 }
 
 type outputFormat struct {
-	in chan interface{}
+	in       chan interface{}
+	complete chan struct{}
 }
 
 func (o *outputFormat) In() chan<- interface{} {
 	return o.in
+}
+
+func (o *outputFormat) Complete() <-chan struct{} {
+	return o.complete
 }
 
 func (o *outputFormat) Init(ctx core.Context, w io.Writer) {
@@ -32,6 +38,10 @@ func (o *outputFormat) Init(ctx core.Context, w io.Writer) {
 		Logger()
 
 	ctx.Logger.Debug().Msg("init")
+
+	defer func() {
+		o.complete <- struct{}{}
+	}()
 
 	var (
 		once   sync.Once

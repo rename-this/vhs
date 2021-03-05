@@ -119,7 +119,9 @@ type errWriteCloser struct {
 	err error
 }
 
-func (n *errWriteCloser) Close() error { return n.err }
+func (n *errWriteCloser) Close() error {
+	return n.err
+}
 
 // NewTestSource creates a new test source.
 func NewTestSource(core.Context) (core.Source, error) {
@@ -202,6 +204,7 @@ type TestErrOutputModifier struct {
 
 // Wrap retuns an error.
 func (m *TestErrOutputModifier) Wrap(w core.OutputWriter) (core.OutputWriter, error) {
+	fmt.Println("returning err")
 	return nil, m.Err
 }
 
@@ -216,6 +219,7 @@ func (m *TestDoubleInputModifier) Wrap(r core.InputReader) (core.InputReader, er
 	if m.OptCloseErr == nil {
 		return core.EmptyMeta(ioutil.NopCloser(tdim)), nil
 	}
+
 	return core.EmptyMeta(&errReadCloser{
 		Reader: ioutil.NopCloser(tdim),
 		err:    m.OptCloseErr,
@@ -264,16 +268,22 @@ func NewTestOutputFormatNoErr(ctx core.Context) core.OutputFormat {
 func NewTestOutputFormat(ctx core.Context) (core.OutputFormat, error) {
 	return &testOutputFormat{
 		in:       make(chan interface{}),
+		complete: make(chan struct{}, 1),
 		buffered: ctx.FlowConfig.BufferOutput,
 	}, nil
 }
 
 type testOutputFormat struct {
 	in       chan interface{}
+	complete chan struct{}
 	buffered bool
 }
 
 func (f *testOutputFormat) Init(ctx core.Context, w io.Writer) {
+	defer func() {
+		f.complete <- struct{}{}
+	}()
+
 	if f.buffered {
 		f.initBuffered(ctx, w)
 	} else {
@@ -306,4 +316,10 @@ func (f *testOutputFormat) initUnbuffered(ctx core.Context, w io.Writer) {
 	}
 }
 
-func (f *testOutputFormat) In() chan<- interface{} { return f.in }
+func (f *testOutputFormat) In() chan<- interface{} {
+	return f.in
+}
+
+func (f *testOutputFormat) Complete() <-chan struct{} {
+	return f.complete
+}
