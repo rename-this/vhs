@@ -78,9 +78,7 @@ func TestOutput(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			// hack: Make this big enough to handle any errors we
-			// might end up with.
-			errs := make(chan error, 10)
+			errs := make(chan error, 1)
 			ctx := core.NewContext(nil, nil, errs)
 
 			for _, o := range c.oo {
@@ -96,8 +94,9 @@ func TestOutput(t *testing.T) {
 			time.Sleep(500 * time.Millisecond)
 
 			ctx.Cancel()
-
-			time.Sleep(500 * time.Millisecond)
+			for _, o := range c.oo {
+				<-o.Done()
+			}
 
 			if c.errContains == "" {
 				s := c.oo[0].Sink.(*coretest.TestSink)

@@ -20,8 +20,9 @@ var _ core.OutputFormat = &Metrics{}
 // Note that this format does not modify data passing through it, it merely extracts metrics.
 // Also note that this is a "dead end" format: its output io.Reader is never updated and remains empty.
 type Metrics struct {
-	c  *Correlator
-	in chan interface{}
+	c        *Correlator
+	in       chan interface{}
+	complete chan struct{}
 
 	met metricsBackend
 }
@@ -34,7 +35,8 @@ func NewMetricsOutput() *flow.Output {
 // NewMetrics creates a new Metrics format.
 func NewMetrics() *Metrics {
 	return &Metrics{
-		in: make(chan interface{}),
+		in:       make(chan interface{}),
+		complete: make(chan struct{}, 1),
 
 		met: &promBackend{
 			Count: promauto.NewCounterVec(prometheus.CounterOpts{
@@ -64,7 +66,14 @@ func NewMetrics() *Metrics {
 }
 
 // In returns the input channel.
-func (m *Metrics) In() chan<- interface{} { return m.in }
+func (m *Metrics) In() chan<- interface{} {
+	return m.in
+}
+
+// Complete returns a completion channel.
+func (m *Metrics) Complete() <-chan struct{} {
+	return m.complete
+}
 
 // Init initializes the metrics format and registers the metrics with Prometheus
 func (m *Metrics) Init(ctx core.Context, _ io.Writer) {
@@ -73,6 +82,10 @@ func (m *Metrics) Init(ctx core.Context, _ io.Writer) {
 		Logger()
 
 	ctx.Logger.Debug().Msg("init")
+
+	defer func() {
+		m.complete <- struct{}{}
+	}()
 
 	c := NewCorrelator(ctx.FlowConfig.HTTPTimeout)
 	c.Start(ctx)

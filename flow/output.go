@@ -23,7 +23,7 @@ func NewOutput(f core.OutputFormat, mods core.OutputModifiers, s core.Sink) *Out
 		Format:    f,
 		Modifiers: mods,
 		Sink:      s,
-		done:      make(chan struct{}),
+		done:      make(chan struct{}, 1),
 	}
 }
 
@@ -40,6 +40,10 @@ func (o *Output) Init(ctx core.Context) {
 
 	ctx.Logger.Debug().Msg("init")
 
+	defer func() {
+		o.done <- struct{}{}
+	}()
+
 	w, err := o.Modifiers.Wrap(o.Sink)
 	if err != nil {
 		ctx.Errors <- fmt.Errorf("failed to wrap sink: %w", err)
@@ -50,7 +54,6 @@ func (o *Output) Init(ctx core.Context) {
 		if err := w.Close(); err != nil {
 			ctx.Errors <- fmt.Errorf("failed to close sink: %w", err)
 		}
-		o.done <- struct{}{}
 	}()
 
 	o.Format.Init(ctx, w)
@@ -95,6 +98,7 @@ func (oo Outputs) Drain(ctx core.Context) {
 
 	for i, output := range oo {
 		go func(ii int, o *Output) {
+			<-o.Format.Complete()
 			<-o.Done()
 			ctx.Logger.Debug().Msgf("output %d/%d drained", ii+1, num)
 			wg.Done()

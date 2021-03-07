@@ -6,4 +6,5 @@ import "io"
 type OutputFormat interface {
 	Init(Context, io.Writer)
 	In() chan<- interface{}
+	Complete() <-chan struct{}
 }
