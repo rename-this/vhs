@@ -41,8 +41,7 @@ jobs:
       uses: goreleaser/goreleaser-action@v2
       with:
         version: latest
-        # TODO figure out appropriate args here
-        args: release --rm-dist
+        args: release
       env:
         GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
