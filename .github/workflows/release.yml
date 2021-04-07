@@ -2,7 +2,7 @@ name: release
 
 on:
   release:
-    types: [published, created, edited, released]
+    types: [published, created, edited, prereleased, released]
   # push:
   #   branches:
   #   - "!*"
