@@ -21,7 +21,7 @@ jobs:
 
     - name: Cache Go
       id: go-cache
-      uses: actions/cache@v2.1.6
+      uses: actions/cache@v3.2.4
       with:
         path: |
           ~/go/pkg/mod
@@ -49,7 +49,7 @@ jobs:
 
     - name: Cache Go
       id: go-cache
-      uses: actions/cache@v2.1.6
+      uses: actions/cache@v3.2.4
       with:
         path: |
           ~/go/pkg/mod
